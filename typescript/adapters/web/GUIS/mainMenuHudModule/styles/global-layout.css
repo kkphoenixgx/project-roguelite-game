@@ -1,0 +1,141 @@
+:root {
+  /* Cores do Mapa Antigo (Usado em world-map.css) */
+  --map-paper: #e4dab9;
+  --map-lines: #6a1d13;
+  --map-land: #ad9674;
+  --map-water: #7ba7bc;
+
+  /* Paleta Principal da UI (V2 Palette - Menu/Outras Coisas) */
+  --ui-bg-darkest: #1a0f2e; /* Very dark purple, based on #38146a */
+  --ui-bg-dark: #38146a; /* Deep purple */
+  --ui-bg-medium: #3a192a; /* Dark maroon/brown */
+  --ui-bg-light: #519760; /* Emerald green */
+  --ui-bg-black: #000;
+  --ui-text-primary: #f1c6aa; /* Sand/skin tone */
+  --ui-text-secondary: #b2eca3; /* Pale green */
+  --ui-text-tertiary: #855cc7; /* Light purple */
+  --ui-text-disabled: #555;
+  --ui-border-primary: #855cc7;
+  --ui-border-secondary: #3a192a;
+  
+  /* Map Colors */
+  --world-island-fill: #a07a4b; /* Leather Brown */
+  --world-island-fill-hover: #b88d57;
+  --world-island-fill-selected: #519760; /* Green */
+  --world-ink: #38146a; /* Deep purple ink */
+  
+  --world-wood-dark: #3a192a;
+  --world-wood-medium: #a07a4b;
+  --world-wood-light: #d1b18a;
+  --world-wood-highlight: #f1c6aa;
+  --ui-border-disabled: #555;
+  --ui-shadow: #000;
+
+  /* Cores de Destaque e Ação */
+  --accent-gold: #FFD700;
+  --accent-gold-shadow: #552200;
+  --accent-blue: #55aaff;
+  --accent-blue-light: #aaddff;
+  --accent-blue-glow: rgba(85, 170, 255, 0.2);
+  --accent-blue-glow-hover: rgba(85, 170, 255, 0.6);
+
+  /* Cores do Mapa do Mundo (Sonho) */
+  --world-bg-start: #1a1614;
+  --world-bg-end: #050403;
+  --world-island-fill: #e8dcc4;
+  --world-island-fill-hover: #f0e6d2;
+  --world-island-fill-selected: #fff5e1;
+  --world-ink: #2b1d14;
+  --world-wood-dark: #3e2723;
+  --world-wood-medium: #4e342e;
+  --world-wood-light: #5d4037;
+  --world-wood-highlight: #6d4c41;
+  --world-poi-hover: #8a1c1c;
+  
+  /* Transição de Nuvem */
+  --cloud-center: #ffffff;
+  --cloud-mid: #88ccff;
+}
+
+#main-menu-container {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background-color: var(--ui-bg-dark);
+  color: var(--ui-text-primary);
+  font-family: 'Minecraft', 'Courier New', Courier, monospace;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* ----------- Loading screen ----------- */
+
+#loading-screen-container {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background-color: var(--ui-bg-darkest);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.8s ease-in-out;
+}
+
+.loading-center {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+#loading-sprite {
+  width: 64px; height: 64px;
+  image-rendering: pixelated;
+  animation: bounceSprite 0.4s infinite alternate cubic-bezier(0.5, 0.05, 1, 0.5);
+}
+
+
+#loading-funny-text { font-size: 36px; font-weight: bold; color: var(--accent-gold); text-shadow: 3px 3px 0px var(--accent-gold-shadow); margin: 0; }
+
+#loading-tech-log {
+  position: absolute; bottom: 20px; font-size: 14px; color: var(--ui-border-secondary); opacity: 0.6; font-family: monospace;
+}
+
+/* ----------- tabs ----------- */
+
+.mm-tab-content {
+  flex: 1;
+  position: relative;
+  display: none;
+  overflow: hidden;
+}
+.mm-tab-content.active {
+  display: block;
+}
+
+/* Barra de Navegação Inferior */
+
+#mm-nav-bar {
+  height: 60px;
+  background-color: var(--ui-bg-medium);
+  border-top: 4px solid var(--ui-border-primary);
+  display: flex;
+}
+.mm-nav-btn {
+  flex: 1;
+  background: none; border: none; border-right: 4px solid var(--ui-border-primary);
+  color: var(--ui-border-secondary); font-family: inherit; font-size: 20px;
+  cursor: pointer; transition: all 0.2s;
+}
+.mm-nav-btn:last-child { border-right: none; }
+
+.mm-nav-btn:hover { background-color: var(--ui-bg-light); color: var(--ui-text-secondary); }
+.mm-nav-btn.active { color: var(--ui-text-primary); background-color: var(--ui-bg-black); font-weight: bold; text-shadow: 2px 2px 0 var(--ui-border-disabled); }
+
+/* ----------- Animations ----------- */
+
+@keyframes bounceSprite {
+  from { transform: translateY(0); }
+  to { transform: translateY(-25px); }
+}

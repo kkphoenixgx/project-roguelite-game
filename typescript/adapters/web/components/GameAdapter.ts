@@ -17,6 +17,9 @@ import UIManager from "./UiManager/UIManager";
 import InputGateway from "./keyboardModule/InputGateway";
 import MainMenuGui from "../GUIS/mainMenuHudModule/MainMenuGui";
 import type IRenderable from "./renderModule/visuals/IRenderable";
+import { Telemetry } from "../../../tests/Telemetry"; 
+import { saveTelemetryLog } from "../shared/TauriIPC";
+import { VisualConfigMap } from "../shared/VisualConfigMap";
 
 /** @class GameAdapter O "Adaptador" principal que conecta a lógica de domínio (`IGameDomain`) com as tecnologias da web (Canvas, Input, DOM), traduzindo eventos e dados entre as camadas e gerenciando o ciclo de vida dos componentes de apresentação. */
 export default class GameAdapter {
@@ -49,6 +52,19 @@ export default class GameAdapter {
       window.open('/typescript/adapters/polygonWebEditor/index.html', '_blank');
       console.log('%c[Editor] %cHitbox Editor Tool aberto em uma nova aba.', 'color: #55aaff', 'color: white');
     };
+
+    // Gatilho de Telemetria: Salva os logs quando a janela do Tauri (ou navegador) for fechada
+    window.addEventListener('beforeunload', () => {
+      const report = Telemetry.mountReport();
+      saveTelemetryLog(report, false);
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'F2') {
+        logger.log('ipc', '[Telemetry] Ejeção manual de log iniciada (F2)...');
+        saveTelemetryLog(Telemetry.mountReport(), true);
+      }
+    });
   }
 
 
@@ -100,12 +116,31 @@ export default class GameAdapter {
 
     logger.log('init', 'All assets preloaded.');
     
+    const engineWorlds = [
+        { id: 'cemii', name: 'Cemii', cx: 150, cy: 300, scale: 1.0, path: 'M 100 200 L 150 200 L 200 250 L 200 350 L 150 400 L 100 350 Z' },
+        { id: 'vilgem', name: 'Vilgem', cx: 400, cy: 320, scale: 1.0, path: 'M 300 220 L 450 220 L 500 280 L 500 400 L 400 450 L 300 400 Z' },
+        { id: 'alun', name: 'Alun', cx: 650, cy: 300, scale: 1.0, path: 'M 600 200 L 700 200 L 750 280 L 700 380 L 600 350 Z' }
+    ];
+
     // O Jogo só começa quando o botão TELEtrans é clicado na aba do mapa!
     new MainMenuGui(async (mapId) => {
         logger.log('init', `Map selected: ${mapId}. Instructing domain to generate world...`);
         
-        // 1. O Domínio assume a responsabilidade de instanciar o mundo (VilgemWorld, CemiiWorld)
-        this.domain.loadWorld(mapId);
+        // Lemos o JSON desenhado no Polygon Web Editor
+        const mapConfig = (VisualConfigMap as any)[mapId];
+        let collisionData: any[] | undefined = undefined;
+        
+        if (mapConfig && mapConfig.collisionJsonUrl) {
+            try {
+                const response = await fetch(mapConfig.collisionJsonUrl);
+                const json = await response.json();
+                collisionData = json.hitboxes;
+                logger.log('init', `[Data-Driven] Carregados ${collisionData?.length} hitboxes do JSON do Editor.`);
+            } catch (err) {
+                logger.log('error', `[Data-Driven] Falha ao carregar JSON de colisões: ${err}`);
+            }
+        }
+        await this.domain.loadWorld(mapId, collisionData);
         
         // 2. Lemos o DTO do mundo recém-gerado
         const { world } = this.domain.getRenderState();
@@ -118,12 +153,14 @@ export default class GameAdapter {
         this.isGameStarted = true;
         this.togglePauseGame(); // Descongela a lógica com segurança
         initializeGame(this.update.bind(this), this.draw.bind(this));
-    });
+    }, engineWorlds);
     window.dispatchEvent(new Event('resize'));
   }
 
   /** Fase de Update (Lógica do Adapter): Função principal do ciclo de vida, chamada a cada frame para processar inputs, delegar a atualização de lógica para o domínio, sincronizar o estado visual e atualizar a câmera. @private @param deltaTime O tempo em segundos desde o último frame. */
   private update(deltaTime: number): void {
+    Telemetry.performance.recordFrame(deltaTime * 1000);
+    Telemetry.profiler.start('Engine Update Total');
     
     if (this.inputGateway.inputManager.consumeAction('interact')) {
       this.uiManager.handleInteract();
@@ -141,14 +178,18 @@ export default class GameAdapter {
     const mouseWorldPos = this.screenToWorld(mousePos.x, mousePos.y);
 
     if (!this.isPaused) {
+      Telemetry.profiler.start('Domain Math & Physics');
       this.handlePlayerInteractions();
       this.domain.update(deltaTime);
+      Telemetry.profiler.end('Domain Math & Physics');
       this.sceneManager.updateAnimations(deltaTime, mouseWorldPos);
     }
 
     // Requisita o DTO do domínio apenas UMA vez por frame para garantir Zero-GC e performance!
+    Telemetry.profiler.start('Render State Sync');
     this.currentFrameState = this.domain.getRenderState();
     this.syncScene(this.currentFrameState);
+    Telemetry.profiler.end('Render State Sync');
 
     const playerState = this.currentFrameState.renderables.find(r => r.id === 1);
     
@@ -157,12 +198,16 @@ export default class GameAdapter {
         playerScreenPos = this.worldToScreen(playerState.coordinates.x + playerState.size.width / 2, playerState.coordinates.y + playerState.size.height / 2);
     }
     this.uiManager.update(playerState, playerScreenPos, mousePos);
+
+    Telemetry.activeEntities = this.currentFrameState.renderables.length;
+    Telemetry.profiler.end('Engine Update Total');
   }
 
   /** Fase de Desenho: Função final do ciclo de vida, chamada a cada frame após o `update` para delegar a responsabilidade de desenhar o frame atual para o `Renderer`. */
   private async draw(): Promise<void> {
     if (!this.currentFrameState) return;
     logger.log('render', 'Drawing frame...');
+    Telemetry.profiler.start('GPU Render Pipeline');
 
     const domainState = this.currentFrameState;
     const cameraTarget = domainState.renderables.find(r => r.id === 1); 
@@ -205,6 +250,7 @@ export default class GameAdapter {
       const canvasDomainState = { world: domainState.world, renderables: this.canvasRenderBuffer };
       await (this.renderer as Renderer).drawFrame(canvasDomainState, cameraTarget, undefined, this.map);
     }
+    Telemetry.profiler.end('GPU Render Pipeline');
   }
 
   //? ----------- Main Methods -----------
