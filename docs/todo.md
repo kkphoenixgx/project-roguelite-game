@@ -2,7 +2,7 @@
 
 ## Issues
 
-- [] Interface geral (#13)
+- [ ] Interface geral (#13)
     descrição: - [ ] Seleção de broches
     - [ ] Seleção de broches
     - [ ] Geração dos broches
@@ -13,7 +13,8 @@
 
 
 
-- [] Árvore de habilidades de cada classe (#12)
+
+- [ ] Árvore de habilidades de cada classe (#12)
     descrição: - [ ] Árvores de habilidade das 5 classes-base (guerreiro, gunslighter, arqueiro, mago e feiticeiro)
     - [ ] Árvores de habilidade das 5 classes-base (guerreiro, gunslighter, arqueiro, mago e feiticeiro)
     - [ ] Seleção de classes ao iniciar a run
@@ -23,7 +24,8 @@
 
 
 
-- [] NPCS (#11)
+
+- [ ] NPCS (#11)
     descrição: - [X] Entidade npc no jogo
     - [X] Entidade npc no jogo
     - [X] Diálogo com npcs
@@ -35,11 +37,13 @@
 
 
 
-- [] Interface personagem (#10)
+
+- [ ] Interface personagem (#10)
     descrição: 
     - [X] - Bag
     - [~]  - Itens equipados (Habilitar as classes e manter as classes atuais no personagem)
     - [ ] - Status
+
 
 
 
@@ -57,12 +61,14 @@
 
 
 
-- [] Compositor de personagem (#8)
+
+- [ ] Compositor de personagem (#8)
     descrição: - [ ] Melhorar o `renderModule/Sprite` para poder juntar os sprites de partes do **personagem** 
     - [ ] Melhorar o `renderModule/Sprite` para poder juntar os sprites de partes do **personagem**
     - [X] Permitir adição de **armas**
     - [X] Adição de **armaduras**
     - [ ] Composição dos sprites de **skills**
+
 
 
 
@@ -76,6 +82,7 @@
 
 
 
+
 - [~] Inventário Mínimo (#5)
     descrição: - [ ] Implementar apenas a UI de "Itens Equipados" (o "Paper")
     - [ ] Implementar apenas a UI de "Itens Equipados" (o "Paper")
@@ -83,7 +90,8 @@
 
 
 
-- [] Drop de Item Básico (#4)
+
+- [ ] Drop de Item Básico (#4)
     descrição: - [X] Inimigos têm X% de chance (ex: 3%) de "dropar" um item ao morrer.
     - [X] Inimigos têm X% de chance (ex: 3%) de "dropar" um item ao morrer.
     - [X] Item fica no chão se inventário cheio.
@@ -93,7 +101,8 @@
 
 
 
-- [] Paredes e colisões (#3)
+
+- [ ] Paredes e colisões (#3)
     descrição: - [ ] Colisão de entidades
     - [ ] Colisão em objetos do mundo
     - [ ] Mapa de lugares que não pode andar
@@ -102,10 +111,12 @@
 
 
 
-- [] Player Básico (#1)
+
+- [ ] Player Básico (#1)
     descrição: - [x] Design inicial do personagem
     - [ ] Animação para cada uma das direções (8 direções) andando
     - [ ] Animação para cada uma das direções (8 direções) idle
+
 
 
 
