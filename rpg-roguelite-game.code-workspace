@@ -4,7 +4,6 @@
 			"path": "./"
 		}
 	],
-
 	"extensions": {
 		"recommendations": [
 			// life candys:
@@ -16,10 +15,8 @@
 			"usernamehw.errorlens",
 			"developer2006.svg-gallery",
 			"eliostruyf.vscode-hide-comments",
-
 			// theme:
 			"tinaciousdesign.theme-tinaciousdesign",
-			
 			// Workspace Essentials:
 			"vunguyentuan.vscode-css-variables",
 			"dbaeumer.vscode-eslint",
@@ -29,7 +26,6 @@
 			"DSKWRK.vscode-generate-getter-setter"
 		]
 	},
-
 	"settings": {
 		"workbench.colorTheme": "Tinacious Design (High Contrast)",
 		"workbench.iconTheme": "material-icon-theme",

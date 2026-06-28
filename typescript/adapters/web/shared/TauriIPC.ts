@@ -26,3 +26,33 @@ export async function safeInvoke<T>(command: string, args?: Record<string, unkno
         throw error;
     }
 }
+
+/**
+ * Métrica 18: Disparo de Telemetria pós-mortem.
+ * Tenta invocar o backend em Rust para salvar os arquivos 'latest.log' e 'metrics.log'.
+ */
+export async function saveTelemetryLog(reportText: string, forceDownload: boolean = false): Promise<void> {
+    try {
+        if ((window as any).__TAURI__ && !forceDownload) {
+            await invoke('save_telemetry_log', { report: reportText });
+            logger.log('ipc' as any, '[Tauri] Relatório de Telemetria salvo em disco.');
+        } else {
+            throw new Error("Tauri ausente ou Ejeção Manual solicitada.");
+        }
+    } catch (e) {
+        console.warn("[Telemetry] Forçando Ejeção de Blob pelo navegador...");
+        
+        const blob = new Blob([reportText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const date = new Date().toISOString().replace(/[:.]/g, '-');
+        a.download = `run-metrics-${date}.log`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        if (typeof window !== 'undefined') localStorage.setItem('telemetry_latest_run', reportText);
+    }
+}

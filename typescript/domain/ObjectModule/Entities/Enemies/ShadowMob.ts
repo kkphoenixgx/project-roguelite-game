@@ -1,6 +1,6 @@
 import Entity from "../Entity";
 import type { IEventManager } from "../../../eventDispacher/IGameEvents";
-import type Attributes from "../Attributes";
+import Attributes from "../Attributes";
 import Vector2D from "../../../shared/Vector2D";
 import { HitBoxCircle } from "../../../hitBox/HitBoxCircle";
 import type ObjectElement from "../../ObjectElement";
@@ -10,7 +10,9 @@ import PoisonStatus from "../Status/PoisonStatus";
 import WetStatus from "../Status/WetStatus";
 import ParalyzeStatus from "../Status/ParalyzeStatus";
 import StunStatus from "../Status/StunStatus";
+import { RegisterSpawner, type SpawnPayload } from "../../SpawnRegistry";
 
+@RegisterSpawner('shadowMob')
 export default class ShadowMob extends Entity {
     private lastAttackTime: number = 0;
     private attackCooldown: number = 1500; // 1.5 segundos entre cada ataque
@@ -78,5 +80,9 @@ export default class ShadowMob extends Entity {
         const cx = this.coordinates.x + this.size.width / 2;
         const cy = this.coordinates.y + this.size.height / 2;
         this.hitboxes?.forEach(hb => hb.updatePosition({ x: cx, y: cy }));
+    }
+
+    public static createSpawn(id: number, payload: SpawnPayload, eventManager: IEventManager): ShadowMob {
+        return new ShadowMob(id, payload.coordinates, new Attributes(10, 5, 10, 10, 20, 10, 10, 10), eventManager);
     }
 }

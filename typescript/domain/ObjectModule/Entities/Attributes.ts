@@ -17,7 +17,8 @@ export default class Attributes {
   private _mana: number = 0;
   private _currentXp: number = 0;
   private _xpToNextLevel: number = 0;
-  private _availablePoints: number = 0;
+  private _manaRegen: number = 5; // Mana por segundo base
+  private _availablePoints: number = 1; // Começa com 1 ponto para poder liberar a primeira skill da classe!
 
   //? Modificação vai ser pelos bonus
   private _bonusSpeed: number = 0;

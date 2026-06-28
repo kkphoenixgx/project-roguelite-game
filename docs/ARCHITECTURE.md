@@ -23,13 +23,19 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
     - **Manutenibilidade:** Mudanças em uma tecnologia externa (ex: trocar de Canvas 2D para WebGPU ou envelopar no Tauri) não afetam o Domínio. Uma linha de lógica não precisa ser reescrita.
     - **Flexibilidade:** Facilita a adaptação a novos requisitos ou tecnologias.
 
-  ### 1.1. Filosofia de Performance: Zero-GC e Data-Oriented Design (DOD)
+  ### 1.1. Filosofia de Performance: Zero-GC (Domínio) e Data-Oriented Design no Front-end (Adaptador)
   
   Em um jogo *Bullet Hell*, onde milhares de balas e inimigos ocupam a tela simultaneamente, a maior ameaça à performance não é o desenho, mas a memória (O "Lixeiro" do Navegador, ou *Garbage Collector*). Se instanciarmos milhares de novos objetos (`new Bullet()`) por segundo, o motor V8 congela o jogo para limpar o lixo da memória, causando quedas massivas de FPS (Stuttering).
   
-  Para resolver isso, adotamos:
+  **No Domínio (OOP Tradicional):**
   - **Object Pooling:** Quando uma bala "morre", ela não é deletada da memória. Ela é desligada e enviada para uma "piscina de reciclagem". Quando o jogador atira de novo, reutilizamos aquele mesmo espaço de memória, alterando apenas os dados internos.
   - **Física Assíncrona e Fire-and-Forget:** Nunca bloqueamos o Cérebro (Game Loop) para calcular hitboxes complexas. O Domínio envia os dados brutos de colisão para uma outra aba invisível (Web Worker) e continua rodando liso. No frame seguinte, as colisões são processadas instantaneamente.
+
+  **No Adaptador Web (Data-Oriented Design):**
+  - **Float32Array e Buffers Reutilizáveis:** O `WebGPURenderer` utiliza `Float32Array` pré-alocados para dados de instância, evitando alocações dinâmicas. A memória é mutada in-place a cada frame, não criada.
+  - **Memoização de Composição Visual:** O `composedLayersCache` no `WebGPURenderer` calcula as camadas visuais uma única vez e só recalcula quando o estado da entidade muda, abolindo recálculos desnecessários.
+  - **Object Pooling em Partículas:** O `ParticleOrchestrator` usa **Swap-Based Recycle** para reutilizar instâncias de partículas, pré-alocando matrizes na inicialização para emitir milhares simultaneamente sem engatilhar o GC.
+  - **Reutilização de Collections:** Sets e arrays são zerados com `.clear()` e `.length = 0` em vez de serem recriados, preservando a alocação original.
 
 ## 2. Módulos Atuais como Atores
 
@@ -120,12 +126,17 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
 
   #### renderModule (A Engine Visual Data-Driven e Zero-GC)
 
-    O módulo de renderização foi reestruturado para alto desempenho, abolindo a necessidade de classes repetitivas (Data-Driven) e garantindo preservação de memória.
+    O módulo de renderização foi reestruturado para alto desempenho, abolindo alocações dinâmicas em hot paths e aplicando princípios de Data-Oriented Design (DOD) rigorosamente.
+
+    **Estratégia DOD Aplicada:**
+    - **Buffers Pré-Alocados:** `Float32Array` para dados de instância são criados uma única vez na inicialização e mutados in-place, nunca recriados. Instancing via GPU permite desenhar milhares de vértices em uma única chamada.
+    - **Zero Garbage Allocation em Hot Paths:** Toda iteração sobre renderáveis reutiliza Sets e arrays pré-criados. Collections são zeradas com `.length = 0` e `.clear()`, não descartadas.
+    - **Memoização Agressiva:** O cache `composedLayersCache` mapeia entidades para suas camadas visuais, recalculando apenas quando o estado muda. Isso elimina varreduras desnecessárias de `VisualComposer` a cada frame.
 
     - **`engine/`**: O maquinário de baixo nível. Contém `Renderer.ts` (Canvas 2D) e o avançado `WebGPURenderer.ts` (Shaders WGSL, *Texture Atlas* global e *Instanced Rendering* para desenhar milhares de vértices em uma única chamada da GPU).
     - **`scene/`**: Orquestração espacial. `SceneManager.ts` sincroniza os DTOs do Domínio com a tela e lida com **Efeitos Visuais Transientes (VFX)** (instâncias temporárias com "Snap Magnético" em atores). Inclui `Camera.ts` (Translação/Zoom restrito aos limites do mundo) e `Map.ts` (Renderização assíncrona de matriz de Chunks 3x3 na visão do jogador).
     - **`visuals/`**: Blocos construtores. Contém a base `GameObjectElement.ts` e o motor `LayeredGameObjectElement.ts` integrado ao `VisualComposer.ts`, que aplica regras complexas de Z-Index anatômico (ex: "barbas ficam sobre o peitoral") para criar "Paper Dolls" (equipar roupas visivelmente).
-    - **`particlesModule/` (Zero-GC):** Subsistema assombroso de partículas (`ParticleOrchestrator` e `Particles`). Utiliza **Object Pooling com Swap-Based Recycle**, pré-alocando matrizes de memória na inicialização para emitir milhares de partículas simultâneas sem engatilhar o Garbage Collector do V8. Disponibiliza uma biblioteca de **VFX Semânticos** (`bloodSplatter`, `levelUp`, `criticalStrike`).
+    - **`particlesModule/` (Zero-GC via Object Pooling):** Subsistema assombroso de partículas (`ParticleOrchestrator` e `Particles`). Utiliza **Object Pooling com Swap-Based Recycle**, pré-alocando matrizes de memória na inicialização para emitir milhares de partículas simultâneas sem engatilhar o Garbage Collector do V8. Disponibiliza uma biblioteca de **VFX Semânticos** (`bloodSplatter`, `levelUp`, `criticalStrike`).
     - **`customRenderables/`**: Exceções visuais procedimentais (`CircleForm`, `FishingHookVisual`) e injeções de Debug visual (`DebugPolygon`, `DebugRectangle`).
 
   #### UiManager e GUIS (Módulo de Interface DOM)
@@ -387,7 +398,7 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
 
 ### 4.2. Como Habilitar/Desabilitar a Visualização de Debug
 
-  A visualização de elementos de depuração, como as `HitBox`es, é controlada por uma única flag na camada de adaptação.
+  A visualização de elementos de depuração, como as `HitBox`es, é controlada por uma única flag na camada de adaptação. Pode rodar `toggleDebugMode()` no console do terminal também, mas se prefirir deixar ativo sem precisar rodar no terminal:
 
   1.  **Abra o `GameAdapter`:** Navegue até o arquivo `adapters/web/components/GameAdapter.ts`.
   2.  **Encontre a Flag:** No topo da classe, localize a propriedade `isDebugMode`.
@@ -548,3 +559,176 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
 
   1. **Aplique a Força:** Nunca altere a propriedade `velocity` diretamente para empurrar um inimigo. Em vez disso, calcule o vetor de direção, normalize-o, multiplique pela magnitude da força (ex: 25) e chame `target.applyForce(vetor)`. Isso soma a força no `accelerator` da Entidade.
   2. **Anule a Resistência (Dica de Ouro):** Se o inimigo for rápido, ele pode "lutar" contra o empurrão no mesmo frame. Para um arrasto perfeito (como um puxão ou arremesso), zere a inércia temporariamente (`target.velocity.resetMut()`) antes de aplicar a força, ou aplique um micro-stun (`target.applyStatus(new StunStatus(0.2))`). O Stun paralisa a IA, mas a física nativa continuará lendo o `accelerator` e arremessará o corpo pela tela!
+
+## Guia de Mapas de Colisão (Collision Layers)
+
+### O que é uma Camada de Colisão?
+
+Uma **camada de colisão** é uma imagem PNG adicional que funciona como um "mapa de obstáculos" do mapa visual. Cada cor na imagem representa um tipo diferente de obstáculo ou comportamento de tile.
+
+Ao invés de hardcodificar colisores no código (`new HitBoxPolygon(...)`), o sistema agora carrega automaticamente a imagem, interpreta as cores e cria hitboxes para cada obstáculo.
+
+### Como Funciona
+
+#### 1. Estrutura da Camada de Colisão
+
+A imagem deve ter as **mesmas dimensões do mapa visual** (ex: 8192 x 8192 pixels).
+
+Cada **cor** representa um tipo de colisão:
+
+| Cor | Hex | Tipo | Comportamento |
+|-----|-----|------|---------------|
+| Preto | `#000000` | Parede (WALL) | Intransponível |
+| Azul | `#0000FF` | Água (WATER) | 60% de velocidade, efeito "wet" |
+| Vermelho | `#FF0000` | Lava (LAVA) | Dano contínuo (0.5 por segundo) |
+| Verde | `#00FF00` | Grama Alta (GRASS) | 80% de velocidade |
+| Ciano | `#00FFFF` | Gelo (ICE) | 50% de velocidade, efeito "slip" |
+| Magenta | `#FF00FF` | Espinhos (SPIKE) | Dano contínuo (1.0 por segundo) |
+| Branco | `#FFFFFF` | Sem Colisão (NONE) | Transparente |
+
+#### 2. Criando uma Camada de Colisão
+
+##### No Photoshop/GIMP/Krita:
+
+1. Crie uma **nova camada** chamada "Collision" ou "Colisão"
+2. Use a ferramenta **Balde de Tinta** ou **Pincel** para desenhar as áreas de obstáculo
+   - Preencha áreas com os respectivos colors
+   - **Exemplo:** Desenhar paredes ao redor da beira do mapa com preto `#000000`
+3. **Tamanho do Tile:** O sistema amostra uma cor a cada 32 pixels (tamanho padrão do tile)
+   - Mantenha as áreas de cores grandes (múltiplas de 32px) para evitar amostras incorretas
+4. Exporte como PNG: **File → Export As → vilgem-collision.png**
+
+##### No Código (TypeScript com Canvas):
+
+```typescript
+// Exemplo de script para gerar collision layer programaticamente
+function generateCollisionLayer(width: number, height: number): Canvas {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d')!;
+
+    // Fundo branco (sem colisão)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, width, height);
+
+    // Parede ao redor da beira
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, 64, height);       // Esquerda
+    ctx.fillRect(width - 64, 0, 64, height); // Direita
+    ctx.fillRect(0, 0, width, 64);        // Topo
+    ctx.fillRect(0, height - 64, width, 64); // Fundo
+
+    // Rio (Água)
+    ctx.fillStyle = '#0000FF';
+    ctx.fillRect(1024, 2048, 2048, 512);
+
+    return canvas;
+}
+```
+
+#### 3. Adicionando ao VisualConfigMap
+
+No arquivo `typescript/adapters/web/shared/VisualConfigMap.ts`:
+
+```typescript
+const vilgemChunks: string[][] = Array.from({ length: 8 }, () => 
+    Array(8).fill(new URL('../assets/maps/map.jpeg', import.meta.url).href)
+);
+
+export const VisualConfigMap: Record<string, AnyVisualConfig> = {
+    // ================== MAPAS ==================
+    'vilgem': {
+        category: 'map',
+        chunkSize: 1024,
+        chunks: vilgemChunks,
+        // ✨ NOVO: Adicione a camada de colisão aqui
+        collisionLayerUrl: new URL('../assets/maps/vilgem-collision.png', import.meta.url).href,
+        collisionTileSize: 32  // Tamanho de cada tile (padrão: 32px)
+    },
+    // ... resto do mapa
+};
+```
+
+#### 4. Como o Sistema Processa
+
+1. **Quando o mundo carrega:** O `GameWorld.generate()` é chamado
+2. **CollisionTileAdapter lê a imagem** da URL configurada
+3. **Parser de cores** amostram o centro de cada tile (32x32 pixels por padrão)
+4. **Hitboxes são criadas** automaticamente para cada cor não-branca
+5. **O Domínio cria colisores** invisíveis usando o tipo extraído
+
+#### 5. Código-Exemplo no Domínio
+
+```typescript
+// Na camada web (GameAdapter.ts)
+new MainMenuGui(async (mapId) => {
+    // Isso agora carrega os tiles de colisão automaticamente
+    await this.domain.loadWorld(mapId);
+    
+    const { world } = this.domain.getRenderState();
+    // O mundo já tem todos os colisores de tile carregados!
+});
+```
+
+### Otimizações
+
+#### Aggregation de Tiles (Reduzir Hitboxes)
+
+O sistema oferece uma função `aggregateCollisionTiles()` que mescla tiles adjacentes do mesmo tipo em retângulos maiores. Isso reduz significativamente o número de hitboxes:
+
+- **Antes:** 1 tile por pixel = ~8.000 tiles para um mapa 8192x8192
+- **Depois (com aggregation):** ~50-100 tiles agrupados
+
+A aggregation está **ativada por padrão** no `CollisionTileAdapter`.
+
+#### Caching
+
+Os dados de colisão carregados são **cacheados** em memória. Trocar de mapa rápido não recarrega a imagem.
+
+```typescript
+adapter.clearCache(); // Manual cache clear se necessário
+```
+
+### Tipos de Colisão Personalizados
+
+Para adicionar novos tipos (ex: "Lama Espessa"), edite `CollisionTileType.ts`:
+
+```typescript
+export enum CollisionTileType {
+    NONE = 'none',
+    WALL = 'wall',
+    WATER = 'water',
+    LAVA = 'lava',
+    GRASS = 'grass',
+    ICE = 'ice',
+    SPIKE = 'spike',
+    MUD = 'mud',  // ✨ NOVO
+}
+
+export const COLOR_TO_COLLISION_TYPE: Record<string, CollisionTileType> = {
+    // ...
+    '#8B7355': CollisionTileType.MUD,  // Marrom
+};
+
+export const COLLISION_BEHAVIORS: Record<CollisionTileType, {...}> = {
+    // ...
+    [CollisionTileType.MUD]: { passable: true, speedModifier: 0.3, effectType: 'stuck' },
+};
+```
+
+### Troubleshooting
+
+#### Colisores não aparecem
+- ✅ Verifique se a `collisionLayerUrl` está definida no `VisualConfigMap`
+- ✅ Certifique-se de que a imagem tem as cores exatas hex (ex: `#FF0000`, não `#FF0011`)
+- ✅ Verifique o console para mensagens de erro
+
+#### Colisores em lugar errado
+- ✅ O sistema ammostra um pixel a cada 32 pixels (centro do tile)
+- ✅ Mantenha áreas de cor bem definidas e maiores que 32x32
+
+#### Performance lenta
+- ✅ Ative a aggregation (padrão)
+- ✅ Reduza a `collisionTileSize` se houver muitos pequenos tiles
+

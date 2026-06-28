@@ -19,6 +19,6 @@ describe('AlunWorld', () => {
   it('deve despachar logs de início e fim durante a geração do mundo', () => {
     const world = new AlunWorld(mockEventManager);
     world.generate();
-    expect(mockEventManager.dispatch).toHaveBeenCalledWith('log', expect.objectContaining({ message: expect.stringContaining('Gerando o mundo de Alun') }));
+    expect(mockEventManager.dispatch).toHaveBeenCalledWith('log', expect.objectContaining({ message: expect.stringContaining('Gerando o mundo de alun') }));
   });
 });

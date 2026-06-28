@@ -10,7 +10,6 @@ import type Entity from "../Entity";
 
 @RegisterSpawner('simpleBullet')
 @RegisterSpawner('magicMissile')
-@RegisterSpawner('scytheProjectile')
 export class SimpleBullet extends Bullet {
     public accelerator: Vector2D = new Vector2D(0, 0);
     private speed:number = 150

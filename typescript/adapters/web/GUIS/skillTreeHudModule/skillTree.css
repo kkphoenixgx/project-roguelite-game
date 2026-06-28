@@ -78,7 +78,7 @@
 }
 .loadout-slot.locked { border-color: #2a2018; background: #100d0b; }
 .slot-num { position: absolute; bottom: -8px; right: -8px; background: #3a2e24; padding: 2px 6px; border-radius: 4px; font-size: 10px; color: #e6c27a; }
-.slot-req { color: #555; font-size: 12px; }
+.slot-req { color: #ff4444; font-size: 14px; font-weight: bold; text-shadow: 0 0 5px rgba(255,0,0,0.5); }
 
 .equipped-skill-indicator {
     width: 36px; height: 36px;
@@ -111,7 +111,7 @@
     position: absolute;
     transform-origin: 0 0;
     display: flex;
-    flex-direction: column-reverse; /* Cresce de baixo para cima */
+    flex-direction: column; /* Cresce organicamente colocando os primeiros itens no topo */
     align-items: center;
     padding: 100px;
     gap: 40px;

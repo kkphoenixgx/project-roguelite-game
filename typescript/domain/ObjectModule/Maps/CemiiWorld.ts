@@ -12,11 +12,7 @@ export default class CemiiWorld extends GameWorld {
         ['cemii-0-3', 'cemii-1-3', 'cemii-2-3', 'cemii-3-3']
     ];
 
-    public generate(): void {
-        this.eventManager.dispatch('log', { channel: 'init', message: 'Gerando o mundo de Cemii...', params: [] });
-        
-        // Adicione hitboxes estáticas de árvores e ruínas aqui
-
-        this.eventManager.dispatch('log', { channel: 'init', message: 'Mundo de Cemii gerado com sucesso.', params: [] });
+    protected async generateCustomElements(): Promise<void> {
+        // Adicione NPCs, inimigos e elementos customizados das ruínas aqui
     }
 }

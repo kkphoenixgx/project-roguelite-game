@@ -6,7 +6,9 @@ import type { objectTypeId } from "../../objectType.type";
 import Enemy from "./Enemy";
 import ObjectElement from "../../ObjectElement";
 import Attributes from "../Attributes";
+import { RegisterSpawner, type SpawnPayload } from "../../SpawnRegistry";
 
+@RegisterSpawner('slime')
 export default class Slime extends Enemy {
   /** @private Armazena a última posição conhecida do jogador para a perseguição. */
   private lastPlayerPos: {x: number; y: number} = {x:0,y:0}
@@ -140,4 +142,7 @@ export default class Slime extends Enemy {
     ));
   }
 
+  public static createSpawn(id: number, payload: SpawnPayload, eventManager: IEventManager): Slime {
+    return new Slime(id, payload.level || 1, payload.baseXp || 50, payload.coordinates, new Attributes(8, 3, 12, 8, 5, 5, 2, 15), eventManager);
+  }
 }

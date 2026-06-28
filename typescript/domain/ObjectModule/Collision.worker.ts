@@ -70,66 +70,104 @@ function checkPolyCircle(poly: {x:number,y:number}[], cx: number, cy: number, r:
 }
 // ==============================================================================
 
-self.addEventListener('message', (event: MessageEvent<{hitboxData: Float32Array, bufferLength: number, worldBounds: any}>) => {
-  const { hitboxData, bufferLength, worldBounds } = event.data;
+// Pools em memória global do Worker para evitar alocações a cada mensagem (Zero-GC)
+const collidingPairs: number[] = [];
+const processedPairs: Set<number> = new Set(); // Usaremos chaves matemáticas!
+const elementsPool: BoundedElement[] = [];
+const elements: BoundedElement[] = [];
 
-  const collisionTree = new Quadtree<BoundedElement>(worldBounds);
-  const elements: BoundedElement[] = [];
+function getPooledElement(index: number): BoundedElement {
+    if (index >= elementsPool.length) {
+        const newEl = { id: 0, type: 0, x: 0, y: 0, width: 0, height: 0, points: [] };
+        elementsPool.push(newEl);
+        return newEl;
+    }
+    return elementsPool[index]!;
+}
 
-  let offset = 0;
-  while (offset < bufferLength) {
-      const id = hitboxData[offset++]!;
-      const type = hitboxData[offset++]!;
-      
-      if (type === 0) { // Circle
-          const cx = hitboxData[offset++]!; const cy = hitboxData[offset++]!; const radius = hitboxData[offset++]!;
-          const element = { id, type, cx, cy, radius, x: cx - radius, y: cy - radius, width: radius * 2, height: radius * 2 };
-          elements.push(element); collisionTree.insert(element);
-      } else if (type === 1) { // Polygon
-          const pointCount = hitboxData[offset++]!;
-          const points = [];
-          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-          for (let p = 0; p < pointCount; p++) {
-              const px = hitboxData[offset++]!; const py = hitboxData[offset++]!;
-              points.push({x: px, y: py});
-              if (px < minX) minX = px; if (py < minY) minY = py;
-              if (px > maxX) maxX = px; if (py > maxY) maxY = py;
-          }
-          const element = { id, type, points, x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-          elements.push(element); collisionTree.insert(element);
-      }
-  }
+if (typeof self !== 'undefined') {
+    self.addEventListener('message', (event: MessageEvent<{hitboxData: Float32Array, bufferLength: number, worldBounds: any}>) => {    
+    const { hitboxData, bufferLength, worldBounds } = event.data;
 
-  const collidingPairs: number[] = [];
-  const processedPairs = new Set<string>();
+    const collisionTree = new Quadtree<BoundedElement>(worldBounds);
+    elements.length = 0;
+    collidingPairs.length = 0;
+    processedPairs.clear();
 
-  for (let i = 0; i < elements.length; i++) {
+    let offset = 0;
+    let elIndex = 0;
+    
+    while (offset < bufferLength) {
+        const id = hitboxData[offset++]!;
+        const type = hitboxData[offset++]!;
+        
+        const element = getPooledElement(elIndex++);
+        element.id = id;
+        element.type = type;
+
+        if (type === 0) { // Circle
+            const cx = hitboxData[offset++]!; const cy = hitboxData[offset++]!; const radius = hitboxData[offset++]!;
+            element.cx = cx; element.cy = cy; element.radius = radius;
+            element.x = cx - radius; element.y = cy - radius; 
+            element.width = radius * 2; element.height = radius * 2;
+            elements.push(element); collisionTree.insert(element);
+        } else if (type === 1) { // Polygon
+            const pointCount = hitboxData[offset++]!;
+            if (!element.points) element.points = [];
+            element.points.length = pointCount;
+            
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (let p = 0; p < pointCount; p++) {
+                const px = hitboxData[offset++]!; const py = hitboxData[offset++]!;
+                if (!element.points[p]) element.points[p] = { x: 0, y: 0 };
+                element.points[p]!.x = px;
+                element.points[p]!.y = py;
+                if (px < minX) minX = px; if (py < minY) minY = py;
+                if (px > maxX) maxX = px; if (py > maxY) maxY = py;
+            }
+            element.x = minX; element.y = minY; 
+            element.width = maxX - minX; element.height = maxY - minY;
+            elements.push(element); collisionTree.insert(element);
+        }
+    }
+
+    for (let i = 0; i < elements.length; i++) {
     const elA = elements[i];
     if (!elA) continue;
 
     const potentialColliders = collisionTree.retrieve(elA);
 
     for (let j = 0; j < potentialColliders.length; j++) {
-      const elB = potentialColliders[j];
-      if (!elB) continue;
-      if (elA.id === elB.id) continue;
+        const elB = potentialColliders[j];
+        if (!elB) continue;
+        if (elA.id === elB.id) continue;
 
-      const pairKey = elA.id < elB.id ? `${elA.id}-${elB.id}` : `${elB.id}-${elA.id}`;
-      if (processedPairs.has(pairKey)) continue;
+        // Função de emparelhamento de Cantor para IDs únicos (Zero String Allocation)
+        const k1 = elA.id < elB.id ? elA.id : elB.id;
+        const k2 = elA.id < elB.id ? elB.id : elA.id;
+        const pairKey = 0.5 * (k1 + k2) * (k1 + k2 + 1) + k2;
+        
+        if (processedPairs.has(pairKey)) continue;
 
-      // AABB check já foi feito pela QuadTree, agora checamos com precisão SAT
-      if (elA.type === 0 && elB.type === 0) {
-          const dx = elA.cx! - elB.cx!; const dy = elA.cy! - elB.cy!;
-          if (dx * dx + dy * dy <= (elA.radius! + elB.radius!) ** 2) { collidingPairs.push(elA.id, elB.id); processedPairs.add(pairKey); }
-      } else if (elA.type === 1 && elB.type === 1) {
-          if (checkPolyPoly(elA.points!, elB.points!)) { collidingPairs.push(elA.id, elB.id); processedPairs.add(pairKey); }
-      } else {
-          const poly = elA.type === 1 ? elA.points! : elB.points!;
-          const circ = elA.type === 0 ? elA : elB;
-          if (checkPolyCircle(poly, circ.cx!, circ.cy!, circ.radius!)) { collidingPairs.push(elA.id, elB.id); processedPairs.add(pairKey); }
-      }
+        // AABB check já foi feito pela QuadTree, agora checamos com precisão SAT
+        if (elA.type === 0 && elB.type === 0) {
+            const dx = elA.cx! - elB.cx!; const dy = elA.cy! - elB.cy!;
+            if (dx * dx + dy * dy <= (elA.radius! + elB.radius!) ** 2) { collidingPairs.push(elA.id, elB.id); processedPairs.add(pairKey); }
+        } else if (elA.type === 1 && elB.type === 1) {
+            if (checkPolyPoly(elA.points!, elB.points!)) { collidingPairs.push(elA.id, elB.id); processedPairs.add(pairKey); }
+        } else {
+            const poly = elA.type === 1 ? elA.points! : elB.points!;
+            const circ = elA.type === 0 ? elA : elB;
+            if (checkPolyCircle(poly, circ.cx!, circ.cy!, circ.radius!)) { collidingPairs.push(elA.id, elB.id); processedPairs.add(pairKey); }
+        }
     }
-  }
+}
+
+  // Logger visual para atestar o funcionamento do Worker em alta performance
+  // if (collidingPairs.length > 0 && Math.random() < 0.05) {
+  //     console.log(`[Worker Física] Processando com precisão... Identificados ${collidingPairs.length / 2} toques simultâneos entre ${elements.length} corpos.`);
+  // }
 
   self.postMessage(new Int32Array(collidingPairs));
 });
+}

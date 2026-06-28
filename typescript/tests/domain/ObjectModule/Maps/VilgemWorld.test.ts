@@ -23,8 +23,7 @@ describe('VilgemWorld', () => {
     
     world.generate();
 
-    // Valida a injeção de obstáculos estáticos (A Casa/Rio) e do NPC Diretor Molor
-    expect(dispatchSpy).toHaveBeenCalledWith('spawn', expect.objectContaining({ type: 'environmentCollider' }));
+    // Valida a injeção do NPC Diretor Molor
     expect(dispatchSpy).toHaveBeenCalledWith('spawn', expect.objectContaining({ type: 'molor' }));
   });
 });

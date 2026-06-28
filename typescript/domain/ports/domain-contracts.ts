@@ -105,8 +105,8 @@ export type RenderableState = EntityRenderableState; // Por enquanto, só temos 
 export interface IGameDomain {
   /** Aciona a atualização de estado de todas as entidades do domínio a cada tick do game loop. @param deltaTime O tempo, em segundos, desde a última atualização. */
   update(deltaTime: number): void;
-  /** Instruí o domínio a carregar um mapa específico (instanciando a classe World correspondente e gerando suas hitboxes). */
-  loadWorld(mapId: string): void;
+  /** Instruí o domínio a carregar um mapa específico (instanciando a classe World correspondente e gerando suas hitboxes). Este é um método assíncrono pois carrega dados de colisão. */
+  loadWorld(mapId: string): Promise<void>;
   /** Traduz uma intenção do usuário (capturada pela apresentação) em um comando que o domínio entende. @param command O comando de movimento. */
   handlePlayerInteractions(command: { actions: Array<action> }, mouseLastCoordinates: {x:number,y:number}): void; // eslint-disable-line
   /** Executa um comando de inventário, como equipar ou desequipar um item. */

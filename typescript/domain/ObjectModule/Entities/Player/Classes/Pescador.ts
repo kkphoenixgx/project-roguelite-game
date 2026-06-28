@@ -9,6 +9,7 @@ import Vector2D from "../../../../shared/Vector2D";
 import Attack from "../../../Items/Attack";
 import type { HitBox } from "../../../../hitBox/HitBox"; 
 import StunStatus from "../../Status/StunStatus";
+import "../../Casted/Leviata";
 
 export default class Pescador extends Class {
     private skillsByLevel: Map<number, Skill> = new Map();
@@ -28,11 +29,15 @@ export default class Pescador extends Class {
     private readonly petCooldown: number = 10000; // 10s cooldown
     private lastLeviataTime: number = 0;
     private readonly leviataCooldown: number = 8000; // 8s de recarga
+    private leviataSpawnAttack: Attack;
+    
+    private lastNetTime: number = 0;
+    private readonly netCooldown: number = 5000;
 
     constructor(xpTable: IXPTable, player: Player, eventManager: IEventManager) {
         super('Pescador', xpTable, player, eventManager);
         // Exemplo de uma passiva inicial temática
-        this.skillsByLevel.set(2, new Skill('pesc_t1_fisgada', 'Fisgada Perfeita', 'O seu puxão se torna mais rápido e pesado.', 'passive', 1));
+        this.skillsByLevel.set(1, new Skill('pesc_t1_fisgada', 'Fisgada Perfeita', 'O seu puxão se torna mais rápido e pesado.', 'passive', 1));
         this.skillsByLevel.set(4, new Skill('pesc_t2_net', 'Rede Pesada', 'Joga uma rede mágica que enraíza inimigos em área.', 'active', 2, 'pesc_t1_fisgada'));
         this.skillsByLevel.set(8, new Skill('pesc_t3_leviata', 'Fúria do Leviatã', 'Invoca um Leviatã das profundezas para esmagar uma área.', 'active', 3, 'pesc_t2_net'));
         this.skillsByLevel.set(16, new Skill('pesc_t4_fishpet', 'Peixinho de Combate', 'Invoca um peixinho lutador imortal da dimensão aquática.', 'essential', 4));
@@ -285,6 +290,47 @@ export default class Pescador extends Class {
                 type: 'spawn-leviatã' as any,
                 coordinates: mouseCoordinates,
                 attack: leviataAttack
+            });
+        } else if (skillId === 'pesc_t2_net') {
+            const now = Date.now();
+            if (now - this.lastNetTime < this.netCooldown) {
+                this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `[Pescador] Rede Pesada em recarga!`, params: [] });
+                return;
+            }
+            this.lastNetTime = now;
+            
+            // Visual de água/rede
+            this.eventManager.dispatch('spawnVisual', {
+                type: 'waterSplash',
+                coordinates: { x: mouseCoordinates.x - 48, y: mouseCoordinates.y - 48 },
+                duration: 0.5,
+                size: { width: 96, height: 96 }
+            });
+
+            // Enraíza/stun em área
+            const radius = 96;
+            const damage = 20 + Math.floor(this.player.attributes.strength);
+            // OnHitAction aplica StunStatus por 3 segundos
+            const rootAction = (attacker: Entity, target: Entity) => {
+                target.activeStatuses.set('stun', new StunStatus(target, 3));
+            };
+            const netAttack = new Attack(this.player, damage, 'physical', [rootAction]);
+            
+            this.eventManager.dispatch('requestNeighbors', {
+                coordinates: mouseCoordinates,
+                radius: radius,
+                callback: (neighbors: any[]) => {
+                    let hitCount = 0;
+                    neighbors.forEach(n => {
+                        if (n.id !== this.player.id && 'takeDamage' in n) {
+                            const dir = new Vector2D(0, 0); // Sem knockback, apenas root
+                            netAttack.execute(n, dir);
+                            this.eventManager.dispatch('particle', { effect: 'waterSplash', x: n.coordinates.x, y: n.coordinates.y });
+                            hitCount++;
+                        }
+                    });
+                    this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `[Pescador] Rede Pesada atingiu ${hitCount} alvos!`, params: [] });
+                }
             });
         }
     }

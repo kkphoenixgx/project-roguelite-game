@@ -9,15 +9,46 @@
   "mouse_right": "mouse_right",
   "toggle_attributes": "e",
   "toggle_skill_tree": "t",
-  "spell_0": ["~", "numpad_0", "dead"],
-  "spell_1": [",", "numpad_1"],
-  "spell_2": [".", "numpad_2"],
-  "spell_3": [";", "numpad_3"],
-  "spell_4": ["k", "numpad_4"],
-  "spell_5": ["l", "numpad_5"],
-  "spell_6": ["ç", "numpad_6"],
-  "spell_7": ["i", "numpad_7"],
-  "spell_8": ["o", "numpad_8"],
-  "spell_9": ["p", "numpad_9"],
+  "spell_0": [
+    "~",
+    "numpad_0",
+    "dead"
+  ],
+  "spell_1": [
+    ",",
+    "numpad_1"
+  ],
+  "spell_2": [
+    ".",
+    "numpad_2"
+  ],
+  "spell_3": [
+    ";",
+    "numpad_3"
+  ],
+  "spell_4": [
+    "k",
+    "numpad_4"
+  ],
+  "spell_5": [
+    "l",
+    "numpad_5"
+  ],
+  "spell_6": [
+    "ç",
+    "numpad_6"
+  ],
+  "spell_7": [
+    "i",
+    "numpad_7"
+  ],
+  "spell_8": [
+    "o",
+    "numpad_8"
+  ],
+  "spell_9": [
+    "p",
+    "numpad_9"
+  ],
   "cast_spell": " "
 }

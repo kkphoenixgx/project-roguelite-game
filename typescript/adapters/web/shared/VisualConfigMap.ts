@@ -25,6 +25,7 @@ export interface MapVisualConfig {
     category: 'map';
     chunkSize: number;
     chunks: string[][]; // Matriz de URLs de imagens para cada pedaço do mapa
+    collisionJsonUrl?: string; // URL do arquivo JSON contendo os polígonos exportados do Web Editor
 }
 export type AnyVisualConfig = EntityVisualConfig | ItemVisualConfig | ProjectileVisualConfig | VFXVisualConfig | MapVisualConfig;
 
@@ -38,7 +39,9 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
     'vilgem': {
         category: 'map',
         chunkSize: 1024,
-        chunks: vilgemChunks
+        chunks: vilgemChunks,
+        // Aponta para o JSON gerado no Polygon Web Editor!
+        collisionJsonUrl: new URL('../assets/maps/collision-layers/vilgem_hitboxes.json', import.meta.url).href
     },
 
     // ================== ENTIDADES (Corpos) ==================
@@ -94,6 +97,18 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
                 frameWidth: 128, frameHeight: 128,
                 atlasOffset: { x: 0, y: 0 },
                 spriteSize: { width: 128, height: 128 }
+            }
+        }
+    },
+    'environmentCollider': {
+        category: 'entity',
+        animations: {
+            'static': { 
+                // Imagem de 1 pixel 100% transparente para forçar a renderização das hitboxes em modo Debug sem pesar a GPU
+                imageSrc: 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', 
+                frameCount: 1, animationSpeed: 1, 
+                frameWidth: 1, frameHeight: 1, 
+                atlasOffset: { x: 0, y: 0 }, spriteSize: { width: 1, height: 1 } 
             }
         }
     },

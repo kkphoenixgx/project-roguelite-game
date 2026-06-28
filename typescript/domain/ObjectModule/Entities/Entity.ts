@@ -22,6 +22,9 @@ export default abstract class Entity extends ObjectElement {
   public direction: Vector2D = new Vector2D(0, 0);
   public hitBox :HitBox[] | null = null
   public activeStatuses: Map<string, StatusEffect> = new Map();
+  public activeStatusesList: StatusEffect[] = [];
+  public currentSpeedModifier: number = 1;
+  protected _centerCache: {x: number, y: number} = {x: 0, y: 0};
 
   constructor(
     id: number,
@@ -50,16 +53,19 @@ export default abstract class Entity extends ObjectElement {
         existing.elapsed = 0;
     } else {
         this.activeStatuses.set(status.id, status);
+        this.activeStatusesList.push(status);
         status.apply(this);
         (this as any).eventManager?.dispatch('log', { channel: 'domain', message: `Status ${status.id} aplicado em ${this.objectId}`, params: [] });
     }
   }
 
   public updateStatuses(deltaTime: number): void {
-    for (const [id, status] of this.activeStatuses.entries()) {
+    for (let i = this.activeStatusesList.length - 1; i >= 0; i--) {
+        const status = this.activeStatusesList[i]!;
         if (status.update(deltaTime, this)) {
-            this.activeStatuses.delete(id);
-            (this as any).eventManager?.dispatch('log', { channel: 'domain', message: `Status ${id} removido de ${this.objectId}`, params: [] });
+            this.activeStatuses.delete(status.id);
+            this.activeStatusesList.splice(i, 1);
+            (this as any).eventManager?.dispatch('log', { channel: 'domain', message: `Status ${status.id} removido de ${this.objectId}`, params: [] });
         }
     }
   }
@@ -68,7 +74,13 @@ export default abstract class Entity extends ObjectElement {
     this.coordinates.x += this.velocity.x;
     this.coordinates.y += this.velocity.y;
     
-    this.eventManager.dispatch('log', { channel: 'domain-entity-move', message: `(Entity) ${this.id}-${this.objectId} moved`, params: [] });
+    if (this.hitboxes) {
+      this._centerCache.x = this.coordinates.x + this.size.width / 2;
+      this._centerCache.y = this.coordinates.y + this.size.height / 2;
+      for (let i = 0; i < this.hitboxes.length; i++) {
+        this.hitboxes[i]!.update(this._centerCache, this.rotation);
+      }
+    }
   }
 
   /** Aplica dano à entidade e retorna se ela foi derrotada. * @param damageInfo DTO contendo as informações do dano a ser aplicado - objeto simplificado do ataque. * @returns O dano real causado após a aplicação das defesas. */
@@ -165,6 +177,70 @@ export default abstract class Entity extends ObjectElement {
     return finalDamage;
   }
 
+  /** Resolve colisão física sólida empurrando a entidade para fora de obstáculos do ambiente. */
+  public resolveEnvironmentCollision(env: any, radius: number): void {
+    if (env.passable !== false) {
+        if (env.speedModifier !== undefined) {
+            this.currentSpeedModifier = Math.min(this.currentSpeedModifier, env.speedModifier);
+        }
+        return;
+    }
+
+    const px = this.coordinates.x + this.size.width / 2;
+    const py = this.coordinates.y + this.size.height / 2;
+
+    let boxX = env.coordinates.x;
+    let boxY = env.coordinates.y;
+    let boxW = env.size?.width || 32;
+    let boxH = env.size?.height || 32;
+
+    if (env.hitboxes && env.hitboxes[0]) {
+        const shape = env.hitboxes[0].getDebugShape();
+        if (shape.type === 'polygon' && shape.points && shape.points.length > 0) {
+            const pts = shape.points;
+            const minX = Math.min(...pts.map((p: any) => p.x));
+            const maxX = Math.max(...pts.map((p: any) => p.x));
+            const minY = Math.min(...pts.map((p: any) => p.y));
+            const maxY = Math.max(...pts.map((p: any) => p.y));
+            boxX = minX;
+            boxY = minY;
+            boxW = maxX - minX;
+            boxH = maxY - minY;
+        }
+    }
+
+    const closestX = Math.max(boxX, Math.min(px, boxX + boxW));
+    const closestY = Math.max(boxY, Math.min(py, boxY + boxH));
+
+    const dx = px - closestX;
+    const dy = py - closestY;
+    const distance = Math.hypot(dx, dy);
+
+    if (distance < radius && distance > 0) {
+        const overlap = radius - distance;
+        this.coordinates.x += (dx / distance) * overlap;
+        this.coordinates.y += (dy / distance) * overlap;
+    } else if (distance === 0) {
+        // Centro perfeitamente dentro do AABB (Penetração Profunda devido a Física Atrasada)
+        const distLeft = px - boxX;
+        const distRight = (boxX + boxW) - px;
+        const distTop = py - boxY;
+        const distBottom = (boxY + boxH) - py;
+        
+        const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+        
+        if (minDist === distLeft) {
+            this.coordinates.x -= (distLeft + radius);
+        } else if (minDist === distRight) {
+            this.coordinates.x += (distRight + radius);
+        } else if (minDist === distTop) {
+            this.coordinates.y -= (distTop + radius);
+        } else {
+            this.coordinates.y += (distBottom + radius);
+        }
+    }
+  }
+
   public resetAccelerator(): void {
     this.accelerator.resetMut();
   }
@@ -181,7 +257,8 @@ export default abstract class Entity extends ObjectElement {
     }
 
     //? Calcula o deslocamento base para este frame (velocidade * tempo)
-    this.velocity.multiplyMut(deltaTime);
+    this.velocity.multiplyMut(deltaTime * this.currentSpeedModifier);
+    this.currentSpeedModifier = 1; // Reseta para ler novo terreno no próx frame
     
     // A física reage: Adiciona Forças Externas (Knockback/Pull) como deslocamento absoluto
     this.velocity.addMut(this.accelerator);
@@ -193,8 +270,9 @@ export default abstract class Entity extends ObjectElement {
     const dX = (this.coordinates.x + this.size.width / 2) - (otherElement.coordinates.x + otherElement.size.width / 2);
     const dY = (this.coordinates.y + this.size.height / 2) - (otherElement.coordinates.y + otherElement.size.height / 2);
 
-    const disperseVector = new Vector2D(dX,dY).normalizeMut()
-    this.velocity = disperseVector.clone().addMut(this.accelerator);
+    this.velocity.x = dX;
+    this.velocity.y = dY;
+    this.velocity.normalizeMut().addMut(this.accelerator);
 
     this.updatePosition();
   }

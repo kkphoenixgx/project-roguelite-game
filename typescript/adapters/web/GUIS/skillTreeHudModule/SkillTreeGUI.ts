@@ -20,7 +20,11 @@ export default class SkillTreeGui {
     private translateY: number = 0;
     private scale: number = 1;
 
-    constructor(togglePauseCallback: () => void, private skillActionCallback: (action: 'unlock' | 'changeClass' | 'equip', payload: any) => void) {
+    private draggedSkillId: string | null = null;
+    private customDragGhost: HTMLElement | null = null;
+
+    constructor(
+        private readonly togglePauseCallback: () => void, private skillActionCallback: (action: 'unlock' | 'changeClass' | 'equip', payload: any) => void) {
         this.togglePauseCallback = togglePauseCallback;
         this.injectUI();
         this.setupViewportEvents();
@@ -56,13 +60,52 @@ export default class SkillTreeGui {
         });
 
         window.addEventListener('mousemove', (e) => {
+            if (this.customDragGhost) {
+                this.customDragGhost.style.left = `${e.clientX - 24}px`;
+                this.customDragGhost.style.top = `${e.clientY - 24}px`;
+                
+                // Visual de hover nos slots
+                const hoverTarget = document.elementFromPoint(e.clientX, e.clientY);
+                const slotEl = hoverTarget?.closest('.loadout-slot:not(.locked)');
+                
+                const allSlots = Array.from(this.container.querySelectorAll('.loadout-slot'));
+                allSlots.forEach(s => (s as HTMLElement).style.borderColor = '');
+                
+                if (slotEl) {
+                    (slotEl as HTMLElement).style.borderColor = '#00ffff';
+                }
+                return;
+            }
             if (!this.isDragging) return;
             this.translateX = e.clientX - this.startX;
             this.translateY = e.clientY - this.startY;
             canvas.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
         });
 
-        window.addEventListener('mouseup', () => { this.isDragging = false; });
+        window.addEventListener('mouseup', (e) => {
+            if (this.customDragGhost && this.draggedSkillId) {
+                this.customDragGhost.remove();
+                this.customDragGhost = null;
+                
+                const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+                const slotEl = dropTarget?.closest('.loadout-slot:not(.locked)');
+                
+                if (slotEl) {
+                    const allSlots = Array.from(this.container.querySelectorAll('.loadout-slot'));
+                    const index = allSlots.indexOf(slotEl as HTMLElement);
+                    if (index !== -1) {
+                        this.skillActionCallback('equip', { skillId: this.draggedSkillId, slotIndex: index });
+                    }
+                }
+                
+                // Limpa bordas
+                const allSlots = Array.from(this.container.querySelectorAll('.loadout-slot'));
+                allSlots.forEach(s => (s as HTMLElement).style.borderColor = '');
+                
+                this.draggedSkillId = null;
+            }
+            this.isDragging = false; 
+        });
 
         viewport.addEventListener('wheel', (e) => {
             e.preventDefault();
@@ -77,6 +120,12 @@ export default class SkillTreeGui {
         if (toggleBtn && loadoutPanel) {
             toggleBtn.onclick = () => { loadoutPanel.classList.toggle('collapsed'); };
         }
+
+        // Permite o arraste visual em toda a tela para evitar o cursor 🚫
+        this.container.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+        });
     }
 
     public get isOpen(): boolean { return this.isVisible; }
@@ -85,10 +134,13 @@ export default class SkillTreeGui {
         this.isVisible = !this.isVisible;
         this.container.style.display = this.isVisible ? 'flex' : 'none';
         
-        // Centraliza a visão na primeira vez que abre
+        // Centraliza a visão na primeira vez que abre (olhando mais para a base da árvore)
         if (this.isVisible) {
             const canvas = this.container.querySelector('.skill-tree-canvas') as HTMLElement;
-            this.translateX = -50; this.translateY = -50; this.scale = 1;
+            // Deslocamos mais o Y para que o foco inicial não fique tão no topo.
+            this.translateX = 0; 
+            this.translateY = -300; 
+            this.scale = 0.8;
             if (canvas) canvas.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
         }
         
@@ -115,7 +167,7 @@ export default class SkillTreeGui {
             this.lastLoadoutHash = loadoutHash;
 
             const loadoutSlots = this.container.querySelectorAll('.loadout-slot');
-            const slotRequirements = [1, 10, 30, 50]; // Níveis estritos para liberar cada slot!
+            const slotRequirements = [1, 5, 10, 15]; // Níveis estritos para liberar cada slot (reduzidos para facilitar progressão inicial)
 
             if (loadoutSlots.length > 0 && data.activeLoadout) {
                 loadoutSlots.forEach((slotEl, index) => {
@@ -129,18 +181,11 @@ export default class SkillTreeGui {
                         const reqSpan = el.querySelector('.slot-req');
                         if (reqSpan) reqSpan.remove();
                         
-                        // Prepara o Drag & Drop no Slot com prevenção segura nativa
-                        el.ondragover = (e) => e.preventDefault(); 
-                        el.ondrop = (e) => {
-                            e.preventDefault();
-                            el.style.borderColor = ''; 
-                            const skillId = e.dataTransfer?.getData('text/plain');
-                            if (skillId) {
-                                this.skillActionCallback('equip', { skillId, slotIndex: index });
-                            }
-                        };
-                        el.ondragenter = () => { el.style.borderColor = '#00ffff'; };
-                        el.ondragleave = () => { el.style.borderColor = ''; };
+                        // Drag and Drop (mantém eventos HTML5 limpos para não dar conflito, mas a lógica agora é manual)
+                        el.ondragover = null; 
+                        el.ondrop = null;
+                        el.ondragenter = null;
+                        el.ondragleave = null;
                     } else {
                         el.classList.add('locked');
                         let reqSpan = el.querySelector('.slot-req');
@@ -253,10 +298,13 @@ export default class SkillTreeGui {
 
         const treeArea = this.container.querySelector('.skill-tree-canvas') as HTMLElement;
         if (treeArea && data.skillTree && data.skillTree.length > 0) {
-            treeArea.innerHTML = '';
-            const maxTier = Math.max(0, ...data.skillTree.map(s => s.tier));
+            // Se estiver arrastando a árvore (pan) ou arrastando uma skill (drag \u0026 drop), não recria o DOM
+            // para evitar que o navegador cancele os eventos de mouse
+            if (!this.isDragging && !this.draggedSkillId) {
+                treeArea.innerHTML = '';
+                const maxTier = Math.max(0, ...data.skillTree.map(s => s.tier));
 
-            for (let tier = 1; tier <= maxTier; tier++) {
+            for (let tier = maxTier; tier >= 1; tier--) {
                 const skillsInTier = data.skillTree.filter(s => s.tier === tier);
                 if (skillsInTier.length === 0) continue;
 
@@ -299,12 +347,22 @@ export default class SkillTreeGui {
 
                     // Apenas habilidades ativas/essenciais e já desbloqueadas podem ser arrastadas
                     if (stateClass === 'unlocked' && (skill.type === 'active' || skill.type === 'essential')) {
-                        btn.draggable = true;
-                        btn.ondragstart = (e) => {
-                            if (e.dataTransfer) {
-                                e.dataTransfer.effectAllowed = 'copyMove';
-                                e.dataTransfer.setData('text/plain', skill.id);
-                            }
+                        btn.onmousedown = (e) => {
+                            e.preventDefault(); // Impede seleção de texto e comportamentos nativos
+                            e.stopPropagation(); // Impede o Pan do canvas
+                            
+                            this.draggedSkillId = skill.id;
+                            
+                            // Cria um fantasma manual livre do DOM restrito
+                            this.customDragGhost = btn.cloneNode(true) as HTMLElement;
+                            this.customDragGhost.style.position = 'fixed';
+                            this.customDragGhost.style.pointerEvents = 'none'; // Vital para o elementFromPoint funcionar no mouseup!
+                            this.customDragGhost.style.zIndex = '999999';
+                            this.customDragGhost.style.left = `${e.clientX - 24}px`;
+                            this.customDragGhost.style.top = `${e.clientY - 24}px`;
+                            this.customDragGhost.style.transform = 'none'; 
+                            this.customDragGhost.style.boxShadow = '0 0 20px #00ffff';
+                            document.body.appendChild(this.customDragGhost);
                         };
                         btn.style.cursor = 'grab';
                     }
@@ -314,15 +372,16 @@ export default class SkillTreeGui {
                 tierDiv.appendChild(nodesDiv);
                 treeArea.appendChild(tierDiv);
 
-                if (tier < maxTier) {
+                if (tier > 1) { // A linha agora é desenhada "abaixo" de cada tier, indo até o tier 1.
                     const line = document.createElement('div');
-                    // A linha brilha se qualquer skill do tier atual estiver desbloqueada!
+                    // A linha brilha se qualquer skill do tier ATUAL (o mais alto sendo processado) estiver desbloqueada
                     const hasUnlocked = skillsInTier.some(s => s.unlocked);
                     line.className = `skill-path-line ${hasUnlocked ? 'unlocked' : ''}`;
-                    line.style.visibility = hasUnlocked ? 'visible' : 'hidden'; // Esconde completamente até que seja liberada
+                    line.style.visibility = hasUnlocked ? 'visible' : 'hidden'; 
                     treeArea.appendChild(line);
                 }
             }
+            } // Fechamento do if (!this.isDragging && !this.draggedSkillId)
         } else if (treeArea) { treeArea.innerHTML = '<p style="color: #666;">Nenhuma classe selecionada</p>'; }
     }
 }

@@ -17,6 +17,7 @@ export type LogChannel =
   | 'npc'       //? Para comportamento e IA de NPCs
   | 'update-cycles'//? Para update cycles (game loop)
   | 'classes:pescador'//? Para update cycles (game loop)
+  | 'ipc'       //? Para Inter-Process Communication (Tauri)
 ;    
 
 

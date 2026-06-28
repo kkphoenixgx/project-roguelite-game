@@ -5,6 +5,10 @@ export default class HitBoxPolygon extends HitBox {
     private points: {x: number, y: number}[];
     private pivot: {x: number, y: number};
     private debugShape: HitboxDebugShape;
+    private rotatedPoints: {x: number, y: number}[];
+    private lastX: number = -Infinity;
+    private lastY: number = -Infinity;
+    private lastRot: number = -Infinity;
     
     constructor(
         coordinates: {x: number, y: number},
@@ -16,33 +20,38 @@ export default class HitBoxPolygon extends HitBox {
         super(coordinates, rotation, onColision);
         this.points = points;
         this.pivot = pivot;
-        this.debugShape = { type: 'polygon', coordinates, points: [], rotation };
+        this.rotatedPoints = points.map(() => ({x: 0, y: 0}));
+        this.debugShape = { type: 'polygon', coordinates: { x: coordinates.x, y: coordinates.y }, points: this.rotatedPoints, rotation };
     }
 
     public getRotatedPoints(): {x: number, y: number}[] {
+        // Memoization rigorosa para evitar realocações (Zero-GC)
+        if (this.rotation === this.lastRot) {
+            return this.rotatedPoints;
+        }
+        this.lastRot = this.rotation;
+
         const cos = Math.cos(this.rotation);
         const sin = Math.sin(this.rotation);
         
-        return this.points.map(p => {
+        for (let i = 0; i < this.points.length; i++) {
+            const p = this.points[i]!;
             const tx = p.x - this.pivot.x;
             const ty = p.y - this.pivot.y;
-
-            const rx = tx * cos - ty * sin;
-            const ry = tx * sin + ty * cos;
-
-            return {
-                x: this.coordinates.x + rx + this.pivot.x,
-                y: this.coordinates.y + ry + this.pivot.y
-            };
-        });
+            this.rotatedPoints[i]!.x = this.coordinates.x + (tx * cos - ty * sin) + this.pivot.x;
+            this.rotatedPoints[i]!.y = this.coordinates.y + (tx * sin + ty * cos) + this.pivot.y;
+        }
+        return this.rotatedPoints;
     }
 
     public intersects(other: HitBox): boolean { return false; /* Delegado 100% para o CollisionWorker de alta performance */ }
 
     public override getDebugShape(): HitboxDebugShape {
-        this.debugShape.coordinates = this.coordinates;
+        this.debugShape.coordinates.x = this.coordinates.x;
+        this.debugShape.coordinates.y = this.coordinates.y;
         this.debugShape.rotation = this.rotation;
-        this.debugShape.points = this.getRotatedPoints();
+        // this.debugShape.points já referencia this.rotatedPoints no construtor
+        this.getRotatedPoints(); // Computa ou puxa do cache
         return this.debugShape;
     }
 }

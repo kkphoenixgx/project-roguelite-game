@@ -1,6 +1,20 @@
 import GameWorld from "../GameWorld";
-import HitBoxPolygon from "../../hitBox/HitBoxPolygon";
-import type ObjectElement from "../ObjectElement";
+import Gun from "../Items/Weapons/RangedWeapons/Gun";
+import Scythe from "../Items/Weapons/MeleeWeapons/Scythe";
+import SimpleStaff from "../Items/Weapons/RangedWeapons/Staffs/SimpleStaff";
+import IronHelmet from "../Items/Armors/helmet/IronHelmet";
+import IronChestplate from "../Items/Armors/chestplates/IronChestplate";
+import IronPants from "../Items/Armors/pants/IronPants";
+import IronBoots from "../Items/Armors/boots/IronBoots";
+import IronGloves from "../Items/Armors/glooves/IronGloves";
+import SimpleAmulet from "../Items/Armors/necklaces/SimpleAmulet";
+import SimpleRing from "../Items/Armors/rings/SimpleRing";
+import SimpleSword from "../Items/Weapons/MeleeWeapons/SimpleSword";
+import VampireFang from "../Items/Consumables/VampireFang";
+import MegaMushroom from "../Items/Consumables/MegaMushroom";
+import AdrenalineFlask from "../Items/Consumables/Potions/AdrenalineFlask";
+import DemonBlood from "../Items/Consumables/DemonBlood";
+import FishingRod from "../Items/Weapons/RangedWeapons/FishingRod";
 
 export default class VilgemWorld extends GameWorld {
     public readonly mapId = 'vilgem';
@@ -8,37 +22,31 @@ export default class VilgemWorld extends GameWorld {
     public readonly width = 8192; // 8 chunks de 1024px
     public readonly height = 8192;
 
-    public generate(): void {
-        this.eventManager.dispatch('log', { channel: 'init', message: 'Gerando o mundo de Vilgem...', params: [] });
-
-        // Exemplo: Parede invisível de uma Casa ou Rio desenhados no mapa visual!
-        const houseCollider = new HitBoxPolygon(
-            { x: 500, y: 300 },
-            0,
-            // Um retângulo delimitador, ou um polígono complexo lido pelo seu HitboxParser!
-            [ {x: 0, y: 0}, {x: 300, y: 0}, {x: 300, y: 200}, {x: 0, y: 200} ],
-            { x: 0, y: 0 },
-            (_otherElement: ObjectElement) => {
-                // Como as colisões já são processadas via AABB/SAT no Worker, 
-                // isso será uma barreira natural contra Player e Balas!
-            }
-        );
-
-        this.eventManager.dispatch('spawn', {
-            type: 'environmentCollider',
-            coordinates: { x: 500, y: 300 },
-            hitboxes: [houseCollider]
-        });
-
+    protected async generateCustomElements(): Promise<void> {
         // Spawna Molor, o Diretor da Academia de Magia, perto da área inicial do jogador!
         this.eventManager.dispatch('spawn', {
             type: 'molor',
             coordinates: { x: 450, y: 480 } 
         });
 
-        // Exemplo: Aqui você vai tirar os spawns de teste que estão grudados no ObjectElementManager
-        // this.eventManager.dispatch('spawn', { type: 'slime', coordinates: { x: 800, y: 800 } });
+        // Spawna a arma inicial no chão, próxima de onde o jogador nasce (512, 512)
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 550, y: 512 }, item: new Gun() });
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 580, y: 512 }, item: new Scythe() });
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 490, y: 512 }, item: new SimpleSword() });
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 520, y: 580 }, item: new SimpleStaff() });
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 450, y: 520 }, item: new IronHelmet() });
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 420, y: 520 }, item: new IronChestplate() });
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 390, y: 520 }, item: new IronPants() });
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 360, y: 520 }, item: new IronBoots() });
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 330, y: 520 }, item: new IronGloves() });
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 380, y: 520 }, item: new SimpleAmulet() });
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 400, y: 520 }, item: new SimpleRing() });
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 500, y: 550 }, item: new FishingRod() });
 
-        this.eventManager.dispatch('log', { channel: 'init', message: 'Mundo de Vilgem gerado com sucesso.', params: [] });
+        // Teste dos Efeitos Classic Survivor/Megabonk
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 500, y: 480 }, item: new VampireFang() });
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 530, y: 480 }, item: new MegaMushroom() });
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 560, y: 480 }, item: new AdrenalineFlask() });
+        this.eventManager.dispatch('spawn', { type: 'droppedItem', coordinates: { x: 590, y: 480 }, item: new DemonBlood() });
     }
 }

@@ -38,8 +38,8 @@ describe('Métrica 12: Determinismo Numérico e Detecção de Desync', () => {
     vi.restoreAllMocks();
   });
 
-  it('deve assegurar que duas simulações paralelas sob os mesmos estímulos gerem o mesmo Hash de Renderização (Zero-Desync)', () => {
-    const simulateRun = (): string => {
+  it('deve assegurar que duas simulações paralelas sob os mesmos estímulos gerem o mesmo Hash de Renderização (Zero-Desync)', async () => {
+    const simulateRun = async (): Promise<string> => {
       const eventManager = new FakeEventManager();
       const domain = new DomainFacade(
         { player: { id: 1, level: 1, initialPos: { x: 100, y: 100 } } },
@@ -48,7 +48,7 @@ describe('Métrica 12: Determinismo Numérico e Detecção de Desync', () => {
         new FakeCollisionService()
       );
 
-      domain.loadWorld('vilgem');
+      await domain.loadWorld('vilgem');
 
       // Simula 120 frames exatos (2 segundos simulados a 60 FPS)
       for (let frame = 0; frame < 120; frame++) {
@@ -63,8 +63,8 @@ describe('Métrica 12: Determinismo Numérico e Detecção de Desync', () => {
       return crypto.createHash('sha256').update(JSON.stringify(renderState)).digest('hex');
     };
 
-    const runAlphaHash = simulateRun();
-    const runBetaHash = simulateRun();
+    const runAlphaHash = await simulateRun();
+    const runBetaHash = await simulateRun();
 
     // Asserção: Falhas de Float flutuante, iteradores de Set() não-ordenados ou Race Conditions quebram essa igualdade.
     expect(runAlphaHash).toStrictEqual(runBetaHash);

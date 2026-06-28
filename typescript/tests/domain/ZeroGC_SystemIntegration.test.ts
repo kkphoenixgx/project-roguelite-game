@@ -6,6 +6,9 @@ import { HitBoxCircle } from '../../domain/hitBox/HitBoxCircle';
 import type { ICollisionService } from '../../domain/ports/ICollisionService';
 import Player from '../../domain/ObjectModule/Entities/Player/Player';
 import Attributes from '../../domain/ObjectModule/Entities/Attributes';
+import EnvironmentCollider from '../../domain/ObjectModule/EnvironmentCollider';
+import HitBoxPolygon from '../../domain/hitBox/HitBoxPolygon';
+import Slime from '../../domain/ObjectModule/Entities/Enemies/Slime';
 import Vector2D from '../../domain/shared/Vector2D';
 import { SimpleBullet } from '../../domain/ObjectModule/Entities/projectiles/SimpleBullet';
 import DroppedItem from '../../domain/ObjectModule/Items/DroppedItem';
@@ -17,11 +20,16 @@ import Entity from '../../domain/ObjectModule/Entities/Entity';
 // Fake Worker que simula o Web Worker de física (Sem mock de bibliotecas)
 class FakeCollisionWorker implements ICollisionService {
   public forcedCollisions: number[] = [];
+  private emptyBuffer = new Int32Array(0);
 
-  async checkCollisions(_hitboxData: Float32Array, _hitboxCount: number, _worldBounds: { x: number; y: number; width: number; height: number; }): Promise<Int32Array> {
+  checkCollisions(_hitboxData: Float32Array, _hitboxCount: number, _worldBounds: any, callback: (result: Int32Array) => void): void {
+    if (this.forcedCollisions.length === 0) {
+        callback(this.emptyBuffer);
+        return;
+    }
     const result = new Int32Array(this.forcedCollisions);
     this.forcedCollisions = []; // Consome as colisões enfileiradas simulando Delayed Resolution
-    return result;
+    callback(result);
   }
 }
 
@@ -51,7 +59,7 @@ describe('System Integration (Headless Engine E2E)', () => {
     vi.restoreAllMocks();
   });
 
-  it('deve rodar 60 ticks de física, processar combate e drop, e provar Zero-GC validando process.memoryUsage()', async () => {
+  it('deve rodar 60 ticks de física e processar a cadeia de combate e drop perfeitamente', async () => {
     // 1. Instanciação e Setup do Motor (Sub-Sistemas do DomainFacade)
     const eventBus = new EventHandler();
     const collisionWorker = new FakeCollisionWorker();
@@ -68,9 +76,6 @@ describe('System Integration (Headless Engine E2E)', () => {
     const enemy = engineManager.spawn(id => new DummyEnemy(id, eventBus));
     
     const initialEnemyHp = enemy.attributes.hp;
-
-    // Captura inicial da Heap de Memória para validação do GC
-    const startMemory = process.memoryUsage().heapUsed;
 
     // Ticks 1 a 10: Ociosidade para estabilizar os buffers
     for (let i = 0; i < 10; i++) {
@@ -132,13 +137,57 @@ describe('System Integration (Headless Engine E2E)', () => {
     // Asserção Crítica 2: Inventário recebeu o drop de maneira limpa (Desacoplamento)
     expect(player.backpack.length).toBe(1);
     expect(player.backpack[0]!.name).toBe('Coração do Dragão');
+  });
 
-    // Asserção Crítica 3: O Zero-GC e a Integridade de Heap
+  it('deve processar o Hot Path (Polígonos, DTOs e Física) sob estresse extremo sem vazar memória (Zero-GC)', async () => {
+    const eventBus = new EventHandler();
+    const collisionWorker = new FakeCollisionWorker();
+    const engineManager = new ObjectElementManager(eventBus, collisionWorker);
+    engineManager.setWorldBounds(8192, 8192);
+
+    SpawnRegistry.strategies.set('slime', (id, _payload, em) => new DummyEnemy(id, em));
+    SpawnRegistry.strategies.set('shadowMob', (id, _payload, em) => new DummyEnemy(id, em));
+
+    const player = new Player(1, { x: 500, y: 500 }, new Attributes(8, 1, 10, 10, 10, 10, 10, 10), eventBus);
+
+    // Cenário de Estresse: 50 Obstáculos com HitBoxPolygon (O terror da alocação de memória)
+    for (let i = 0; i < 50; i++) {
+        const hitboxes = [new HitBoxPolygon({x: i * 32, y: 0}, 0, [{x:0, y:0}, {x:32, y:0}, {x:32, y:32}, {x:0, y:32}], {x:0, y:0}, () => {})];
+        engineManager.spawn(id => new EnvironmentCollider(id, { x: i * 32, y: 0 }, { width: 32, height: 32 }, eventBus, hitboxes));
+    }
+
+    // Cenário de Estresse: 50 Inimigos ativos
+    for (let i = 0; i < 50; i++) {
+        // Usamos DummyEnemy em vez de Slime para isolar o motor de alocações da IA antiga que usa 'requestNeighbors'
+        engineManager.spawn(id => new DummyEnemy(id, eventBus));
+    }
+
+    // Aquecimento (Warm-up): 100 frames para JIT e Object Pools estabilizarem.
+    for (let i = 0; i < 100; i++) {
+        player.onRightAction(); // Garante movimento para triggar atualização de matrizes
+        player.update(0.016);
+        engineManager.updateAll(0.016, player);
+        engineManager.getAllRenderableStates();
+    }
+
+    const startMemory = process.memoryUsage().heapUsed;
+
+    // O Hot Path Real: 1000 frames de jogo contínuo processando matrizes visuais e hitboxes
+    for (let i = 0; i < 1000; i++) {
+        player.onRightAction(); 
+        player.update(0.016);
+        engineManager.updateAll(0.016, player);
+        engineManager.getAllRenderableStates(); // Varredura completa para montar DTOs Visuais
+    }
+
     const endMemory = process.memoryUsage().heapUsed;
     const memoryDeltaMB = (endMemory - startMemory) / 1024 / 1024;
-    
-    // Se não houvesse reaproveitamento ou pre-alocação no Barramento/Motor, os 60 frames
-    // teriam gerado milhares de arrays descartáveis. Tolerância hard-limit de 5MB por flutuação Node.
-    expect(memoryDeltaMB).toBeLessThan(5);
+
+    console.log(`[Zero-GC Profiler] Crescimento da Heap após 1000 frames de estresse: ${memoryDeltaMB.toFixed(3)} MB`);
+
+    // O uso do valor absoluto impede FALSOS POSITIVOS caso o GC do V8 execute a limpeza DURANTE o loop,
+    // o que tornaria o delta negativo (ex: -15MB) e mascararia um vazamento real aprovando o teste.
+    // A Heap deve ser PLANA (variação próxima de 0.0).
+    expect(Math.abs(memoryDeltaMB)).toBeLessThan(2.0);
   });
 });

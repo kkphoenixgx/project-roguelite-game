@@ -18,10 +18,13 @@ export default class Mage extends Class {
     private spellBuffer: action[] = [];
     private timeoutId: ReturnType<typeof setTimeout> | null = null;
     private readonly SPELL_TIMEOUT = 500;
+    
+    private lastTeleportTime: number = 0;
+    private readonly teleportCooldown: number = 3000;
 
     constructor(xpTable: IXPTable, player: Player, eventManager: IEventManager) {
         super('Mago', xpTable, player, eventManager);
-        this.skillsByLevel.set(2, new Skill('m_t1_fireball', 'Axioma Inicial', 'A fundação do Axiomante. Dispara um projétil puro usando as teclas de feitiço.', 'essential', 1));
+        this.skillsByLevel.set(1, new Skill('m_t1_fireball', 'Axioma Inicial', 'A fundação do Axiomante. Dispara um projétil puro usando as teclas de feitiço.', 'essential', 1));
         this.skillsByLevel.set(4, new Skill('m_t2_burn', 'Sobrecarga de Mana', 'Aumenta passivamente a regeneração de mana no calor da batalha.', 'passive', 2, 'm_t1_fireball'));
         this.skillsByLevel.set(6, new Skill('m_t3_knowledge', 'Erudição', 'Concede um aumento formidável em Inteligência Máxima.', 'attribute', 3, 'm_t2_burn'));
         this.skillsByLevel.set(8, new Skill('m_t4_teleport', 'Translocação (Blink)', 'Teletransporta o corpo pelo tecido da realidade numa curta distância.', 'active', 4, 'm_t3_knowledge'));
@@ -410,8 +413,40 @@ export default class Mage extends Class {
         }
     }
 
-    public executeSkill(skillId: string, _mouseCoordinates: {x: number, y: number}): void {
-        this.eventManager.dispatch('log', { channel: 'domain', message: `[Mago] Tentando usar a skill ${skillId} via Loadout (Axiomante geralmente usa digitação!)`, params: [] });
+    public executeSkill(skillId: string, mouseCoordinates: {x: number, y: number}): void {
+        if (skillId === 'm_t4_teleport') {
+            const now = Date.now();
+            if (now - this.lastTeleportTime < this.teleportCooldown) {
+                this.eventManager.dispatch('log', { channel: 'domain', message: `[Mago] Translocação em recarga!`, params: [] });
+                return;
+            }
+            this.lastTeleportTime = now;
+            
+            const px = this.player.coordinates.x + this.player.size.width / 2;
+            const py = this.player.coordinates.y + this.player.size.height / 2;
+            
+            const dir = new Vector2D(mouseCoordinates.x - px, mouseCoordinates.y - py);
+            let dist = dir.magnitude();
+            const maxDist = 200; // Blink distance limit
+            
+            if (dist > maxDist) {
+                dir.normalizeMut().multiplyMut(maxDist);
+            }
+            
+            // Efeito de saída
+            this.eventManager.dispatch('particle', { effect: 'magicPulse', x: px, y: py });
+            
+            // Move player
+            this.player.coordinates.x += dir.x;
+            this.player.coordinates.y += dir.y;
+            
+            // Efeito de entrada
+            this.eventManager.dispatch('particle', { effect: 'magicPulse', x: this.player.coordinates.x + this.player.size.width / 2, y: this.player.coordinates.y + this.player.size.height / 2 });
+            
+            this.eventManager.dispatch('log', { channel: 'domain', message: `[Mago] Translocação (Blink) executada!`, params: [] });
+        } else {
+            this.eventManager.dispatch('log', { channel: 'domain', message: `[Mago] Tentando usar a skill ${skillId} via Loadout (Axiomante geralmente usa digitação!)`, params: [] });
+        }
     }
 
     //? ----------- Skills -----------

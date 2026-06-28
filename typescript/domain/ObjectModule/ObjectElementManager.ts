@@ -1,39 +1,21 @@
 /** @file Contém a classe ObjectElementManager, responsável por gerenciar o ciclo de vida (criação, atualização, remoção) de uma coleção de entidades de domínio. */
 import type { EntityRenderableState } from "../ports/domain-contracts";
-import Slime from "./Entities/Enemies/Slime";
 import type Player from "./Entities/Player/Player";
 import ObjectElement from "./ObjectElement";
-import Attributes from "./Entities/Attributes";
 import type { IEventManager } from "../eventDispacher/IGameEvents";
-import DroppedItem from "./Items/DroppedItem";
-import Gun from "./Items/Weapons/RangedWeapons/Gun";
 import type { ICollisionService } from "../ports/ICollisionService";
-import Scythe from "./Items/Weapons/MeleeWeapons/Scythe"; // Movido para MeleeWeapon!
-import SimpleStaff from "./Items/Weapons/RangedWeapons/Staffs/SimpleStaff";
-import IronHelmet from "./Items/Armors/helmet/IronHelmet";
-import IronChestplate from "./Items/Armors/chestplates/IronChestplate";
-import IronPants from "./Items/Armors/pants/IronPants";
-import IronBoots from "./Items/Armors/boots/IronBoots";
-import IronGloves from "./Items/Armors/glooves/IronGloves";
 import { SpawnRegistry } from "./SpawnRegistry";
-import SimpleAmulet from "./Items/Armors/necklaces/SimpleAmulet";
-import SimpleRing from "./Items/Armors/rings/SimpleRing";
-import SimpleSword from "./Items/Weapons/MeleeWeapons/SimpleSword";
-import VampireFang from "./Items/Consumables/VampireFang";
-import MegaMushroom from "./Items/Consumables/MegaMushroom";
-import AdrenalineFlask from "./Items/Consumables/Potions/AdrenalineFlask";
-import DemonBlood from "./Items/Consumables/DemonBlood";
-import ShadowMob from "./Entities/Enemies/ShadowMob";
-import FishingRod from "./Items/Weapons/RangedWeapons/FishingRod";
 
 // Auto-carrega todas as entidades e itens do domínio para engatilhar os decorators @RegisterSpawner
 import.meta.glob('./Entities/**/*.ts', { eager: true });
 import.meta.glob('./Items/**/*.ts', { eager: true });
+import.meta.glob('./!(Collision.worker).ts', { eager: true }); // Garante que EnvironmentCollider e outras raízes ativem o Decorator
 
 /** * @class ObjectElementManager * Gerencia uma coleção de `ObjectElement`s (como inimigos, itens, projéteis). * Esta classe encapsula a lógica de adicionar, remover, atualizar e acessar * grupos de entidades, permitindo que a `DomainFacade` delegue essa * responsabilidade e permaneça focada na orquestração de alto nível. */
 export default class ObjectElementManager {
   /** @private Um mapa que armazena todas as entidades gerenciadas, usando o ID como chave para acesso rápido. */
   private elements: Map<number, ObjectElement> = new Map();
+  private elementsArray: ObjectElement[] = []; // Array sombra contíguo O(1) para abolir MapIterators
   /** @private Um contador para gerar IDs únicos para novas entidades. Começa em 100 para evitar colisões com IDs estáticos (como o do jogador). */
   private nextId: number = 100;
   /** @private Armazena os limites do mundo para recriar a Quadtree. */
@@ -48,12 +30,99 @@ export default class ObjectElementManager {
   private renderStatePool: EntityRenderableState[] = [];
   private pendingCollisions: Int32Array = new Int32Array(0);
   private collisionBuffer: Float32Array = new Float32Array(10000); // Espaço para 2500 hitboxes simultâneas
+  private emptyCollisions: Int32Array = new Int32Array(0);
+  private stunnedPositionsPool: Map<number, {x: number, y: number}> = new Map();
+  private sharedNeighborsArray: ObjectElement[] = [];
+  private staticCollidersCache: any[] = [];
+  private staticGrid: Map<number, any[]> = new Map();
+  private readonly GRID_SIZE = 256; // 256x256 pixels por célula para otimização de AABB estática
+  private currentCollisionTick = 0;
+
+  private handleCollisionResult = (pairs: Int32Array) => {
+    this.pendingCollisions = pairs;
+    this.isCheckingCollisions = false;
+  };
+
+  private _handleStunnedPosition = (pos: {x: number, y: number}, id: number) => {
+      const el = this.elements.get(id);
+      if (el) {
+          el.coordinates.x = pos.x;
+          el.coordinates.y = pos.y;
+          if (el.hitboxes) {
+              const cx = pos.x + el.size.width / 2;
+              const cy = pos.y + el.size.height / 2;
+              for (let i = 0; i < el.hitboxes.length; i++) {
+                  el.hitboxes[i]!.updatePosition({ x: cx, y: cy });
+              }
+          }
+      }
+  };
 
   constructor(private eventManager: IEventManager, private collisionService: ICollisionService) {
     this.eventManager.dispatch('log', { channel: 'init', message: 'ObjectElementManager instantiated.', params: [] });
     this.setupEventListeners();
   }
 
+  private resolveDynamicStatic(dyn: any): void {
+      if (!dyn.hitboxes || !dyn.hitboxes[0]) return;
+      
+      const cx = dyn.coordinates.x + dyn.size.width / 2;
+      const cy = dyn.coordinates.y + dyn.size.height / 2;
+      const r = dyn.hitboxes[0].radius || 10;
+
+      const startCol = Math.floor((cx - r) / this.GRID_SIZE);
+      const endCol = Math.floor((cx + r) / this.GRID_SIZE);
+      const startRow = Math.floor((cy - r) / this.GRID_SIZE);
+      const endRow = Math.floor((cy + r) / this.GRID_SIZE);
+
+      this.currentCollisionTick++;
+
+      for (let c = startCol; c <= endCol; c++) {
+          for (let row = startRow; row <= endRow; row++) {
+              const key = c + (row << 10);
+              const cell = this.staticGrid.get(key);
+              if (!cell) continue;
+
+              for (let i = 0; i < cell.length; i++) {
+                  const env = cell[i];
+                  if (env._lastCheckTick === this.currentCollisionTick) continue;
+                  env._lastCheckTick = this.currentCollisionTick;
+
+                  const aabb = env._aabbCache;
+
+                  if (cx + r > aabb.boxX && cx - r < aabb.boxX + aabb.boxW && cy + r > aabb.boxY && cy - r < aabb.boxY + aabb.boxH) {
+                      if (typeof dyn.resolveEnvironmentCollision === 'function') {
+                          dyn.resolveEnvironmentCollision(env, r);
+                          if (dyn.hitboxes) {
+                              const newCx = dyn.coordinates.x + dyn.size.width / 2;
+                              const newCy = dyn.coordinates.y + dyn.size.height / 2;
+                              if (dyn._centerCache) {
+                                  dyn._centerCache.x = newCx;
+                                  dyn._centerCache.y = newCy;
+                              }
+                              const coord = dyn._centerCache || { x: newCx, y: newCy };
+                              for (let j = 0; j < dyn.hitboxes.length; j++) {
+                                  dyn.hitboxes[j]!.update(coord, dyn.rotation);
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+      }
+  }
+
+  private resolveStaticCollisions(player: Player): void {
+      const statics = this.staticCollidersCache;
+      if (statics.length === 0) return;
+      this.resolveDynamicStatic(player);
+      for (let i = 0; i < this.elementsArray.length; i++) {
+          const element = this.elementsArray[i]!;
+          if (element.objectId === 'enemy' || element.objectId === 'slime' || element.objectId === 'shadowMob') {
+              this.resolveDynamicStatic(element);
+          }
+      }
+  }
   
   //? ----------- Methods -----------
 
@@ -74,7 +143,7 @@ export default class ObjectElementManager {
     });
 
     this.eventManager.on('requestNeighbors', (payload :any) => {
-      const neighbors: ObjectElement[] = [];
+      this.sharedNeighborsArray.length = 0;
       
       // Centro de quem solicitou a busca
       let reqX = 0;
@@ -87,7 +156,7 @@ export default class ObjectElementManager {
         reqX = payload.requester.coordinates.x + (payload.requester.size.width / 2);
         reqY = payload.requester.coordinates.y + (payload.requester.size.height / 2);
       } else {
-        return payload.callback(neighbors);
+        return payload.callback(this.sharedNeighborsArray);
       }
 
 
@@ -99,32 +168,16 @@ export default class ObjectElementManager {
         const distance = Math.hypot(reqX - elX, reqY - elY);
         
         if (distance <= payload.radius) {
-          neighbors.push(element);
+          this.sharedNeighborsArray.push(element);
         }
       }
       
-      payload.callback(neighbors);
+      payload.callback(this.sharedNeighborsArray);
     });
   }
 
   /** * Executa o método `update` de todas as entidades gerenciadas. * @param deltaTime O tempo decorrido desde o último frame. */
   public updateAll(deltaTime: number, player: Player): void {
-
-    // Resolução Atrasada: Aplica as colisões do último frame processado, sem travar esse!
-    for (let i = 0; i < this.pendingCollisions.length; i += 2) {
-      const idA = this.pendingCollisions[i];
-      const idB = this.pendingCollisions[i + 1];
-      if (idA === undefined || idB === undefined) continue;
-
-      const elementA = this.elements.get(idA) || (player.id === idA ? player : undefined);
-      const elementB = this.elements.get(idB) || (player.id === idB ? player : undefined);
-
-      if (elementA && elementB) {
-        elementA.hitboxes?.[0]?.onColision(elementB);
-        elementB.hitboxes?.[0]?.onColision(elementA);
-      }
-    }
-    this.pendingCollisions = new Int32Array(0); // Limpa para o próximo evento
 
     // O timer de spawn agora respeita o deltaTime. Se o jogo pausar, o deltaTime para de somar aqui.
     this.waveTimer += deltaTime;
@@ -139,36 +192,49 @@ export default class ObjectElementManager {
       this.shadowMobTimer = 0;
     }
 
-    // Em seguida, atualizamos cada elemento. Durante seu update, ele pode pedir vizinhos.
-    const stunnedPositions = new Map<number, {x: number, y: number}>();
+    // 1. Movemos todas as entidades fisicamente primeiro
+    this.stunnedPositionsPool.clear();
 
-    for (const element of this.elements.values()) {
+    for (let i = 0; i < this.elementsArray.length; i++) {
+      const element = this.elementsArray[i]!;
       if ('activeStatuses' in element && (element as any).activeStatuses?.has('stun')) {
           // Salva a posição exata imposta pelo controle de grupo (ex: Pescador arrastando)
-          stunnedPositions.set(element.id, { x: element.coordinates.x, y: element.coordinates.y });
+          this.stunnedPositionsPool.set(element.id, { x: element.coordinates.x, y: element.coordinates.y });
       }
       element.update(deltaTime, player);
     }
 
     // Anula qualquer movimento físico que a IA tentou fazer enquanto estava atordoada (Stunned)
-    for (const [id, pos] of stunnedPositions) {
-        const el = this.elements.get(id);
-        if (el) {
-            el.coordinates.x = pos.x;
-            el.coordinates.y = pos.y;
-            el.hitboxes?.forEach(hb => hb.updatePosition({ x: pos.x + el.size.width / 2, y: pos.y + el.size.height / 2 }));
-        }
+    this.stunnedPositionsPool.forEach(this._handleStunnedPosition);
+
+    // MÁGICA: Resolve colisões estáticas SINCRONAMENTE na Main Thread (Extingue o Tunneling e o Efeito Fantasma)!
+    this.resolveStaticCollisions(player);
+
+    // 2. Resolução Atrasada: Aplica as colisões para ejetar as entidades de dentro dos obstáculos antes de desenhar!
+    for (let i = 0; i < this.pendingCollisions.length; i += 2) {
+      const idA = this.pendingCollisions[i];
+      const idB = this.pendingCollisions[i + 1];
+      if (idA === undefined || idB === undefined) continue;
+
+      const elementA = this.elements.get(idA) || (player.id === idA ? player : undefined);
+      const elementB = this.elements.get(idB) || (player.id === idB ? player : undefined);
+
+      if (elementA && elementB) {
+        elementA.hitboxes?.[0]?.onColision(elementB);
+        elementB.hitboxes?.[0]?.onColision(elementA);
+      }
     }
+    this.pendingCollisions = this.emptyCollisions;
 
     // Após todas as atualizações, garante que ninguém saiu dos limites do mapa.
-    for (const element of this.elements.values()) {
-      this.clampToWorldBounds(element);
+    for (let i = 0; i < this.elementsArray.length; i++) {
+      this.clampToWorldBounds(this.elementsArray[i]!);
     }
     // O jogador também precisa ser verificado.
     this.clampToWorldBounds(player);
 
     // Monta o array limpo, excluindo entidades que foram destruídas (ex: DroppedItems coletados) na resolução de colisão acima
-    this.checkCollisions([player, ...this.elements.values()]);
+    this.checkCollisions(player);
   }
   /** * Cria e adiciona uma nova entidade ao gerenciador usando uma função de fábrica. * Este método abstrai a criação de qualquer tipo de `ObjectElement`. * @param factoryFn Uma função que recebe um ID e retorna uma nova instância de `ObjectElement` (ou uma subclasse como `Enemy`, `Projectile`, etc.). * @returns A instância da entidade criada. * @template T O tipo específico da entidade a ser criada, que deve estender `ObjectElement`. */
   public spawn<T extends ObjectElement>(factoryFn: (id: number) => T): T {
@@ -178,11 +244,81 @@ export default class ObjectElementManager {
       throw new Error("A fábrica deve retornar uma instância de ObjectElement.");
     }
     this.elements.set(newId, newElement);
+    this.elementsArray.push(newElement);
     
+    // Cache AABB for static geometry (Zero-GC optimization)
+    if (newElement.objectId === 'environmentCollider') {
+        const env = newElement as any;
+        let boxX = env.coordinates.x;
+        let boxY = env.coordinates.y;
+        let boxW = env.size?.width || 32;
+        let boxH = env.size?.height || 32;
+
+        if (env.hitboxes && env.hitboxes[0]) {
+            const shape = env.hitboxes[0].getDebugShape();
+            if (shape.type === 'polygon' && shape.points && shape.points.length > 0) {
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                for(let i=0; i < shape.points.length; i++) {
+                    const px = shape.points[i]!.x;
+                    const py = shape.points[i]!.y;
+                    if (px < minX) minX = px;
+                    if (py < minY) minY = py;
+                    if (px > maxX) maxX = px;
+                    if (py > maxY) maxY = py;
+                }
+                boxX = minX; boxY = minY; boxW = maxX - minX; boxH = maxY - minY;
+            }
+        }
+        env._aabbCache = { boxX, boxY, boxW, boxH };
+        env._lastCheckTick = 0;
+        this.staticCollidersCache.push(env);
+
+        // Zero-GC Spatial Grid Insertion
+        const startCol = Math.floor(boxX / this.GRID_SIZE);
+        const endCol = Math.floor((boxX + boxW) / this.GRID_SIZE);
+        const startRow = Math.floor(boxY / this.GRID_SIZE);
+        const endRow = Math.floor((boxY + boxH) / this.GRID_SIZE);
+        for(let c = startCol; c <= endCol; c++) {
+            for(let r = startRow; r <= endRow; r++) {
+                const key = c + (r << 10);
+                let cell = this.staticGrid.get(key);
+                if(!cell) { cell = []; this.staticGrid.set(key, cell); }
+                cell.push(env);
+            }
+        }
+    }
+
     return newElement;
   }
   /** * Remove um elemento do mapa com base no ID fornecido. @param id O número (key) do elemento a ser removido. @returns Retorna true se o elemento existia e foi removido, ou false caso contrário. */
   public removeByID(id: number): boolean {
+    const el = this.elements.get(id);
+    if (el) {
+        const idx = this.elementsArray.indexOf(el);
+        if (idx !== -1) this.elementsArray.splice(idx, 1);
+    }
+    if (el && el.objectId === 'environmentCollider') {
+        const idx = this.staticCollidersCache.indexOf(el);
+        if (idx !== -1) this.staticCollidersCache.splice(idx, 1);
+
+        const aabb = (el as any)._aabbCache;
+        if (aabb) {
+            const startCol = Math.floor(aabb.boxX / this.GRID_SIZE);
+            const endCol = Math.floor((aabb.boxX + aabb.boxW) / this.GRID_SIZE);
+            const startRow = Math.floor(aabb.boxY / this.GRID_SIZE);
+            const endRow = Math.floor((aabb.boxY + aabb.boxH) / this.GRID_SIZE);
+            for(let c = startCol; c <= endCol; c++) {
+                for(let r = startRow; r <= endRow; r++) {
+                    const key = c + (r << 10);
+                    let cell = this.staticGrid.get(key);
+                    if(cell) {
+                        const cellIdx = cell.indexOf(el);
+                        if (cellIdx !== -1) cell.splice(cellIdx, 1);
+                    }
+                }
+            }
+        }
+    }
     return this.elements.delete(id);
   }
 
@@ -204,33 +340,6 @@ export default class ObjectElementManager {
     coordinates.y = Math.max(0, Math.min(coordinates.y, worldHeight - size.height));
   }
 
-  /** * Popula o mundo com os elementos iniciais (inimigos, NPCs, itens, etc.). Este método pode ser expandido para ler de uma configuração de nível no futuro. */
-  public spawnInitialElements(): void { 
-    // this.spawnWave();
-
-    // Spawna a arma inicial no chão, próxima de onde o jogador nasce (512, 512)
-    this.spawn(id => new DroppedItem(id, { x: 550, y: 512 }, new Gun(), this.eventManager));
-    this.spawn(id => new DroppedItem(id, { x: 580, y: 512 }, new Scythe(), this.eventManager));
-    this.spawn(id => new DroppedItem(id, { x: 490, y: 512 }, new SimpleSword(), this.eventManager));
-    this.spawn(id => new DroppedItem(id, { x: 520, y: 580 }, new SimpleStaff(), this.eventManager));
-    this.spawn(id => new DroppedItem(id, { x: 450, y: 520 }, new IronHelmet(), this.eventManager));
-    this.spawn(id => new DroppedItem(id, { x: 420, y: 520 }, new IronChestplate(), this.eventManager));
-    this.spawn(id => new DroppedItem(id, { x: 390, y: 520 }, new IronPants(), this.eventManager));
-    this.spawn(id => new DroppedItem(id, { x: 360, y: 520 }, new IronBoots(), this.eventManager));
-    this.spawn(id => new DroppedItem(id, { x: 330, y: 520 }, new IronGloves(), this.eventManager));
-    this.spawn(id => new DroppedItem(id, { x: 380, y: 520 }, new SimpleAmulet(), this.eventManager));
-    this.spawn(id => new DroppedItem(id, { x: 400, y: 520 }, new SimpleRing(), this.eventManager));
-    this.spawn(id => new DroppedItem(id, { x: 500, y: 550 }, new FishingRod(), this.eventManager));
-
-    // Teste dos Efeitos Classic Survivor/Megabonk
-    this.spawn(id => new DroppedItem(id, { x: 500, y: 480 }, new VampireFang(), this.eventManager));
-    this.spawn(id => new DroppedItem(id, { x: 530, y: 480 }, new MegaMushroom(), this.eventManager));
-    this.spawn(id => new DroppedItem(id, { x: 560, y: 480 }, new AdrenalineFlask(), this.eventManager));
-    this.spawn(id => new DroppedItem(id, { x: 590, y: 480 }, new DemonBlood(), this.eventManager));
-
-
-  }
-
   /** * Instancia uma onda de inimigos atrelada ao loop de atualização do domínio. */
   private spawnWave(): void {
     const enemyCount = 20;
@@ -245,14 +354,10 @@ export default class ObjectElementManager {
       const x = startPos.x + col * spacing;
       const y = startPos.y + row * spacing;
 
-      this.spawn(id => new Slime(
-        id,
-        1,
-        50,
-        { x, y },
-        new Attributes( 8, 3, 12, 8, 5, 5, 2, 15),
-        this.eventManager
-      ));
+      this.eventManager.dispatch('spawn', {
+          type: 'slime',
+          coordinates: { x, y }
+      });
     }
   }
 
@@ -264,14 +369,22 @@ export default class ObjectElementManager {
     const x = player.coordinates.x + distanceX;
     const y = player.coordinates.y + distanceY;
 
-    this.spawn(id => new ShadowMob(id, { x, y }, new Attributes(10, 5, 10, 10, 20, 10, 10, 10), this.eventManager));
+    this.eventManager.dispatch('spawn', {
+        type: 'shadowMob',
+        coordinates: { x, y }
+    });
   }
 
 
   /** * Retorna uma lista de DTOs (`EntityRenderableState`) para todas as entidades gerenciadas. * @returns Um array com o estado renderizável de cada entidade. */
   public getAllRenderableStates(): EntityRenderableState[] {
     let index = 0;
-    for (const element of this.elements.values()) {
+    for (let i = 0; i < this.elementsArray.length; i++) {
+      const element = this.elementsArray[i]!;
+      
+      // OTIMIZAÇÃO CRÍTICA: Impede que os milhares de blocos invisíveis do chão vão para a GPU e afundem os FPS!
+      if (element.objectId === 'environmentCollider') continue;
+
       const rotation = typeof element.rotation === 'number' ? element.rotation : 0;
 
       let state = this.renderStatePool[index];
@@ -302,11 +415,12 @@ export default class ObjectElementManager {
       (state as any).facingDirection = (element as any).facingDirection;
       state.spellElements = (element as any).spellElements;
       
-      if ('activeStatuses' in element) {
-        const statuses = (element as any).activeStatuses as Map<string, any>;
+      if ('activeStatusesList' in element) {
+        const statusesList = (element as any).activeStatusesList as any[];
         if (!state.activeStatuses) state.activeStatuses = [];
         let statusIndex = 0;
-        for (const s of statuses.values()) {
+        for (let i = 0; i < statusesList.length; i++) {
+            const s = statusesList[i];
             if (!state.activeStatuses[statusIndex]) state.activeStatuses[statusIndex] = { id: '', description: '', remaining: 0 };
             const uiStatus = state.activeStatuses[statusIndex]!;
             uiStatus.id = s.id;
@@ -322,7 +436,7 @@ export default class ObjectElementManager {
       if ('connectedTo' in element && (element as any).connectedTo) {
         state.connectedTo = (element as any).connectedTo;
       } else {
-        delete state.connectedTo; // Remove a chave para respeitar o 'exactOptionalPropertyTypes'
+        (state as any).connectedTo = undefined; // Remove a chave sem destruir a hidden class C++ do V8
       }
 
       // Reciclando o Array de Hitboxes (Livre do Garbage Collector)
@@ -347,58 +461,55 @@ export default class ObjectElementManager {
     return this.renderStatePool;
   }
 
-  private checkCollisions(elements: ObjectElement[]): void {
+  private checkCollisions(player: Player): void {
       if (this.isCheckingCollisions) return;
       this.isCheckingCollisions = true;
 
       let offset = 0;
-      const ensureBuffer = (size: number) => {
-          if (offset + size > this.collisionBuffer.length) {
-              const newBuffer = new Float32Array(this.collisionBuffer.length * 2 + size);
-              newBuffer.set(this.collisionBuffer);
-              this.collisionBuffer = newBuffer;
-          }
-      };
+      offset = this.addElementToCollisionBuffer(player, offset);
+      for (let i = 0; i < this.elementsArray.length; i++) {
+          offset = this.addElementToCollisionBuffer(this.elementsArray[i]!, offset);
+      }
 
-      for (let i = 0; i < elements.length; i++) {
-        const element = elements[i];
-        if (!element || !element.hitboxes) continue;
+      // Envia (Fire and Forget)
+      this.collisionService.checkCollisions(this.collisionBuffer, offset, this.worldBounds, this.handleCollisionResult);
+  }
 
-        for (let j = 0; j < element.hitboxes.length; j++) {
+  private addElementToCollisionBuffer(element: ObjectElement, offset: number): number {
+      if (!element || !element.hitboxes || element.objectId === 'environmentCollider') return offset;
+      for (let j = 0; j < element.hitboxes.length; j++) {
           const hitbox = element.hitboxes[j];
           if (!hitbox) continue;
 
           const shape = hitbox.getDebugShape();
           if (shape.type === 'circle') {
-            ensureBuffer(5);
-            this.collisionBuffer[offset++] = element.id;
-            this.collisionBuffer[offset++] = 0; // Type 0 = Circle
-            this.collisionBuffer[offset++] = shape.coordinates.x;
-            this.collisionBuffer[offset++] = shape.coordinates.y;
-            this.collisionBuffer[offset++] = shape.radius || 0;
+              if (offset + 5 > this.collisionBuffer.length) {
+                  const newBuffer = new Float32Array(this.collisionBuffer.length * 2 + 5);
+                  newBuffer.set(this.collisionBuffer);
+                  this.collisionBuffer = newBuffer;
+              }
+              this.collisionBuffer[offset++] = element.id;
+              this.collisionBuffer[offset++] = 0;
+              this.collisionBuffer[offset++] = shape.coordinates.x;
+              this.collisionBuffer[offset++] = shape.coordinates.y;
+              this.collisionBuffer[offset++] = shape.radius || 0;
           } else if (shape.type === 'polygon' && shape.points) {
-            ensureBuffer(3 + shape.points.length * 2);
-            this.collisionBuffer[offset++] = element.id;
-            this.collisionBuffer[offset++] = 1; // Type 1 = Polygon
-            this.collisionBuffer[offset++] = shape.points.length;
-            for (const p of shape.points) {
-                this.collisionBuffer[offset++] = p.x;
-                this.collisionBuffer[offset++] = p.y;
-            }
+              const sizeNeeded = 3 + shape.points.length * 2;
+              if (offset + sizeNeeded > this.collisionBuffer.length) {
+                  const newBuffer = new Float32Array(this.collisionBuffer.length * 2 + sizeNeeded);
+                  newBuffer.set(this.collisionBuffer);
+                  this.collisionBuffer = newBuffer;
+              }
+              this.collisionBuffer[offset++] = element.id;
+              this.collisionBuffer[offset++] = 1;
+              this.collisionBuffer[offset++] = shape.points.length;
+              for (let k = 0; k < shape.points.length; k++) {
+                  this.collisionBuffer[offset++] = shape.points[k]!.x;
+                  this.collisionBuffer[offset++] = shape.points[k]!.y;
+              }
           }
-        }
       }
-
-      const dataToSend = this.collisionBuffer.subarray(0, offset); // Cria uma View sem clonar a memória
-
-      // Envia (Fire and Forget)
-      this.collisionService.checkCollisions(dataToSend, offset, this.worldBounds).then((pairs) => {
-        this.pendingCollisions = pairs;
-        this.isCheckingCollisions = false; // Libera a trava para enviar o próximo frame
-      }).catch((err) => {
-        console.error("Collision worker failed:", err);
-        this.isCheckingCollisions = false; // Destrava o loop em caso de falha crítica
-      });
+      return offset;
   }
 
   

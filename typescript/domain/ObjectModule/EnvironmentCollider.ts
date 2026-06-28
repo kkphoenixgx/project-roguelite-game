@@ -6,16 +6,26 @@ import type { HitBox } from "../hitBox/HitBox";
 
 @RegisterSpawner('environmentCollider')
 export default class EnvironmentCollider extends ObjectElement {
+    public tileType: string;
+    public passable: boolean;
+    public speedModifier?: number | undefined;
+
     constructor(
         id: number,
         coordinates: { x: number; y: number },
         size: { width: number; height: number },
         eventManager: IEventManager,
         hitboxes: HitBox[],
-        objectId: objectTypeId = 'environmentCollider'
+        objectId: objectTypeId = 'environmentCollider',
+        tileType: string = 'none',
+        passable: boolean = true,
+        speedModifier?: number
     ) {
         // Colocamos o estado como 'static'. Ele não terá representação no VisualConfigMap.
         super(size, coordinates, id, objectId, eventManager, 'static', hitboxes);
+        this.tileType = tileType;
+        this.passable = passable;
+        this.speedModifier = speedModifier;
     }
 
     public override update(_deltaTime: number): void {
@@ -26,6 +36,7 @@ export default class EnvironmentCollider extends ObjectElement {
         // O tamanho base pode ser 0, pois a hitbox poligonal enviada na carga dita os limites reais
         const size = payload.size || { width: 0, height: 0 };
         const hitboxes = payload.hitboxes || [];
-        return new EnvironmentCollider(id, payload.coordinates, size, eventManager, hitboxes);
+        const metadata = payload.metadata || {};
+        return new EnvironmentCollider(id, payload.coordinates, size, eventManager, hitboxes, 'environmentCollider', metadata.tileType, metadata.passable, metadata.speedModifier);
     }
 }

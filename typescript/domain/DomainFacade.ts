@@ -32,8 +32,9 @@ export default class DomainFacade implements IGameDomain {
     renderables: [] as any[]
   };
   private cachedPlayerState: any = null;
+  private viewedClass: string | null = null;
 
-  /** @constructor @param config O objeto de configuração com os dados iniciais para a criação das entidades do jogo. @param logger Uma instância de um logger que implementa a interface `ILogger`. */
+  /** @constructor @param config O objeto de configuração com os dados iniciais para a criação das entidades do jogo. @param logger Uma instância de um logger que implementa a interface `ILogger`. @param collisionTileService Uma instância de um serviço para carregar dados de colisão de tiles do mapa. */
   constructor(
     config: DomainConfig, 
     logger: ILogger, 
@@ -54,7 +55,7 @@ export default class DomainFacade implements IGameDomain {
     // para evitar "saltos" de física se o jogo engasgar.
     const clampedDeltaTime = Math.min(deltaTime, 1 / 30);
 
-    this.logger.log('update-cycles', `Update cycle started (deltaTime: ${clampedDeltaTime})`);
+    this.logger.log('update-cycles', 'Update cycle started (deltaTime:)', clampedDeltaTime);
 
     this.player.update(clampedDeltaTime);
     
@@ -71,7 +72,7 @@ export default class DomainFacade implements IGameDomain {
   }
 
   /** Fase de Inicialização: Cria as instâncias das entidades de domínio e orquestra a montagem do cenário. */
-  public loadWorld(mapId: string): void {
+  public async loadWorld(mapId: string, collisionData?: any[]): Promise<void> {
     this.logger.log('domain', `Loading world: ${mapId}`);
     
     if (mapId === 'vilgem') {
@@ -81,7 +82,9 @@ export default class DomainFacade implements IGameDomain {
         this.world = new VilgemWorld(this.eventManager); 
     }
     
-    this.world.generate();
+    // Aguarda a geração do mundo (agora async)
+    await this.world.generate(collisionData);
+    
     this.objectManager.setWorldBounds(this.world.width, this.world.height);
     
     this.player = new Player(
@@ -92,10 +95,6 @@ export default class DomainFacade implements IGameDomain {
     );
     this.actionManager = new ActionManager(this.player, this.logger, this.eventManager);
     this.logger.log('domain', 'Player entity created:', this.player);
-    
-
-    this.objectManager.spawnInitialElements();
-    this.logger.log('domain', 'Initial elements spawned via ObjectManager.');
   }
 
   /** Interface de comunicação que passa a responsabilidade para o domínio. @param command O objeto de comando vindo da camada de apresentação. @param deltaTime O tempo desde o último frame, usado para calcular o movimento. */
@@ -119,6 +118,7 @@ export default class DomainFacade implements IGameDomain {
               this.player.unlockedClasses.push(handItem.unlocksClass);
           }
           this.player.setActiveClass(handItem.unlocksClass);
+          this.viewedClass = null; // Reseta a classe visualizada para acompanhar a arma atual
           this.logger.log('actions', `[DomainFacade] Forçando classe do jogador para: ${handItem.unlocksClass}`);
                   this.eventManager.dispatch('classChanged', { oldClassInstance: null, newClassInstance: null });
       }
@@ -136,11 +136,26 @@ export default class DomainFacade implements IGameDomain {
 
   public manageSkillTree(action: 'unlock' | 'changeClass' | 'equip', payload: { className?: string; skillId?: string; slotIndex?: number }): void {
     if (action === 'changeClass' && payload.className) {
-       this.player.setActiveClass(payload.className as string);
-       this.logger.log('actions', `[DomainFacade] UI trocou a classe manualmente para: ${payload.className}`);
-       this.eventManager.dispatch('classChanged', { oldClassInstance: null, newClassInstance: null });
+       // Apenas muda a classe que está sendo visualizada na UI, NÃO a classe ativa (armada) do jogador!
+       this.viewedClass = payload.className as string;
+       this.logger.log('actions', `[DomainFacade] UI está agora visualizando a árvore da classe: ${payload.className}`);
+       this.eventManager.dispatch('classChanged', { oldClassInstance: null, newClassInstance: null }); // Atualiza UI
     } else if (action === 'unlock' && payload.skillId) {
-       const activeClassInstance = this.player.classes.find(c => c.name === this.player.activeClass);
+       // Procura a skill em qualquer classe (já que podemos comprar de outras árvores)
+       let activeClassInstance = undefined;
+       for (const cls of this.player.classes) {
+           const map = (cls as any).skillsByLevel as Map<number, any>;
+           if (map) {
+               for (const sk of map.values()) {
+                   if (sk.id === payload.skillId) {
+                       activeClassInstance = cls;
+                       break;
+                   }
+               }
+           }
+           if (activeClassInstance) break;
+       }
+       
        let requiredLevel = 1;
        
        if (activeClassInstance) {
@@ -234,7 +249,9 @@ export default class DomainFacade implements IGameDomain {
     // Object Pooling para Status Ativos (Sem instanciar novos objetos por frame)
     if (!ps.activeStatuses) ps.activeStatuses = [];
     let statusIndex = 0;
-    for (const s of this.player.activeStatuses.values()) {
+    const statusesList = this.player.activeStatusesList || [];
+    for (let i = 0; i < statusesList.length; i++) {
+        const s = statusesList[i]!;
         if (!ps.activeStatuses[statusIndex]) ps.activeStatuses[statusIndex] = { id: '', description: '', remaining: 0 };
         const uiStatus = ps.activeStatuses[statusIndex];
         uiStatus.id = s.id;
@@ -270,51 +287,86 @@ export default class DomainFacade implements IGameDomain {
     }
     ps.classes.length = this.player.classes.length;
     
-    // Mapeia as skills da Classe Ativa para a interface da Árvore
-    const activeClassInstance = this.player.classes.find(c => c.name === this.player.activeClass);
-    if (activeClassInstance) {
-        const skillsMap = (activeClassInstance as any).skillsByLevel as Map<number, any>;
+    // Mapeia as skills da Classe que a UI está VENDO para a interface da Árvore
+    const classToView = this.viewedClass || this.player.activeClass;
+    let viewedClassInstance = undefined;
+    for (let i = 0; i < this.player.classes.length; i++) {
+        if (this.player.classes[i]!.name === classToView) {
+            viewedClassInstance = this.player.classes[i];
+            break;
+        }
+    }
+    
+    // Atualiza a flag visual de qual classe está ativa na aba "Classes" da árvore
+    for (const c of ps.classes) {
+        c.isActive = c.name === classToView;
+    }
+
+    if (!ps.skillTree) ps.skillTree = [];
+    if (viewedClassInstance) {
+        const skillsMap = (viewedClassInstance as any).skillsByLevel as Map<number, any>;
         
-        ps.skillTree = activeClassInstance.allSkills.map(skill => {
+        let stIndex = 0;
+        for (let s = 0; s < viewedClassInstance.allSkills.length; s++) {
+            const skill = viewedClassInstance.allSkills[s]!;
+            
+            // Find required level for this skill
             let requiredLevel = 1;
-            if (skillsMap) {
-                for (const [lvl, s] of skillsMap.entries()) {
-                    if (s.id === (skill as any).id) {
-                        requiredLevel = lvl;
-                        break;
-                    }
+            for (const [lvl, sk] of skillsMap.entries()) {
+                if (sk.id === skill.id) {
+                    requiredLevel = lvl;
+                    break;
                 }
             }
             
-            return {
-                id: (skill as any).id,
-                name: (skill as any).name,
-                description: (skill as any).description || '',
-                type: (skill as any).type,
-                tier: (skill as any).tier || 1,
-                unlocked: this.player.unlockedSkills.has((skill as any).id),
-                canUnlock: !this.player.unlockedSkills.has((skill as any).id) && this.player.attributes.level >= requiredLevel
-            };
-        });
+            if (!ps.skillTree[stIndex]) ps.skillTree[stIndex] = { id: '', name: '', description: '', type: 'active', tier: 1, unlocked: false, canUnlock: false };
+            const uiNode = ps.skillTree[stIndex];
+            
+            uiNode.id = skill.id;
+            uiNode.name = skill.name;
+            uiNode.description = skill.description || '';
+            uiNode.type = skill.type;
+            uiNode.tier = skill.tier || 1;
+            uiNode.unlocked = this.player.unlockedSkills.has(skill.id);
+            
+            const hasPrereq = !skill.requiredSkillId || this.player.unlockedSkills.has(skill.requiredSkillId);
+            uiNode.canUnlock = !uiNode.unlocked && this.player.attributes.level >= requiredLevel && hasPrereq;
+            
+            stIndex++;
+        }
+        ps.skillTree.length = stIndex;
     } else {
-        ps.skillTree = [];
+        ps.skillTree.length = 0;
     }
 
     // Preenche o Loadout Ativo e a "Mochila de Magias" para o Deck Building
-    ps.activeLoadout = [...this.player.activeLoadout];
-    const allUnlockedActives: any[] = [];
-    for (const cls of this.player.classes) {
-        for (const skill of cls.allSkills) {
+    if (!ps.activeLoadout) ps.activeLoadout = [];
+    for (let i = 0; i < this.player.activeLoadout.length; i++) {
+        ps.activeLoadout[i] = this.player.activeLoadout[i];
+    }
+    ps.activeLoadout.length = this.player.activeLoadout.length;
+
+    if (!ps.unlockedActiveSkills) ps.unlockedActiveSkills = [];
+    let activeSkillIndex = 0;
+    for (let c = 0; c < this.player.classes.length; c++) {
+        const cls = this.player.classes[c]!;
+        for (let s = 0; s < cls.allSkills.length; s++) {
+            const skill = cls.allSkills[s]!;
             if (skill.type === 'active' && this.player.unlockedSkills.has(skill.id)) {
-                allUnlockedActives.push({
-                    id: skill.id, name: skill.name, description: skill.description || '',
-                    type: skill.type, tier: skill.tier || 1,
-                    unlocked: true, canUnlock: false
-                });
+                if (!ps.unlockedActiveSkills[activeSkillIndex]) ps.unlockedActiveSkills[activeSkillIndex] = {} as any;
+                const uiSkill = ps.unlockedActiveSkills[activeSkillIndex];
+                uiSkill.id = skill.id;
+                uiSkill.name = skill.name;
+                uiSkill.description = skill.description || '';
+                uiSkill.type = skill.type;
+                uiSkill.tier = skill.tier || 1;
+                uiSkill.unlocked = true;
+                uiSkill.canUnlock = false;
+                activeSkillIndex++;
             }
         }
     }
-    ps.unlockedActiveSkills = allUnlockedActives;
+    ps.unlockedActiveSkills.length = activeSkillIndex;
 
     const otherStates = this.objectManager.getAllRenderableStates();
     
@@ -324,7 +376,8 @@ export default class DomainFacade implements IGameDomain {
     const px = ps.coordinates.x + ps.size.width / 2;
     const py = ps.coordinates.y + ps.size.height / 2;
 
-    for (const st of otherStates) {
+    for (let i = 0; i < otherStates.length; i++) {
+        const st = otherStates[i]!;
         if (st.entityTypeId === 'molor' || st.entityTypeId === 'interactiveNpc') {
             const ex = st.coordinates.x + st.size.width / 2;
             const ey = st.coordinates.y + st.size.height / 2;
@@ -338,12 +391,19 @@ export default class DomainFacade implements IGameDomain {
 
     if (nearestNpc) {
         const npcName = nearestNpc.entityTypeId === 'molor' ? 'Diretor Molor' : 'NPC';
-        ps.interactablePrompt = { npcId: nearestNpc.id, text: `[Z] Falar`, npcName };
+        if (!ps.interactablePrompt) ps.interactablePrompt = { npcId: 0, text: '', npcName: '' };
+        ps.interactablePrompt.npcId = nearestNpc.id;
+        ps.interactablePrompt.text = '[Z] Falar';
+        ps.interactablePrompt.npcName = npcName;
     } else {
         ps.interactablePrompt = undefined;
     }
     
-    this.cachedRenderState.renderables = [ps, ...otherStates];
+    this.cachedRenderState.renderables.length = otherStates.length + 1;
+    this.cachedRenderState.renderables[0] = ps;
+    for (let i = 0; i < otherStates.length; i++) {
+        this.cachedRenderState.renderables[i + 1] = otherStates[i];
+    }
     return this.cachedRenderState;
   }
 

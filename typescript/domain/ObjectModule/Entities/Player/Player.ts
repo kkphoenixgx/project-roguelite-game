@@ -52,7 +52,7 @@ export default class Player extends Entity {
   public hasBeard: boolean = false; // Para validar a Regra de Negócio de Exceção Visual!
 
   // --- Sistema de Classes e Skills ---
-  private _unlockedClasses: Set<string> = new Set();
+  private _unlockedClasses: string[] = [];
   private _activeClass: string | null = null;
   private _classes: Class[] = [];
   private _unlockedSkills: Set<string> = new Set();
@@ -97,6 +97,14 @@ export default class Player extends Entity {
       0,
       7,
       (otherElement: ObjectElement) => {
+        // 1. Resolução Física (Obstáculos Sólidos)
+        if (otherElement.objectId === 'environmentCollider') {
+            // console.log(`[Física Domínio] O Player sofreu atrito com: ${(otherElement as any).tileType}`);
+            this.resolveEnvironmentCollision(otherElement, 7);
+            return;
+        }
+
+        // 2. Interação com Inimigos (Dano de Contato)
         // Verificação estrita: garante que é uma função antes de chamar
         if (typeof (otherElement as any).onStrike === 'function'){
           const enemyAttack = (otherElement as any).onStrike();
@@ -188,17 +196,6 @@ export default class Player extends Entity {
     return damageDealt;
   }
 
-  protected override updatePosition() {
-    this.coordinates.x += this.velocity.x;
-    this.coordinates.y += this.velocity.y;
-
-    this.hitboxes?.forEach(hb => hb.update(
-      { x: this.coordinates.x + this.size.width / 2, y: this.coordinates.y + this.size.height / 2 }, this.rotation
-    ));
-
-    this.eventManager.dispatch('log', { channel: 'domain-entity-move', message: "(Entity) player moved", params: [] });
-  }
-
   //? ----------- Main actions -----------
 
 
@@ -227,17 +224,20 @@ export default class Player extends Entity {
       this.movementSinceLastUpdate = true;
     }
 
-    const displacement = this.attributes.speed * deltaTime
+    const displacement = this.attributes.speed * this.currentSpeedModifier * deltaTime;
+    this.currentSpeedModifier = 1; // Reseta
     
     // Guarda a última direção virada para usar na magia
     if (this.direction.x !== 0 || this.direction.y !== 0) {
-      this.facingDirection = this.direction.clone().normalizeMut();
+      this.facingDirection.x = this.direction.x;
+      this.facingDirection.y = this.direction.y;
+      this.facingDirection.normalizeMut();
     }
 
-    this.velocity = this.direction.clone()
-      .normalizeMut()
-      .multiplyMut(displacement)
-      .addMut(this.accelerator);
+    this.velocity.x = this.direction.x;
+    this.velocity.y = this.direction.y;
+    this.velocity.normalizeMut().multiplyMut(displacement).addMut(this.accelerator);
+        
     
     this.updatePosition();
   }
@@ -339,9 +339,8 @@ export default class Player extends Entity {
                   if (activeClass) {
                       const newSkill = activeClass.getSkillForLevel(level);
                       if (newSkill) {
-                          // Sistema instancia a classe e, de acordo com o nível, destrava a skill automaticamente
-                          this.unlockSkill(newSkill.id);
-                          this.eventManager.dispatch('log', { channel: 'domain', message: `Gained class skill: ${newSkill.name}!`, params: [] });
+                          // Agora o destrave é apenas notificado, o jogador deve abrir a Árvore e gastar o ponto lá.
+                          this.eventManager.dispatch('log', { channel: 'domain', message: `Nova habilidade liberada para compra: ${newSkill.name}!`, params: [] });
                       }
                   }
                   break;
@@ -493,13 +492,15 @@ export default class Player extends Entity {
 
   /** Desbloqueia permanentemente uma nova classe. Pode ser chamado quando pegar uma arma pela primeira vez. */
   public unlockClass(className: string): void {
-    this._unlockedClasses.add(className);
-    this.eventManager.dispatch('log', { channel: 'domain', message: `Class unlocked: ${className}`, params: [] });
+    if (!this._unlockedClasses.includes(className)) {
+      this._unlockedClasses.push(className);
+      this.eventManager.dispatch('log', { channel: 'domain', message: `Class unlocked: ${className}`, params: [] });
+    }
   }
 
   /** Define a classe ativa atual. */
   public setActiveClass(className: string): void {
-    if (this._unlockedClasses.has(className)) {
+    if (this._unlockedClasses.includes(className)) {
       const oldClassInstance = this._classes.find(c => c.name === this._activeClass);
       this._activeClass = className;
       const newClassInstance = this._classes.find(c => c.name === className);
@@ -562,5 +563,5 @@ export default class Player extends Entity {
   }
 
   public get activeClass(): string | null { return this._activeClass; }
-  public get unlockedClasses(): string[] { return Array.from(this._unlockedClasses); }
+  public get unlockedClasses(): string[] { return this._unlockedClasses; }
 }

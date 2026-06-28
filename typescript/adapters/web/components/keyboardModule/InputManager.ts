@@ -5,13 +5,13 @@ import keymapConfig from '../../assets/keymap.json';
 import type { action } from "../../../../domain/eventDispacher/actions.type";
 
 /** Define as ações de jogo possíveis, desacoplando as teclas físicas das ações lógicas. */
-export type GameAction = 
-  | 'move_up' 
-  | 'move_down' 
-  | 'move_left' 
-  | 'move_right' 
-  | 'log_debug' 
-  | 'shift' 
+export type GameAction =
+  | 'move_up'
+  | 'move_down'
+  | 'move_left'
+  | 'move_right'
+  | 'log_debug'
+  | 'shift'
   | 'mouse_left'
   | 'mouse_middle'
   | 'mouse_right'
@@ -42,7 +42,7 @@ export class InputManager {
   private keyMap: Map<string, GameAction> = new Map();
   private actionMap: Map<GameAction, string[]> = new Map();
   private preventUnload: boolean = true;
-  public mouseLastCoordinates:{x:number,y:number} = {x:0,y:0} 
+  public mouseLastCoordinates: { x: number, y: number } = { x: 0, y: 0 }
   public clickActions: Set<action> = new Set(["leftClick", "scrollClick", "rightClick"])
 
   /** @constructor Carrega o mapa de teclas a partir da configuração e anexa os listeners de evento. */
@@ -95,17 +95,17 @@ export class InputManager {
         this.setKeyForAction(action as GameAction, (keyOrKeys as string).toLowerCase());
       }
     });
-    
+
     // Fallback de Segurança: Garante que a tecla F invoque a magia F se não estiver no JSON
     if (!this.actionMap.has('spell_f')) {
-        this.setKeyForAction('spell_f', 'f');
+      this.setKeyForAction('spell_f', 'f');
     }
-    
+
     // Fallback de Segurança: Garante que o Z funcione para interação mesmo se o keymap.json estiver desatualizado ou com erro.
     if (!this.actionMap.has('interact')) {
-        this.setKeyForAction('interact', 'z');
+      this.setKeyForAction('interact', 'z');
     }
-    
+
     // Fallback de Segurança: Atalhos padrão para os slots de habilidade (Loadout) independentes do Mago
     if (!this.actionMap.has('slot_1')) this.setKeyForAction('slot_1', '1');
     if (!this.actionMap.has('slot_2')) this.setKeyForAction('slot_2', '2');
@@ -160,11 +160,11 @@ export class InputManager {
   }
 
   private handleMouseDown(e: MouseEvent) {
-    
+
     // Força a atualização imediata da mira na hora do clique
     this.mouseLastCoordinates.x = e.clientX;
     this.mouseLastCoordinates.y = e.clientY;
-    
+
     // Previne comportamentos padrão (seleção de texto no canvas, auto-scroll do middle click)
     if (e.target instanceof HTMLCanvasElement || e.button === 1 || e.button === 2) {
       e.preventDefault();
@@ -174,10 +174,10 @@ export class InputManager {
     if (e.button === 0) {
       key = 'mouse_left'
     }
-    if (e.button === 1 ) {
+    if (e.button === 1) {
       key = 'mouse_middle'
     }
-    if (e.button === 2 ) {
+    if (e.button === 2) {
       key = 'mouse_right'
     }
 
@@ -188,15 +188,15 @@ export class InputManager {
     }
   }
 
-  private handleMouseUp(e: MouseEvent ) {
+  private handleMouseUp(e: MouseEvent) {
     let key = ''
     if (e.button === 0) {
       key = 'mouse_left'
     }
-    if (e.button === 1 ) {
+    if (e.button === 1) {
       key = 'mouse_middle'
     }
-    if (e.button === 2 ) {
+    if (e.button === 2) {
       key = 'mouse_right'
     }
 
@@ -207,23 +207,23 @@ export class InputManager {
 
   // private handleLeftClick(e: PointerEvent ) {}
 
-  private handleRightClick(e: MouseEvent ) {
+  private handleRightClick(e: MouseEvent) {
     e.preventDefault()
   }
 
   private handleKeyDown(e: KeyboardEvent): void {
     let key = e.key.toLowerCase();
-    
+
     // Diferencia os números do teclado físico superior dos números do Numpad
     if (e.location === KeyboardEvent.DOM_KEY_LOCATION_NUMPAD) {
       key = `numpad_${key}`;
     }
 
-    const isBrowserShortcut = 
+    const isBrowserShortcut =
       ((e.ctrlKey || e.metaKey) && ['s', 'p', 'f', 'g', 'r', 'j', 'u', 'd', 'h', 'w', 't', 'n'].includes(key)) || // Atalhos com Ctrl
       ['f3', 'f5', 'f6', 'f7'].includes(key) || // Teclas de função
       (e.altKey && ['arrowleft', 'arrowright'].includes(key)); // Alt + Setas (Voltar/Avançar página)
-      
+
     if (isBrowserShortcut) {
       e.preventDefault();
       logger.log('input', `Blocked browser shortcut: ${e.key}`);

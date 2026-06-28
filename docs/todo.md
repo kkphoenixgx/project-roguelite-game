@@ -94,7 +94,7 @@
 
 
 - [] Paredes e colisões (#3)
-    descrição: - [x] Colisão de entidades
+    descrição: - [ ] Colisão de entidades
     - [ ] Colisão em objetos do mundo
     - [ ] Mapa de lugares que não pode andar
     - [ ] Lógica de "spawn" de inimigos em áreas.
@@ -115,24 +115,26 @@
 
 ## TODO (Organização)
 
-* [x] HUD Modular: Desenvolver as GUIs de HP, Mana e Status
-* [x] Compositor Visual (O "Lego"): Sistema modular na fábrica visual para juntar formas simples/sprites para armaduras, itens e customização de personagem.
-* [x] Sistema de Drops e Inventário: Entidades droparem itens de verdade, lógica de coleta por proximidade e armazenamento.
-* [x] Lógica de Classes e Desbloqueio
-* [x] Mago (Spell Parser): Analisador no Domínio que traduz a sequência do buffer em ataques concretos (Lógica de Receitas).
-* [x] Seleção de mapas: criação de classes extendidas de mundo que são mapas que são mandadas do domínio para poder selecionar um mapa, que contém toda a estrutura para colocar tudo de um mapa em determinado mapa
-* [x] Objetos do mapa: Tem que ter um jeito do adaptador web montar o mundo, o que tem no mundo é definido pelo domínio.
+- [x] HUD Modular: Desenvolver as GUIs de HP, Mana e Status
+- [x] Compositor Visual (O "Lego"): Sistema modular na fábrica visual para juntar formas simples/sprites para armaduras, itens e customização de personagem.
+- [x] Sistema de Drops e Inventário: Entidades droparem itens de verdade, lógica de coleta por proximidade e armazenamento.
+- [x] Lógica de Classes e Desbloqueio
+- [x] Mago (Spell Parser): Analisador no Domínio que traduz a sequência do buffer em ataques concretos (Lógica de Receitas).
+- [x] Seleção de mapas: criação de classes extendidas de mundo que são mapas que são mandadas do domínio para poder selecionar um mapa, que contém toda a estrutura para colocar tudo de um mapa em determinado mapa
+- [x] Objetos do mapa: Tem que ter um jeito do adaptador web montar o mundo, o que tem no mundo é definido pelo domínio.
 
-* [X] Refatoração Web (God Class): Isolar o `GameAdapter` extraindo o `SceneManager` (visual), `UIManager` (DOM) e `InputGateway`.
-* [X] (Buffer de Input): Implementar buffer temporal no `ActionManager` para capturar sequências de teclas (ex: 0, 1, 2).
+- [X] Refatoração Web (God Class): Isolar o `GameAdapter` extraindo o `SceneManager` (visual), `UIManager` (DOM) e `InputGateway`.
+- [X] (Buffer de Input): Implementar buffer temporal no `ActionManager` para capturar sequências de teclas (ex: 0, 1, 2).
 - [x] EventManager → IEventManagable (Injeção de Dependência)
-* [X] Lógica de Hp
-* [X] Hitbox
-* [X] Colisão
-* [X] Lógica melhor de Enemy e Entity
-* [X] Dois tipos de inimigo.
-* [X] IA simples (ex: mover*se em direção ao jogador e bater).
-* [X] Sistema de Vida (HP) e "Hitbox" (ser atingido) e xp dropado.
+- [X] Lógica de Hp
+- [X] Hitbox
+- [X] Colisão
+- [X] Lógica melhor de Enemy e Entity
+- [X] Dois tipos de inimigo.
+- [X] IA simples (ex: mover-se em direção ao jogador e bater).
+- [X] Sistema de Vida (HP) e "Hitbox" (ser atingido) e xp dropado.
+
+- [ ] Precisa de keybinds para f12, para no menu alterar as tabs
 
 ## REQUISITOS - Organização
 

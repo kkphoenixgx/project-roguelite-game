@@ -8,7 +8,7 @@ export type ParticleEffectType = 'bloodSplatter' | 'enemyDeath' | 'fireExplosion
 export interface GameEventMap {
   playerMoved: { x: number, y: number };
   playerDied: {};
-  spawn: { type: objectTypeId, coordinates: { x: number, y: number }, direction?: Vector2D, attack?: any, spellElements?: string[], attacker?: any, item?: any, hitboxes?: any[], size?: { width: number, height: number } };
+  spawn: { type: objectTypeId, coordinates: { x: number, y: number }, direction?: Vector2D, attack?: any, spellElements?: string[], attacker?: any, item?: any, hitboxes?: any[], size?: { width: number, height: number }, metadata?: any };
   despawn: { objectId: number };
   levelUp: { newLevel: number, coordinates: { x: number, y: number } };
   requestNeighbors :{ requester: ObjectElement, radius: number, callback: (neighbors :ObjectElement[]) => void };
