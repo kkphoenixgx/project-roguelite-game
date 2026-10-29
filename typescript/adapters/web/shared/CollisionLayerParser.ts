@@ -5,7 +5,7 @@
 
 import { COLOR_TO_COLLISION_TYPE, CollisionTileType, type CollisionTileData } from '../../../domain/ObjectModule/CollisionTileType';
 
-// Paleta de Referência para Fuzzy Color Matching
+/* Paleta de Referência para Fuzzy Color Matching */
 const COLOR_TARGETS = [
     { type: CollisionTileType.WALL, r: 0, g: 0, b: 0 },
     { type: CollisionTileType.WATER, r: 0, g: 0, b: 255 },
@@ -18,9 +18,9 @@ const COLOR_TARGETS = [
 
 export interface CollisionMapData {
     tiles: CollisionTileData[];
-    width: number;  // Dimensões em pixels
+    width: number;
     height: number;
-    tileSize: number;  // Tamanho de cada tile (ex: 32px)
+    tileSize: number;
 }
 
 /**
@@ -65,7 +65,7 @@ export async function parseCollisionLayerImage(
             const numTilesX = Math.ceil(finalWidth / tileSize);
             const numTilesY = Math.ceil(finalHeight / tileSize);
 
-            // Itera sobre cada tile do MUNDO e projeta na proporção da imagem carregada
+            //? Itera sobre cada tile do mundo e projeta na escala proporcional da imagem
             for (let tileY = 0; tileY < numTilesY; tileY++) {
                 for (let tileX = 0; tileX < numTilesX; tileX++) {
                     const worldPixelX = tileX * tileSize + Math.floor(tileSize / 2);
@@ -76,19 +76,17 @@ export async function parseCollisionLayerImage(
                     
                     const pixelIndex = (imgPixelY * img.width + imgPixelX) * 4;
 
-                    // Uint8ClampedArray sempre retorna valores no intervalo [0, 255], nunca undefined
                     const r = data[pixelIndex]!;
                     const g = data[pixelIndex + 1]!;
                     const b = data[pixelIndex + 2]!;
                     const a = data[pixelIndex + 3]!;
 
-                    // Ignora pixels totalmente transparentes
                     if (a < 128) continue;
 
                     let tileType = CollisionTileType.NONE;
                     let minDistance = Infinity;
 
-                    // Fuzzy Matching: Acha a cor registrada mais próxima deste pixel
+                    //? Fuzzy Matching: calcula distância euclidiana RGB para mapear cor mais próxima
                     for (const target of COLOR_TARGETS) {
                         const dist = (r - target.r) ** 2 + (g - target.g) ** 2 + (b - target.b) ** 2;
                         if (dist < minDistance) {
@@ -97,7 +95,7 @@ export async function parseCollisionLayerImage(
                         }
                     }
 
-                    // Se a cor for muito suja/distante (distância RGB muito alta), ignora o ruído
+                    //? Descarta ruído cromático caso a distância euclidiana mínima exceda o limiar tolerado
                     if (minDistance > 25000) tileType = CollisionTileType.NONE;
 
                     if (tileType !== CollisionTileType.NONE) {
@@ -130,7 +128,6 @@ export async function parseCollisionLayerImage(
  * Reduz o número de hitboxes necessárias
  */
 export function aggregateCollisionTiles(tiles: CollisionTileData[]): CollisionTileData[] {
-    // Agrupa por tipo
     const tilesByType = new Map<CollisionTileType, CollisionTileData[]>();
 
     for (const tile of tiles) {
@@ -143,7 +140,6 @@ export function aggregateCollisionTiles(tiles: CollisionTileData[]): CollisionTi
     const aggregated: CollisionTileData[] = [];
 
     for (const [_type, typeTiles] of tilesByType) {
-        // Ordena da esquerda pra direita, cima para baixo
         const sorted = typeTiles.sort((a, b) => {
             if (a.y !== b.y) return a.y - b.y;
             return a.x - b.x;
@@ -174,7 +170,7 @@ export function aggregateCollisionTiles(tiles: CollisionTileData[]): CollisionTi
             tileSize: startTile.tileSize, width: runWidth, height: startTile.tileSize
         });
 
-        // Agrupa as runs horizontais verticalmente
+        //? Agrupa faixas contíguas horizontais verticalmente para formar retângulos colisionadores maiores
         const used = new Set<number>();
         for (let i = 0; i < horizontalRuns.length; i++) {
             if (used.has(i)) continue;
@@ -187,7 +183,7 @@ export function aggregateCollisionTiles(tiles: CollisionTileData[]): CollisionTi
                 if (used.has(j)) continue;
                 const nextRun = horizontalRuns[j]!;
 
-                if (nextRun.y > expectedY) break; // Passou da altura atual
+                if (nextRun.y > expectedY) break;
 
                 if (nextRun.y === expectedY && nextRun.x === currentRun.x && nextRun.width === currentRun.width) {
                     currentRun.height! += nextRun.height!;

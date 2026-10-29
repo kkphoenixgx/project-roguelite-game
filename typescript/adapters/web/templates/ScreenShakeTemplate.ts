@@ -76,7 +76,7 @@ export class ScreenShakeController {
       return;
     }
 
-    const t = this.elapsed / this.config.duration; // 0.0 -> 1.0
+    const t = this.elapsed / this.config.duration;
     const damp = this.config.decay === 'linear' 
       ? (1 - t) 
       : Math.pow(1 - t, 2);
@@ -84,7 +84,7 @@ export class ScreenShakeController {
     const currentIntensity = this.config.intensity * damp;
     const freq = this.config.frequency ?? 30;
 
-    // Ruído harmônico pseudo-aleatório com decaimento
+    //? Amortecimento harmônico senoidal com componente de ruído aleatório
     this.offsetX = (Math.sin(this.elapsed * freq * 1.5) * currentIntensity) + ((Math.random() - 0.5) * currentIntensity * 0.4);
     this.offsetY = (Math.cos(this.elapsed * freq * 1.8) * currentIntensity) + ((Math.random() - 0.5) * currentIntensity * 0.4);
   }

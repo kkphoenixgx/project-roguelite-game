@@ -191,7 +191,6 @@ export default class AiConfigGui {
                 percentText.textContent = '100%';
                 inputModel.value = '';
                 
-                // Marca automaticamente o novo modelo como ativo
                 localStorage.setItem('selected_llm_model', modelName);
                 
                 setTimeout(() => {

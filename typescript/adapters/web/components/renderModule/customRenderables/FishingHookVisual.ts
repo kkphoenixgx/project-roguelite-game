@@ -23,13 +23,13 @@ export default class FishingHookVisual extends GameObjectElement {
             ctx.beginPath();
             ctx.moveTo(this.coordinates.x + this.size.width / 2, this.coordinates.y + this.size.height / 2);
             ctx.lineTo(this.connectedTo.x, this.connectedTo.y);
-            ctx.strokeStyle = '#aaddff'; // Fio de magia azul claro
+            ctx.strokeStyle = '#aaddff';
             ctx.lineWidth = 1.5;
             ctx.stroke();
             ctx.restore();
         }
         
-        // Agora desenha o sprite do Anzol por cima da linha!
+        //? Renderiza o sprite do anzol sobre a linha conectora traçada
         super.draw(ctx);
     }
 }

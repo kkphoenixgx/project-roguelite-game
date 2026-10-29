@@ -6,9 +6,12 @@ export interface Point {
 export interface HitboxModel {
     id: string;
     type: 'polygon' | 'circle';
-    coordinates: Point; // Ponto de origem (geralmente o centro ou top-left do sprite)
+    //? Ponto de ancoragem/origem (geralmente centro ou top-left do sprite)
+    coordinates: Point;
     rotation: number;
     
-    points?: Point[]; // Usado apenas se type === 'polygon'
-    radius?: number;  // Usado apenas se type === 'circle'
+    //? Vértices locais utilizados quando type === 'polygon'
+    points?: Point[];
+    //? Raio geométrico em pixels utilizado quando type === 'circle'
+    radius?: number;
 }

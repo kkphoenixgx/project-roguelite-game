@@ -29,8 +29,8 @@ export default class Camera {
     const viewWidth = this.canvas.element.width / this.zoom;
     const viewHeight = this.canvas.element.height / this.zoom;
 
-    let camX = (this.target.coordinates.x + this.target.size.width / 2) - viewWidth / 2; // Calcula a posição X da câmera para centralizar o alvo.
-    let camY = (this.target.coordinates.y + this.target.size.height / 2) - viewHeight / 2; // Calcula a posição Y da câmera para centralizar o alvo.
+    let camX = (this.target.coordinates.x + this.target.size.width / 2) - viewWidth / 2;
+    let camY = (this.target.coordinates.y + this.target.size.height / 2) - viewHeight / 2;
 
     const minX = world.bounds?.minX ?? world.minX ?? 0;
     const minY = world.bounds?.minY ?? world.minY ?? 0;
@@ -49,8 +49,8 @@ export default class Camera {
     this.camX = clampedCamX;
     this.camY = clampedCamY;
 
-    ctx.scale(this.zoom, this.zoom); // Aplica o fator de zoom ao contexto.
-    ctx.translate(-clampedCamX, -clampedCamY); // Aplica a translação para posicionar o mundo de acordo com a câmera.
+    ctx.scale(this.zoom, this.zoom);
+    ctx.translate(-clampedCamX, -clampedCamY);
   }
 
   /** Verifica se uma caixa delimitadora no mundo está dentro da área visível da câmera (Frustum Culling). */

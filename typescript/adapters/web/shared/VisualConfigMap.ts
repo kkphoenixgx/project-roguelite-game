@@ -7,16 +7,16 @@ export type VisualCategory = 'entity' | 'equipment' | 'weapon' | 'projectile' | 
 
 export interface BaseVisualConfig {
     category: VisualCategory;
-    animations: Record<string, SpriteConfig>; // Mapeia 'estado' -> 'SpriteConfig'
+    animations: Record<string, SpriteConfig>;
 }
 export interface EntityVisualConfig extends BaseVisualConfig {
     category: 'entity';
 }
 export interface ItemVisualConfig extends BaseVisualConfig {
     category: 'equipment' | 'weapon';
-    iconId: number; // O ID do ícone que conecta com o Domínio
-    uiIconUrl: string; // Imagem mostrada na bolsa e nos slots do Paper Doll
-    droppedConfig: SpriteConfig; // Configuração visual para quando o item estiver no chão
+    iconId: number;
+    uiIconUrl: string;
+    droppedConfig: SpriteConfig;
 }
 export interface ProjectileVisualConfig extends BaseVisualConfig {
     category: 'projectile';
@@ -227,7 +227,7 @@ export const ElementalEffectIcons = {
     }
 } satisfies Record<ElementalEffectKey, EffectIconEntry>;
 
-// ================== ÍCONES DE HABILIDADES & BROCHES ATIVOS ==================
+/* ================== ÍCONES DE HABILIDADES & BROCHES ATIVOS ================== */
 export type SkillNodeType = 'active' | 'passive' | 'attribute' | 'essential' | 'rare';
 
 export interface SkillIconEntry {
@@ -241,29 +241,29 @@ export interface SkillIconEntry {
 }
 
 export type SkillIconKey =
-    // Guerreiro
+  /* Guerreiro */
     | 'w_t1_strike' | 'w_t1_heavy_blow' | 'w_t1_iron_skin' | 'w_t2_cleave'
     | 'w_t2_shield_bash' | 'w_t3_berserk' | 'w_t3_war_cry' | 'w_t4_ground_slam'
     | 'w_t3_colossus_vigor' | 'w_t5_blade_dance' | 'w_t4_armor_breaker' | 'w_t5_avatar_of_war'
-    // Necromante
+  /* Necromante */
     | 'n_t1_reap' | 'n_t1_death_aura' | 'n_t1_soul_leech' | 'n_t2_lifesteal'
     | 'n_t2_bone_spear' | 'n_t3_soul' | 'n_t3_grasp_of_dead' | 'n_t4_corpse_explosion'
     | 'n_t3_spectral_veil' | 'n_t5_wail_of_banshee' | 'n_t4_death_warden' | 'n_t5_dance_of_dead'
-    // Mago
+  /* Mago */
     | 'm_t1_fireball' | 'm_t2_burn' | 'm_t3_knowledge' | 'm_t4_teleport' | 'm_t5_blackhole'
-    // Pescador
+  /* Pescador */
     | 'pesc_t1_fisgada' | 'pesc_t2_net' | 'pesc_t3_leviata' | 'pesc_t4_fishpet'
-    // Pistoleiro
+  /* Pistoleiro */
     | 'gs_t1_quickdraw' | 'gs_t2_fanhammer' | 'gs_t3_deadeye'
-    // Broches Ativos
+  /* Broches Ativos */
     | 'brooch_active_heal' | 'brooch_active_meteor' | 'brooch_active_luck' | 'brooch_active_dash'
     | 'brooch_active_shield' | 'brooch_active_berserk'
-    // Broches Passivos
+  /* Broches Passivos */
     | 'brooch_titan' | 'brooch_shadow' | 'brooch_pyro_core' | 'brooch_luck_charm'
     | 'brooch_vampiric' | 'brooch_reroll_master' | 'brooch_phoenix';
 
 export const SkillIcons = {
-    // Guerreiro
+  /* Guerreiro */
     'w_t1_strike': {
         id: 'w_t1_strike',
         name: 'Força Bruta',
@@ -373,7 +373,7 @@ export const SkillIcons = {
         description: 'Avatar da Guerra: Manifestação suprema da fúria marcial com imunidade temporária.'
     },
 
-    // Necromante
+  /* Necromante */
     'n_t1_reap': {
         id: 'n_t1_reap',
         name: 'Colheita Sombria',
@@ -483,7 +483,7 @@ export const SkillIcons = {
         description: 'Dança das Almas: Turbilhão de espíritos vingativos orbitando e dilacerando os inimigos.'
     },
 
-    // Mago / Axiomante
+  /* Mago / Axiomante */
     'm_t1_fireball': {
         id: 'm_t1_fireball',
         name: 'Axioma Inicial',
@@ -530,7 +530,7 @@ export const SkillIcons = {
         description: 'Buraco Negro: Colapsa o espaço-tempo em uma singularidade de gravidade devastadora que atrai e esmaga inimigos.'
     },
 
-    // Pescador
+  /* Pescador */
     'pesc_t1_fisgada': {
         id: 'pesc_t1_fisgada',
         name: 'Fisgada Perfeita',
@@ -568,7 +568,7 @@ export const SkillIcons = {
         description: 'Peixinho de Combate: Companheiro marinho com capacete e mini-lança de combate.'
     },
 
-    // Pistoleiro
+  /* Pistoleiro */
     'gs_t1_quickdraw': {
         id: 'gs_t1_quickdraw',
         name: 'Saque Rápido',
@@ -597,7 +597,7 @@ export const SkillIcons = {
         description: 'Caminho do Franco-Atirador: Ponto de inflexão para precisão cirúrgica de longo alcance.'
     },
 
-    // Broches Ativos Globais
+  /* Broches Ativos Globais */
     'brooch_active_heal': {
         id: 'brooch_active_heal',
         name: 'Cálice da Vida',
@@ -653,7 +653,7 @@ export const SkillIcons = {
         description: 'Fúria do Berserker: Aumenta o dano em 50% e reduz a defesa a zero por 8 segundos.'
     },
 
-    // Broches Passivos Globais
+  /* Broches Passivos Globais */
     'brooch_titan': {
         id: 'brooch_titan',
         name: 'Broche do Titã',
@@ -722,9 +722,9 @@ export const SkillIcons = {
 export interface MapVisualConfig {
     category: 'map';
     chunkSize: number;
-    chunks: string[][]; // Matriz de URLs de imagens para cada pedaço do mapa
-    collisionJsonUrl?: string; // URL do arquivo JSON contendo os polígonos exportados do Web Editor
-    originChunk?: { cx: number; cy: number }; // Chunk central onde fica a origem (0, 0)
+    chunks: string[][];
+    collisionJsonUrl?: string;
+    originChunk?: { cx: number; cy: number };
 }
 export type AnyVisualConfig = EntityVisualConfig | ItemVisualConfig | ProjectileVisualConfig | VFXVisualConfig | MapVisualConfig;
 
@@ -780,13 +780,12 @@ const vilgemChunks: string[][] = [
 
 export const VisualConfigMap: Record<string, AnyVisualConfig> = {
    
-    // ================== MAPAS ==================
+/* ================== MAPAS ================== */
     'vilgem': {
         category: 'map',
         chunkSize: 1024,
         chunks: vilgemChunks,
         originChunk: { cx: 2, cy: 3 },
-        // Aponta para o JSON gerado no Polygon Web Editor!
         collisionJsonUrl: new URL('../assets/maps/collision-layers/vilgem_hitboxes.json', import.meta.url).href
     },
     'interior_black_default': {
@@ -800,7 +799,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         ]
     },
 
-    // ================== ENTIDADES (Corpos) ==================
+/* ================== ENTIDADES (Corpos) ================== */
     'player': {
         category: 'entity',
         animations: {
@@ -825,7 +824,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
     'shadowMob': {
         category: 'entity',
         animations: {
-            'idle': { imageSrc: new URL('../assets/entities/enemies/shadowMob-waiting.png', import.meta.url).href, frameCount: 9, animationSpeed: 4, frameWidth: 32, frameHeight: 32, atlasOffset: { x: 64, y: 0 }, spriteSize: { width: 32, height: 32 } }, // Reciclando o slime temporariamente
+            'idle': { imageSrc: new URL('../assets/entities/enemies/shadowMob-waiting.png', import.meta.url).href, frameCount: 9, animationSpeed: 4, frameWidth: 32, frameHeight: 32, atlasOffset: { x: 64, y: 0 }, spriteSize: { width: 32, height: 32 } },
             'walking': { imageSrc: new URL('../assets/entities/enemies/shadowMob-waiting.png', import.meta.url).href, frameCount: 9, animationSpeed: 4, frameWidth: 32, frameHeight: 32, atlasOffset: { x: 64, y: 0 }, spriteSize: { width: 32, height: 32 } },
             'dead': { imageSrc: new URL('../assets/entities/enemies/shadowMob-waiting.png', import.meta.url).href, frameCount: 9, animationSpeed: 4, frameWidth: 32, frameHeight: 32, atlasOffset: { x: 64, y: 0 }, spriteSize: { width: 32, height: 32 } }
         }
@@ -865,7 +864,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         category: 'entity',
         animations: {
             'static': { 
-                // Imagem de 1 pixel 100% transparente para forçar a renderização das hitboxes em modo Debug sem pesar a GPU
+    //? Imagem de 1px transparente para renderização de hitboxes em modo debug sem custo de GPU
                 imageSrc: 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', 
                 frameCount: 1, animationSpeed: 1, 
                 frameWidth: 1, frameHeight: 1, 
@@ -874,7 +873,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         }
     },
 
-    // ================== CENÁRIO & PROPS DE ALVORADA DE VILGEM ==================
+/* ================== CENÁRIO & PROPS DE ALVORADA DE VILGEM ================== */
     'fountain_awakening': {
         category: 'entity',
         animations: {
@@ -1261,7 +1260,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         }
     },
 
-    // ================== PONTES & TRAVESSIAS FLUVIAIS ==================
+/* ================== PONTES & TRAVESSIAS FLUVIAIS ================== */
     'bridge_wood_planks': {
         category: 'entity',
         animations: {
@@ -1291,7 +1290,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         }
     },
 
-    // ================== ESTRADAS E CAMINHOS MODULARES ==================
+/* ================== ESTRADAS E CAMINHOS MODULARES ================== */
     'road_straight_horizontal': {
         category: 'entity',
         animations: {
@@ -1398,7 +1397,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         }
     },
 
-    // ================== TRILHAS E ESTRADAS DE TERRA BATIDA ==================
+/* ================== TRILHAS E ESTRADAS DE TERRA BATIDA ================== */
     'road_dirt_straight_horizontal': {
         category: 'entity',
         animations: {
@@ -1449,7 +1448,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         }
     },
 
-    // ================== RIOS, CANAIS & ÁGUAS ==================
+/* ================== RIOS, CANAIS & ÁGUAS ================== */
     'river_straight_horizontal': {
         category: 'entity',
         animations: {
@@ -1717,7 +1716,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         }
     },
 
-    // ================== DEFESAS & MURALHAS DE ALVORADA DE VILGEM ==================
+/* ================== DEFESAS & MURALHAS DE ALVORADA DE VILGEM ================== */
     'fortified_gatehouse': {
         category: 'entity',
         animations: {
@@ -1797,10 +1796,10 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         }
     },
 
-    // ================== ITENS E EQUIPAMENTOS ==================
+/* ================== ITENS E EQUIPAMENTOS ================== */
     'iron-helmet': {
         category: 'equipment',
-        iconId: 10, // Liga ao iconId: 10 do Domínio
+        iconId: 10,
         uiIconUrl: new URL('../assets/itens/capacete-simples.png', import.meta.url).href,
         droppedConfig: { imageSrc: new URL('../assets/itens/capacete-simples.png', import.meta.url).href, 
         frameCount: 1, animationSpeed: 10, frameWidth: 22, frameHeight: 16, 
@@ -1956,7 +1955,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
     },
     'vampire-fang': {
         category: 'equipment', iconId: 40,
-        uiIconUrl: new URL('../assets/itens/vampire-fang.png', import.meta.url).href, // Substitua pelas imagens reais depois
+        uiIconUrl: new URL('../assets/itens/vampire-fang.png', import.meta.url).href,
         droppedConfig: { imageSrc: new URL('../assets/itens/vampire-fang.png', import.meta.url).href, frameCount: 1, animationSpeed: 10, frameWidth: 32, frameHeight: 32, atlasOffset: { x: 0, y: 32 }, spriteSize: { width: 32, height: 32 } },
         animations: {}
     },
@@ -1979,7 +1978,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         animations: {}
     },
 
-    // ================== PROJÉTEIS & VFX ==================
+/* ================== PROJÉTEIS & VFX ================== */
     'simpleBullet': {
         category: 'projectile',
         animations: { 'travelling': { imageSrc: new URL('../assets/entities/vfx/simple-bullet.png', import.meta.url).href, frameCount: 1, animationSpeed: 10, frameWidth: 16, frameHeight: 16, atlasOffset: { x: 0, y: 32 }, spriteSize: { width: 16, height: 16 } } }
@@ -2742,7 +2741,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         }
     },
 
-    // Broche Ativo: Barreira de Cristal
+  /* Broche Ativo: Barreira de Cristal */
     'brooch-shield': {
         category: 'vfx',
         animations: {
@@ -2780,7 +2779,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         }
     },
 
-    // Broche Ativo & Passiva: Fúria do Berserker
+  /* Broche Ativo & Passiva: Fúria do Berserker */
     'berserk': {
         category: 'vfx',
         animations: {
@@ -2830,7 +2829,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         }
     },
 
-    // Passivas de Classe: Guerreiro
+  /* Passivas de Classe: Guerreiro */
     'iron-skin': {
         category: 'vfx',
         animations: {
@@ -2880,7 +2879,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         }
     },
 
-    // Passivas de Classe: Necromante
+  /* Passivas de Classe: Necromante */
     'soul-leech': {
         category: 'vfx',
         animations: {
@@ -2954,7 +2953,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         }
     },
 
-    // Passivas de Classe: Mago
+  /* Passivas de Classe: Mago */
     'mana-burn': {
         category: 'vfx',
         animations: {
@@ -2980,7 +2979,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         }
     },
 
-    // Passivas de Classe: Pescador
+  /* Passivas de Classe: Pescador */
     'fisgada': {
         category: 'vfx',
         animations: {
@@ -3006,12 +3005,12 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         }
     },
 
-    // ================== NPCs ==================
+/* ================== NPCs ================== */
 
     'molor': {
         category: 'entity',
         animations: {
-            // Assumimos frameCount 1 por segurança (sprite estático), mas você pode aumentar se o MolorWaiting for um spritesheet!
+    //? Sprite estático padrão com frameCount 1
             'idle': { imageSrc: new URL('../assets/entities/npc/Molor/Molor.png', import.meta.url).href, frameCount: 1, animationSpeed: 20, frameWidth: 32, frameHeight: 32, atlasOffset: { x: 0, y: 0 }, spriteSize: { width: 32, height: 32 } },
             'walking': { imageSrc: new URL('../assets/entities/npc/Molor/MolorWaiting.png', import.meta.url).href, frameCount: 1, animationSpeed: 10, frameWidth: 32, frameHeight: 32, atlasOffset: { x: 0, y: 0 }, spriteSize: { width: 32, height: 32 } },
         }
@@ -3038,7 +3037,7 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
         }
     },
 
-    // ================== ÍCONES DE EFEITOS ELEMENTAIS & AXIOMÁTICOS ==================
+/* ================== ÍCONES DE EFEITOS ELEMENTAIS & AXIOMÁTICOS ================== */
     'effect_abys': { category: 'vfx', animations: { 'static': { imageSrc: ElementalEffectIcons['abys'].icon32Url, frameCount: 1, animationSpeed: 1, frameWidth: 32, frameHeight: 32, atlasOffset: { x: 0, y: 0 }, spriteSize: { width: 32, height: 32 } } } },
     'effect_air': { category: 'vfx', animations: { 'static': { imageSrc: ElementalEffectIcons['air'].icon32Url, frameCount: 1, animationSpeed: 1, frameWidth: 32, frameHeight: 32, atlasOffset: { x: 0, y: 0 }, spriteSize: { width: 32, height: 32 } } } },
     'effect_crystal': { category: 'vfx', animations: { 'static': { imageSrc: ElementalEffectIcons['crystal'].icon32Url, frameCount: 1, animationSpeed: 1, frameWidth: 32, frameHeight: 32, atlasOffset: { x: 0, y: 0 }, spriteSize: { width: 32, height: 32 } } } },
@@ -3061,13 +3060,13 @@ export const VisualConfigMap: Record<string, AnyVisualConfig> = {
     'effect_thunder': { category: 'vfx', animations: { 'static': { imageSrc: ElementalEffectIcons['thunder'].icon32Url, frameCount: 1, animationSpeed: 1, frameWidth: 32, frameHeight: 32, atlasOffset: { x: 0, y: 0 }, spriteSize: { width: 32, height: 32 } } } },
     'effect_water': { category: 'vfx', animations: { 'static': { imageSrc: ElementalEffectIcons['water'].icon32Url, frameCount: 1, animationSpeed: 1, frameWidth: 32, frameHeight: 32, atlasOffset: { x: 0, y: 0 }, spriteSize: { width: 32, height: 32 } } } },
 
-    // ================== ASSETS & SPRITES DINÂMICOS DO ASSETS ADAPTER ==================
+/* ================== ASSETS & SPRITES DINÂMICOS DO ASSETS ADAPTER ================== */
     // <!-- ASSETS_ADAPTER_SPRITES_START -->
     // <!-- ASSETS_ADAPTER_SPRITES_END -->
 
 };
 
-// ================== ÍNDICE O(1) POR ICON_ID ==================
+/* ================== ÍNDICE O(1) POR ICON_ID ================== */
 let _itemByIconIdCache: Map<number, { key: string; config: ItemVisualConfig }> | null = null;
 
 function ensureItemIconIndex(): Map<number, { key: string; config: ItemVisualConfig }> {

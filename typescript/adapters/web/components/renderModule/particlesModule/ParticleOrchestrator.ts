@@ -9,7 +9,7 @@ import type { ParticleEmitterConfig } from "./ParticleEmitterConfig";
  * Implementa `IRenderable` para se integrar nativamente ao pipeline de renderização existente.
  */
 export default class ParticleOrchestrator implements IRenderable {
-    // Propriedades de IRenderable ignoradas matematicamente, usadas apenas para satisfazer o contrato com a Engine visual
+  //? Propriedades de IRenderable para satisfazer contrato com a engine visual
     public id: number = -999999;
     public readonly coordinates = { x: 0, y: 0 };
     public readonly size = { width: 0, height: 0 };
@@ -49,9 +49,9 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles.clear();
     }
 
-    // ============================================================================
-    // BIBLIOTECA DE EFEITOS VISUAIS (VFX) SEMÂNTICOS
-    // ============================================================================
+  /* ============================================================================
+     BIBLIOTECA DE EFEITOS VISUAIS (VFX) SEMÂNTICOS
+  ============================================================================ */
 
     /**
      * Roteador central de efeitos de partículas. 
@@ -91,14 +91,14 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles.emit({
             x, y,
             count: 18,
-            colors: ['#8a0303', '#bf0000', '#ff2a2a'], // Gradiente rico para dar noção de volume
+            colors: ['#8a0303', '#bf0000', '#ff2a2a'],
             speedMin: 80, speedMax: 250,
             sizeMin: 2, sizeMax: 6,
             lifeMin: 0.3, lifeMax: 0.8,
             angle: 0, spread: Math.PI * 2,
             gravity: 600,
-            friction: 0.92, // Trajetória de queda mais fluida
-            isCircle: true // Gotas biológicas redondas ao invés de pixels quadrados
+            friction: 0.92,
+            isCircle: true
         });
     }
 
@@ -111,16 +111,16 @@ export default class ParticleOrchestrator implements IRenderable {
     public enemyDeath(x: number, y: number): void {
         this.particles.emit({
             x, y,
-            count: 10, // Baixíssima alocação
-            colors: ['#3a0000', '#5e0000', '#8a0303', '#222222'], // Sangue coagulado e resquícios de fumaça escura
+            count: 10,
+            colors: ['#3a0000', '#5e0000', '#8a0303', '#222222'],
             speedMin: 40, speedMax: 150,
             sizeMin: 2, sizeMax: 5,
-            lifeMin: 0.2, lifeMax: 0.4, // Limpa da tela e do Pool quase instantaneamente
+            lifeMin: 0.2, lifeMax: 0.4,
             angle: 0, spread: Math.PI * 2,
-            gravity: 100, // Queda suave
+            gravity: 100,
             friction: 0.88,
             fade: true,
-            isCircle: false // Renderização primitiva em bloco: Otimização máxima para a GPU/CPU
+            isCircle: false
         });
     }
 
@@ -129,13 +129,13 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles.emit({
             x, y,
             count: 45,
-            colors: ['#FFF7CC', '#FFD700', '#FF4500', '#8B0000'], // Perfil térmico realístico (núcleo branco/amarelo esfriando para vermelho)
+            colors: ['#FFF7CC', '#FFD700', '#FF4500', '#8B0000'],
             speedMin: 60, speedMax: 320,
-            sizeMin: 4, sizeMax: 12, // Variação maior de tamanho gera sensação de profundidade
+            sizeMin: 4, sizeMax: 12,
             lifeMin: 0.4, lifeMax: 0.9,
-            angle: 0, spread: Math.PI * 2, // 360 graus
-            gravity: -80, // Ascensão termal mais orgânica
-            friction: 0.88, // Vira uma "nuvem" suspensa no final da vida
+            angle: 0, spread: Math.PI * 2,
+            gravity: -80,
+            friction: 0.88,
             isCircle: true
         });
     }
@@ -145,12 +145,12 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles.emit({
             x, y,
             count: 12,
-            colors: [hexColor, '#FFFFFF', '#E0FFFF'], // Cores análogas harmoniosas
+            colors: [hexColor, '#FFFFFF', '#E0FFFF'],
             speedMin: 5, speedMax: 35,
             sizeMin: 2, sizeMax: 6,
-            lifeMin: 1.0, lifeMax: 2.5, // Vida bem longa (sensação de paz / buff)
-            angle: -Math.PI / 2, spread: Math.PI, // Espalha pra cima
-            gravity: -20, // Flutuação etérea e graciosa
+            lifeMin: 1.0, lifeMax: 2.5,
+            angle: -Math.PI / 2, spread: Math.PI,
+            gravity: -20,
             friction: 0.96,
             isCircle: true
         });
@@ -162,13 +162,13 @@ export default class ParticleOrchestrator implements IRenderable {
             x, y,
             count: 20,
             colors: ['#FFFFFF', '#FFFACD', '#FFD700'],
-            speedMin: 300, speedMax: 700, // Violência mecânica
+            speedMin: 300, speedMax: 700,
             sizeMin: 1, sizeMax: 4,
             lifeMin: 0.1, lifeMax: 0.35,
-            angle: angle, spread: Math.PI / 4, // Cone pontiagudo acompanhando o corte
+            angle: angle, spread: Math.PI / 4,
             gravity: 100,
             friction: 0.85,
-            isCircle: false // MANTEMOS QUADRADO! O contraste cognitivo de lascas pontiagudas realça os impactos!
+            isCircle: false
         });
     }
 
@@ -177,14 +177,14 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles.emit({
             x, y,
             count: 35,
-            colors: ['#E0FFFF', '#87CEFA', '#1E90FF', '#0000CD'], // Gradiente do raso ao oceano profundo
+            colors: ['#E0FFFF', '#87CEFA', '#1E90FF', '#0000CD'],
             speedMin: 100, speedMax: 300,
             sizeMin: 3, sizeMax: 7,
             lifeMin: 0.4, lifeMax: 0.9,
-            angle: -Math.PI / 2, spread: Math.PI * 1.5, // Jorra majoritariamente pra cima
+            angle: -Math.PI / 2, spread: Math.PI * 1.5,
             gravity: 700,
-            friction: 0.96, // A inércia suave da água resistindo ao ar
-            isCircle: true // Gotículas visivelmente polidas
+            friction: 0.96,
+            isCircle: true
         });
     }
 
@@ -193,13 +193,13 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles.emit({
             x, y,
             count: 45,
-            colors: ['#ADFF2F', '#32CD32', '#228B22', '#556B2F'], // Musgos e tons orgânicos
+            colors: ['#ADFF2F', '#32CD32', '#228B22', '#556B2F'],
             speedMin: 10, speedMax: 80,
-            sizeMin: 8, sizeMax: 16, // Círculos muito grandes sobrepostos geram a ilusão de uma "nuvem" vetorial coesa
+            sizeMin: 8, sizeMax: 16,
             lifeMin: 1.0, lifeMax: 2.5,
             angle: 0, spread: Math.PI * 2,
             gravity: -10, 
-            friction: 0.80, // Densidade do gás (freia quase de imediato)
+            friction: 0.80,
             fade: true,
             isCircle: true
         });
@@ -207,7 +207,6 @@ export default class ParticleOrchestrator implements IRenderable {
 
     /** Explosão majestosa e azulada com vida longa, para celebrar a subida de nível! */
     public levelUp(x: number, y: number, hexColor?: string): void {
-        // Um ápice de satisfação: Brancos ofuscantes, Dourados e tons do Céu.
         const colors = hexColor ? [hexColor, '#FFFFFF', '#FFF8DC'] : ['#87CEFA', '#FFFFFF', '#FFD700', '#FFFACD'];
         this.particles.emit({
             x, y,
@@ -215,11 +214,11 @@ export default class ParticleOrchestrator implements IRenderable {
             colors: colors,
             speedMin: 50, speedMax: 250,
             sizeMin: 3, sizeMax: 9,
-            lifeMin: 1.5, lifeMax: 3.5, // Extremamente duradouro, ancora o estado de flow e recompensa
-            angle: -Math.PI / 2, spread: Math.PI * 2, // Em todas as direções
-            gravity: -60, // Ascensão majestosa constante
+            lifeMin: 1.5, lifeMax: 3.5,
+            angle: -Math.PI / 2, spread: Math.PI * 2,
+            gravity: -60,
             friction: 0.94,
-            isCircle: true // Suavidade absoluta na tela
+            isCircle: true
         });
     }
 
@@ -260,16 +259,16 @@ export default class ParticleOrchestrator implements IRenderable {
 
         this.particles.emit({
             x, y,
-            count: 3 * elements.length, // Volume visual superior
+            count: 3 * elements.length,
             colors: activeColors,
             speedMin: 10, speedMax: 30,
             sizeMin: 2, sizeMax: 6,
             lifeMin: 0.2, lifeMax: 0.6,
-            angle: 0, spread: Math.PI * 2, // Orbitando ao redor
+            angle: 0, spread: Math.PI * 2,
             gravity: 0,
             friction: 0.90,
             fade: true,
-            isCircle: true // Magias em estado puro tendem à esfericidade
+            isCircle: true
         });
     }
     
@@ -282,15 +281,15 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles.emit({
             x, y,
             count: 45,
-            colors: ['#FFFFFF', '#FFD700', '#FFA500', '#FFFFE0'], // Branco ofuscante e Dourado
-            speedMin: 400, speedMax: 900, // Explosão inicial quase instantânea
+            colors: ['#FFFFFF', '#FFD700', '#FFA500', '#FFFFE0'],
+            speedMin: 400, speedMax: 900,
             sizeMin: 2, sizeMax: 6,
-            lifeMin: 0.2, lifeMax: 0.5, // Vive muito pouco, é um "flash"
+            lifeMin: 0.2, lifeMax: 0.5,
             angle: 0, spread: Math.PI * 2,
             gravity: 0,
-            friction: 0.80, // Freia de soco, criando uma "coroa" ou "nova" geométrica ao redor do impacto
+            friction: 0.80,
             fade: true,
-            isCircle: false // Mantemos blocos duros (Pixels) para maximizar o estresse visual do acerto brutal.
+            isCircle: false
         });
     }
 
@@ -303,15 +302,15 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles.emit({
             x, y,
             count: 60,
-            colors: ['#FFD700', '#FF8C00', '#FF1493', '#00FFFF'], // Ouro, Rosa Épico e Ciano Puro
+            colors: ['#FFD700', '#FF8C00', '#FF1493', '#00FFFF'],
             speedMin: 20, speedMax: 150,
             sizeMin: 3, sizeMax: 8,
-            lifeMin: 1.5, lifeMax: 4.0, // Vida muito longa
-            angle: -Math.PI / 2, spread: Math.PI / 4, // Jorra num cone reto para cima como um farol
-            gravity: -30, // Flutua lentamente contra a gravidade (sensação etérea)
+            lifeMin: 1.5, lifeMax: 4.0,
+            angle: -Math.PI / 2, spread: Math.PI / 4,
+            gravity: -30,
             friction: 0.96,
             fade: true,
-            isCircle: true // Círculos transmitem a ideia de orbes divinos e itens preciosos.
+            isCircle: true
         });
     }
 
@@ -323,16 +322,16 @@ export default class ParticleOrchestrator implements IRenderable {
     public overkillShatter(x: number, y: number): void {
         this.particles.emit({
             x, y,
-            count: 100, // Quantidade obscena de partículas (Como o Pool suporta até 3000, isso é super seguro)
-            colors: ['#00FFFF', '#FF00FF', '#FFFFFF', '#00BFFF', '#9400D3'], // Cyberpunk / Pura Magia
+            count: 100,
+            colors: ['#00FFFF', '#FF00FF', '#FFFFFF', '#00BFFF', '#9400D3'],
             speedMin: 100, speedMax: 650,
             sizeMin: 2, sizeMax: 10,
             lifeMin: 0.4, lifeMax: 1.2,
             angle: 0, spread: Math.PI * 2,
-            gravity: 200, // Partículas pesadas caindo em arco parabólico
+            gravity: 200,
             friction: 0.92,
             fade: true,
-            isCircle: false // Entidade despedaçada em cacos irregulares!
+            isCircle: false
         });
     }
 
@@ -341,15 +340,15 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles.emit({
             x, y,
             count: 35,
-            colors: ['#FFFF00', '#FFFFFF', '#FFD700', '#E0FFFF'], // Elétrico, branco e dourado
-            speedMin: 200, speedMax: 800, // Altíssima velocidade inicial
+            colors: ['#FFFF00', '#FFFFFF', '#FFD700', '#E0FFFF'],
+            speedMin: 200, speedMax: 800,
             sizeMin: 1, sizeMax: 4,
-            lifeMin: 0.1, lifeMax: 0.3, // Curta duração (pisca como um raio)
+            lifeMin: 0.1, lifeMax: 0.3,
             angle: 0, spread: Math.PI * 2,
             gravity: 0,
-            friction: 0.75, // Frenagem brusca para imitar faíscas elétricas quebrando
+            friction: 0.75,
             fade: true,
-            isCircle: false // Formas pontiagudas e ásperas
+            isCircle: false
         });
     }
 
@@ -365,8 +364,8 @@ export default class ParticleOrchestrator implements IRenderable {
             colors: ['#FFFFFF', '#E0FFFF', '#00FFFF', '#7FFFD4', '#F0FFFF'],
             speedMin: 220, speedMax: 420,
             sizeMin: 4, sizeMax: 8,
-            lifeMin: 0.15, lifeMax: 0.25, // Dissipação rápida em 0.25s
-            angle: angle, spread: Math.PI / 6, // Cone estreito acompanhando o golpe
+            lifeMin: 0.15, lifeMax: 0.25,
+            angle: angle, spread: Math.PI / 6,
             gravity: 0,
             friction: 0.86,
             fade: true,
@@ -382,15 +381,15 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles.emit({
             x, y,
             count: 50,
-            colors: ['#FFFFFF', '#FFFACD', '#FFD700', '#FAFAD2', '#FFF8DC'], // Branco puro e dourado radiante
+            colors: ['#FFFFFF', '#FFFACD', '#FFD700', '#FAFAD2', '#FFF8DC'],
             speedMin: 80, speedMax: 420,
             sizeMin: 5, sizeMax: 14,
-            lifeMin: 0.1, lifeMax: 0.2, // Fade-out suave em 0.2s
+            lifeMin: 0.1, lifeMax: 0.2,
             angle: 0, spread: Math.PI * 2,
             gravity: 0,
             friction: 0.85,
             fade: true,
-            isCircle: true // Esferas perfeitas de luz divina
+            isCircle: true
         });
     }
 
@@ -408,13 +407,13 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles.emit({
             x, y,
             count: 50,
-            colors: ['#8A2BE2', '#9400D3', '#DA70D6', '#4B0082'], // Tons roxos, violetas e arcanos
+            colors: ['#8A2BE2', '#9400D3', '#DA70D6', '#4B0082'],
             speedMin: 20, speedMax: 200,
             sizeMin: 2, sizeMax: 7,
-            lifeMin: 0.5, lifeMax: 1.2, // Fica bastante tempo na tela pulsando
+            lifeMin: 0.5, lifeMax: 1.2,
             angle: 0, spread: Math.PI * 2,
-            gravity: 0, // Gravidade zero, energia pura
-            friction: 0.94, // Espalha e para devagar
+            gravity: 0,
+            friction: 0.94,
             fade: true,
             isCircle: true
         });
@@ -425,15 +424,15 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles.emit({
             x, y,
             count: 40,
-            colors: ['#228B22', '#32CD32', '#00FF00', '#8B4513'], // Folhas verdes e pedaços de terra marrom
+            colors: ['#228B22', '#32CD32', '#00FF00', '#8B4513'],
             speedMin: 40, speedMax: 250,
             sizeMin: 3, sizeMax: 7,
             lifeMin: 0.5, lifeMax: 1.2,
-            angle: -Math.PI / 2, spread: Math.PI * 1.5, // Estoura pra cima igual terra/mato sendo chutado
-            gravity: 300, // Gravidade puxa de volta pra terra
+            angle: -Math.PI / 2, spread: Math.PI * 1.5,
+            gravity: 300,
             friction: 0.95,
             fade: true,
-            isCircle: false // Formas quadradas para simular folhas/terra picada
+            isCircle: false
         });
     }
 
@@ -442,15 +441,15 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles.emit({
             x, y,
             count: 45,
-            colors: ['#4A4A4A', '#696969', '#8B4513', '#A0522D', '#2F4F4F'], // Cinzas de pedra e marrons de terra
-            speedMin: 100, speedMax: 400, // Estouro forte inicial
-            sizeMin: 4, sizeMax: 10, // Pedaços graúdos
+            colors: ['#4A4A4A', '#696969', '#8B4513', '#A0522D', '#2F4F4F'],
+            speedMin: 100, speedMax: 400,
+            sizeMin: 4, sizeMax: 10,
             lifeMin: 0.5, lifeMax: 1.2,
-            angle: -Math.PI / 2, spread: Math.PI * 1.5, // Maior parte dos detritos sobe antes de cair
-            gravity: 800, // Gravidade extrema, pedras são muito pesadas
+            angle: -Math.PI / 2, spread: Math.PI * 1.5,
+            gravity: 800,
             friction: 0.95,
             fade: true,
-            isCircle: false // Quadrados afiados para simular pedras irregulares
+            isCircle: false
         });
     }
 
@@ -460,15 +459,15 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles.emit({
             x, y,
             count,
-            colors: color ? [color, '#1A0033', '#2E0854'] : ['#1A0033', '#2E0854', '#4B0082', '#000000', '#483D8B'], // Tons de roxo abissal e preto
-            speedMin: isDense ? 10 : 8, speedMax: isDense ? 90 : 45, // Expansão sutil para manter o formato de estrela nítido
-            sizeMin: isDense ? 3 : 2, sizeMax: isDense ? 7 : 4, // Partículas menores e delicadas que não cobrem os sprites
-            lifeMin: isDense ? 0.35 : 0.2, lifeMax: isDense ? 0.75 : 0.4, // Dissipação rápida para revelar o sprite
+            colors: color ? [color, '#1A0033', '#2E0854'] : ['#1A0033', '#2E0854', '#4B0082', '#000000', '#483D8B'],
+            speedMin: isDense ? 10 : 8, speedMax: isDense ? 90 : 45,
+            sizeMin: isDense ? 3 : 2, sizeMax: isDense ? 7 : 4,
+            lifeMin: isDense ? 0.35 : 0.2, lifeMax: isDense ? 0.75 : 0.4,
             angle: 0, spread: Math.PI * 2,
-            gravity: -10, // Flutua levemente como um miasma
-            friction: 0.90, // Freia rapidamente e fica pairando
+            gravity: -10,
+            friction: 0.90,
             fade: true,
-            isCircle: true // Bordas suaves para simular energia escura e vazios
+            isCircle: true
         });
     }
 

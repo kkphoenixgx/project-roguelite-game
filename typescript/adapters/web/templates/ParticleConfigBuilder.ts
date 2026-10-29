@@ -143,7 +143,7 @@ export const ParticleVfxPresets = {
       .size(1, 4)
       .life(0.4, 0.9)
       .omnidirectional()
-      .gravity(-120) // Flutua suavemente para cima
+      .gravity(-120)
       .friction(0.94)
       .asCircle(true),
 
@@ -166,7 +166,7 @@ export const ParticleVfxPresets = {
       .speed(150, 400)
       .size(2, 5)
       .life(0.15, 0.45)
-      .directional(angle, Math.PI / 3) // Cone de impacto direcional
+      .directional(angle, Math.PI / 3)
       .friction(0.88)
       .asSquare()
 };

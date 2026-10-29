@@ -52,8 +52,7 @@ export default class VisualComposer {
     public static extractLayers(state: any): VisualLayer[] {
         const layers: VisualLayer[] = [{ id: state.entityTypeId, type: 'body' }];
 
-        // Extrai todos os broches equipados (ativos e passivos) em uma lista sequencial no tronco,
-        // posicionados com zIndex 5 (acima do corpo e por debaixo da armadura e do colar).
+        //? Broches equipados (ativos e passivos) são projetados no tronco com zIndex 5 (entre corpo e armadura)
         let broochSlotIndex = 0;
         const maxBroochSlots = BROOCH_TORSO_SLOTS.length;
         const activeBrooches = state.globalActiveLoadout;
@@ -81,8 +80,7 @@ export default class VisualComposer {
         }
 
         if (state.equipment) {
-            // Extraímos o Amuleto para pintar. 
-            // Ao NÃO colocar 'ring1', 'ring2', 'ring3' aqui, garantimos que eles fiquem invisíveis no corpo!
+            //? Renderiza apenas armaduras e amuleto; anéis permanecem invisíveis no modelo corporal
             for (let i = 0; i < this.ARMOR_SLOTS.length; i++) {
                 const slot = this.ARMOR_SLOTS[i]!;
                 const item = state.equipment[slot];
@@ -109,22 +107,20 @@ export default class VisualComposer {
         const composed = layers.map(layer => {
             let zIndex = this.defaultZIndex[layer.type] || 0;
 
-            // REGRA DE EXCEÇÃO: Se a entidade tem Barba e Peitoral, a barba DEVE esconder parte do peito (ficar por cima).
+            //? Regra de sobreposição: Se houver peitoral e barba, a barba sobrepõe o peitoral com zIndex elevado (100)
             if (layer.type === 'beard') {
                 const hasChestplate = layers.some(l => l.type === 'chestplate');
                 if (hasChestplate) {
-                    zIndex = 100; // Força a barba para a estratosfera do Z-Index
+                    zIndex = 100;
                 }
             }
 
-            // Broches ficam ocultos durante a cambalhota (roll/dodge)
+            //? Broches são ocultados durante o estado de esquiva/rolamento para evitar artefatos de rig
             if (layer.type === 'brooch' && isRollState) {
                 return { config: undefined, zIndex, type: layer.type };
             }
 
-            // Resgata o Sprite correspondente à animação atual (ex: 'iron-chest-walking')
-            // Caso o equipamento/acessório não possua sprite específico para o estado (ex: 'roll'/'dodge'),
-            // reutiliza automaticamente o sprite estático 'idle' para transformação via Socket Rig.
+            //? Resgata sprite do estado ou faz fallback para 'idle' se equipamento não tiver animação específica
             const configKey = `${layer.id}-${state}`;
             let config = configs.get(configKey);
             if (!config && layer.type !== 'body' && state !== 'idle') {
@@ -134,7 +130,7 @@ export default class VisualComposer {
             return { config, zIndex, type: layer.type };
         });
 
-        // Ignora camadas com sprites faltantes e ordena a pintura pelo Z-Index calculado
+        //? Descarta camadas sem sprite disponível e ordena renderização pelo zIndex ascendente
         return composed.filter(item => item.config !== undefined).sort((a, b) => a.zIndex - b.zIndex) as { config: SpriteConfig, zIndex: number, type: EquipmentLayerType | string }[];
     }
 }

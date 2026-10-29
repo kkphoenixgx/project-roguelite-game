@@ -88,7 +88,7 @@ export class SoundFxAdapterTemplate {
     source.buffer = buffer;
     source.loop = Boolean(options.loop);
 
-    // Variação de Pitch orgânica (ex: ±5% de tom a cada clique/tiro)
+    //? Variação microtonal de pitch (semitons) para evitar monotonia acústica em disparos repetitivos
     if (options.pitchVariation) {
       const semitone = (Math.random() - 0.5) * 2 * options.pitchVariation;
       source.playbackRate.value = Math.pow(2, semitone / 12);

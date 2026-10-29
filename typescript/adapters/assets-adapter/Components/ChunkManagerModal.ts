@@ -31,7 +31,6 @@ export class ChunkManagerModal {
     private selectedCell: { row: number; col: number } | null = null;
     private cellPaths: Map<string, string> = new Map();
 
-    // Presets de texturas comuns de terreno disponíveis no projeto
     public static readonly DEFAULT_GROUND = new URL('../../web/assets/maps/vilgem/chunk_1_1_ground.png', import.meta.url).href;
     public static readonly TERRAIN_TEXTURES: TerrainTextureOption[] = [
         { label: 'Grama Central (Ground)', url: new URL('../../web/assets/maps/vilgem/chunk_1_1_ground.png', import.meta.url).href, path: 'assets/maps/vilgem/chunk_1_1_ground.png', fileName: 'chunk_1_1_ground.png' },
@@ -73,7 +72,7 @@ export class ChunkManagerModal {
         }
 
         if (!this.mapConfig.chunks || this.mapConfig.chunks.length === 0) {
-            // 1. Tenta carregar de VisualConfigMap (fonte de verdade em código)
+    //? Cadeia de carregamento: VisualConfigMap -> cache local -> matriz padrão
             const mapVisual = VisualConfigMap[this.mapConfig.id] as MapVisualConfig | undefined;
             if (mapVisual?.chunks && mapVisual.chunks.length > 0) {
                 this.mapConfig.chunks = mapVisual.chunks.map((row: string[]) => [...row]);
@@ -85,7 +84,6 @@ export class ChunkManagerModal {
                 return;
             }
 
-            // 2. Tenta carregar do cache local síncrono
             const cached = this.chunkSync.getCachedChunks(this.mapConfig.id);
             if (cached && cached.chunks.length > 0) {
                 this.mapConfig.chunks = cached.chunks.map(row => [...row]);
@@ -98,7 +96,6 @@ export class ChunkManagerModal {
                 return;
             }
 
-            // 3. Fallback: cria matriz padrão se não existir
             const cols = Math.max(1, Math.ceil(this.mapConfig.width / (this.mapConfig.chunkSize || 1024)));
             const rows = Math.max(1, Math.ceil(this.mapConfig.height / (this.mapConfig.chunkSize || 1024)));
             this.mapConfig.chunks = Array.from({ length: rows }, () => Array.from({ length: cols }, () => ChunkManagerModal.DEFAULT_GROUND));
@@ -195,7 +192,6 @@ export class ChunkManagerModal {
     public open(): void {
         this.close();
 
-        // Garante que chunks existe como matriz válida
         this.ensureChunksLoaded();
 
         this.modalElement = document.createElement('div');
@@ -603,11 +599,9 @@ export class ChunkManagerModal {
     private bindEvents(): void {
         if (!this.modalElement) return;
 
-        // Fechar
         this.modalElement.querySelector('#btn-close-chunk-modal')?.addEventListener('click', () => this.close());
         this.modalElement.querySelector('#btn-chunk-modal-close')?.addEventListener('click', () => this.close());
 
-        // Alternância de Abas
         this.modalElement.querySelector('#tab-btn-chunks')?.addEventListener('click', () => {
             this.activeTab = 'chunks';
             this.render();
@@ -622,7 +616,6 @@ export class ChunkManagerModal {
             return;
         }
 
-        // Se for InnerMap na aba chunks, vincula controles de cor de fundo
         const colorPicker = this.modalElement.querySelector('#innermap-bg-color-picker') as HTMLInputElement;
         const colorHex = this.modalElement.querySelector('#innermap-bg-hex-input') as HTMLInputElement;
         if (colorPicker && colorHex) {
@@ -637,20 +630,16 @@ export class ChunkManagerModal {
             colorHex.addEventListener('change', () => updateBg(colorHex.value));
         }
 
-        // Botões Direcionais de Expansão (4 direções nos cantos/bordas)
         this.modalElement.querySelector('#btn-expand-north')?.addEventListener('click', () => this.expandNorth());
         this.modalElement.querySelector('#btn-expand-south')?.addEventListener('click', () => this.expandSouth());
         this.modalElement.querySelector('#btn-expand-west')?.addEventListener('click', () => this.expandWest());
         this.modalElement.querySelector('#btn-expand-east')?.addEventListener('click', () => this.expandEast());
 
-        // Preencher tudo
         this.modalElement.querySelector('#btn-fill-all-grass')?.addEventListener('click', () => this.fillAll(ChunkManagerModal.DEFAULT_GROUND));
 
-        // Seleção de Célula
         const cards = this.modalElement.querySelectorAll('.chunk-block-card');
         cards.forEach(card => {
             card.addEventListener('click', (e) => {
-                // Não dispara seleção se clicou no botão de delete individual
                 if ((e.target as HTMLElement).closest('.btn-delete-chunk-block')) return;
                 const r = parseInt(card.getAttribute('data-row') || '0', 10);
                 const c = parseInt(card.getAttribute('data-col') || '0', 10);
@@ -659,7 +648,6 @@ export class ChunkManagerModal {
             });
         });
 
-        // Botões de Aresta Individuais (➕ em qualquer lado sem chunk)
         const edgeBtns = this.modalElement.querySelectorAll('.btn-chunk-edge-add');
         edgeBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -671,7 +659,6 @@ export class ChunkManagerModal {
             });
         });
 
-        // Botão para criar chunk pontual em slot vazio existente
         const createSlotBtns = this.modalElement.querySelectorAll('.btn-create-chunk-slot');
         createSlotBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -682,7 +669,6 @@ export class ChunkManagerModal {
             });
         });
 
-        // Botão de Deletar Bloco Individual (lixeira no canto do bloco) -> Deleta o chunk do mapa
         const deleteBtns = this.modalElement.querySelectorAll('.btn-delete-chunk-block');
         deleteBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -693,14 +679,12 @@ export class ChunkManagerModal {
             });
         });
 
-        // Deletar o Chunk Selecionado diretamente pelo cabeçalho
         this.modalElement.querySelector('#btn-del-selected-chunk')?.addEventListener('click', () => {
             if (this.selectedCell) {
                 this.deleteChunk(this.selectedCell.row, this.selectedCell.col);
             }
         });
 
-        // Excluir Coluna ou Linha do Bloco Selecionado
         this.modalElement.querySelector('#btn-del-selected-col')?.addEventListener('click', () => {
             if (this.selectedCell) {
                 this.deleteSpecificColumn(this.selectedCell.col);
@@ -713,7 +697,6 @@ export class ChunkManagerModal {
             }
         });
 
-        // Botão de Selecionar Imagem (Arquivo Local do Computador)
         const btnBrowse = this.modalElement.querySelector('#btn-browse-chunk-file');
         const fileInput = this.modalElement.querySelector('#input-chunk-file-hidden') as HTMLInputElement;
         btnBrowse?.addEventListener('click', () => {
@@ -753,7 +736,6 @@ export class ChunkManagerModal {
             }
         });
 
-        // Aplicação de Textura da Galeria do Projeto
         const availableTextures = this.getAvailableTextures();
         const texBtns = this.modalElement.querySelectorAll('.texture-option-btn');
         texBtns.forEach(btn => {
@@ -766,7 +748,6 @@ export class ChunkManagerModal {
             });
         });
 
-        // Aplicação de Path Customizado via input
         this.modalElement.querySelector('#btn-apply-custom-bg')?.addEventListener('click', () => {
             const input = this.modalElement?.querySelector('#input-custom-chunk-url') as HTMLInputElement;
             if (input && this.selectedCell) {
@@ -776,7 +757,6 @@ export class ChunkManagerModal {
             }
         });
 
-        // Limpar fundo do chunk selecionado (mantendo o chunk existente)
         this.modalElement.querySelector('#btn-clear-chunk-bg')?.addEventListener('click', () => {
             if (this.selectedCell) {
                 this.setChunkBackground(this.selectedCell.row, this.selectedCell.col, '');
@@ -789,7 +769,6 @@ export class ChunkManagerModal {
 
         const innerMgr = InnerMapManager.getInstance();
 
-        // 1. Botão nos chips de portais ativos para abrir o mapa de destino
         this.modalElement.querySelectorAll('.btn-chip-open-target').forEach(btn => {
             btn.addEventListener('click', () => {
                 const targetId = btn.getAttribute('data-target');
@@ -814,7 +793,6 @@ export class ChunkManagerModal {
             });
         });
 
-        // 2. Botão nos cards de InnerMap para abrir no Editor
         this.modalElement.querySelectorAll('.btn-open-innermap').forEach(btn => {
             btn.addEventListener('click', () => {
                 const innerId = btn.getAttribute('data-inner-id');
@@ -827,7 +805,6 @@ export class ChunkManagerModal {
             });
         });
 
-        // 3. Botão para Excluir InnerMap
         this.modalElement.querySelectorAll('.btn-delete-innermap').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const innerId = btn.getAttribute('data-inner-id');
@@ -850,7 +827,6 @@ export class ChunkManagerModal {
             });
         });
 
-        // 4. Criação de Novo InnerMap com Double-Bind
         this.modalElement.querySelector('#btn-create-innermap-action')?.addEventListener('click', async () => {
             const idInput = this.modalElement?.querySelector('#new-innermap-id') as HTMLInputElement;
             const nameInput = this.modalElement?.querySelector('#new-innermap-name') as HTMLInputElement;
@@ -862,7 +838,6 @@ export class ChunkManagerModal {
             if (!id || id === 'interior_') {
                 id = `interior_${this.mapConfig.id}_${Date.now()}`;
             }
-            // Sanitiza id para identificador seguro
             id = id.toLowerCase().replace(/[^a-z0-9_]/g, '_');
 
             const name = nameInput?.value.trim() || id;
@@ -987,7 +962,6 @@ export class ChunkManagerModal {
         switch (edge) {
             case 'north':
                 if (row === 0) {
-                    // Adiciona uma nova linha no topo onde APENAS a coluna 'col' tem chunk
                     const newRow = Array.from({ length: cols }, (_, i) => i === col ? ChunkManagerModal.DEFAULT_GROUND : '');
                     chunks.unshift(newRow);
                     this.shiftCellPaths(1, 0);
@@ -1002,7 +976,6 @@ export class ChunkManagerModal {
 
             case 'south':
                 if (row === rows - 1) {
-                    // Adiciona uma nova linha na base onde APENAS a coluna 'col' tem chunk
                     const newRow = Array.from({ length: cols }, (_, i) => i === col ? ChunkManagerModal.DEFAULT_GROUND : '');
                     chunks.push(newRow);
                     this.selectedCell = { row: rows, col };
@@ -1014,7 +987,6 @@ export class ChunkManagerModal {
 
             case 'west':
                 if (col === 0) {
-                    // Adiciona uma coluna à esquerda onde APENAS a linha 'row' tem chunk
                     for (let r = 0; r < rows; r++) {
                         chunks[r]!.unshift(r === row ? ChunkManagerModal.DEFAULT_GROUND : '');
                     }
@@ -1030,7 +1002,6 @@ export class ChunkManagerModal {
 
             case 'east':
                 if (col === cols - 1) {
-                    // Adiciona uma coluna à direita onde APENAS a linha 'row' tem chunk
                     for (let r = 0; r < rows; r++) {
                         chunks[r]!.push(r === row ? ChunkManagerModal.DEFAULT_GROUND : '');
                     }
@@ -1058,7 +1029,6 @@ export class ChunkManagerModal {
             return;
         }
 
-        // Limpa o chunk específico
         chunks[row]![col] = '';
         this.cellPaths.delete(`${row},${col}`);
 
@@ -1066,7 +1036,7 @@ export class ChunkManagerModal {
             this.selectedCell = null;
         }
 
-        // Realiza o trim de bordas externas totalmente vazias (Norte, Sul, Oeste, Leste)
+    //? Trima linhas e colunas externas vazias para compactação da matriz de chunks
         this.trimEmptyOuterBorders();
 
         this.saveAndNotify();
@@ -1089,7 +1059,6 @@ export class ChunkManagerModal {
 
             if (rows <= 1 && cols <= 1) break;
 
-            // 1. Trima Linha do Topo (Norte) se 100% vazia
             if (rows > 1 && chunks[0]!.every(c => !c || c.trim() === '')) {
                 chunks.shift();
                 this.shiftCellPaths(-1, 0);
@@ -1102,14 +1071,12 @@ export class ChunkManagerModal {
                 continue;
             }
 
-            // 2. Trima Linha da Base (Sul) se 100% vazia
             if (rows > 1 && chunks[rows - 1]!.every(c => !c || c.trim() === '')) {
                 chunks.pop();
                 trimmed = true;
                 continue;
             }
 
-            // 3. Trima Coluna da Esquerda (Oeste) se 100% vazia
             if (cols > 1 && chunks.every(row => !row[0] || row[0]!.trim() === '')) {
                 chunks.forEach(row => row.shift());
                 this.shiftCellPaths(0, -1);
@@ -1122,7 +1089,6 @@ export class ChunkManagerModal {
                 continue;
             }
 
-            // 4. Trima Coluna da Direita (Leste) se 100% vazia
             if (cols > 1 && chunks.every(row => !row[cols - 1] || row[cols - 1]!.trim() === '')) {
                 chunks.forEach(row => row.pop());
                 trimmed = true;
@@ -1221,11 +1187,10 @@ export class ChunkManagerModal {
      * mundiais dos assets já posicionados NUNCA devem ser alteradas na expansão.
      */
     private shiftPlacedAssets(deltaCols: number, deltaRows: number): void {
-        // No-op: As coordenadas mundiais são absolutas e persistentes.
+    //? Coordenadas mundiais são absolutas e persistentes no sistema de chunks
         return;
     }
 
-    // Métodos legados mantidos para compatibilidade com outros componentes
     public addColumn(): void {
         this.expandEast();
     }
@@ -1281,13 +1246,11 @@ export class ChunkManagerModal {
         this.mapConfig.width = cols * chunkSize;
         this.mapConfig.height = rows * chunkSize;
 
-        // Atualiza os limites do mundo e coordenadas assinadas relativas à origem central
+    //? Atualiza limites do mundo e coordenadas assinadas relativas à origem central
         this.updateWorldBounds();
 
-        // Notifica o aplicativo para atualizar canvas e mapa
         this.onMapUpdated({ ...this.mapConfig });
 
-        // Se for um InnerMap, atualiza também no catálogo do InnerMapManager
         if (this.mapConfig.isInnerMap || InnerMapManager.getInstance().hasInnerMap(this.mapConfig.id)) {
             await InnerMapManager.getInstance().updateInnerMap(this.mapConfig.id, {
                 chunks,
@@ -1298,7 +1261,7 @@ export class ChunkManagerModal {
             });
         }
 
-        // Sincroniza dinamicamente com o disco (VisualConfigMap.ts e VilgemWorld.ts ou intermapsMap.json)
+    //? Sincroniza com definições no disco (VisualConfigMap.ts, VilgemWorld.ts ou intermapsMap.json)
         await this.chunkSync.syncChunksToDisk(this.mapConfig.id, chunks, this.mapConfig.width, this.mapConfig.height, this.getOriginChunk());
     }
 }

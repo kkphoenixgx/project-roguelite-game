@@ -4,7 +4,6 @@ import type { EntityRenderableState, IGameDomain } from '../../../../domain/port
 import { createSlotSvgElement } from '../../shared/SlotSvgAssets';
 import { ElementalEffectIcons, SkillIcons } from '../../shared/VisualConfigMap';
 
-// Assets visuais temáticos
 const FIRE_ICON = new URL('../../assets/icons/fire-icon.png', import.meta.url).href;
 const BULLET_ICON = new URL('../../assets/entities/vfx/simple-bullet.png', import.meta.url).href;
 const SWORD_ICON = new URL('../../assets/entities/vfx/sword-atack-spritesheet.png', import.meta.url).href;
@@ -19,14 +18,14 @@ const RING_ICON = new URL('../../assets/itens/simple-ring.png', import.meta.url)
 const ADRANALINE_ICON = new URL('../../assets/itens/adranaline-flask.png', import.meta.url).href;
 
 const SKILL_ICON_MAP: Record<string, string> = {
-    // Mago
+  /* Mago */
     'm_t1_fireball': SkillIcons['m_t1_fireball'].icon40Url,
     'm_t2_burn': SkillIcons['m_t2_burn'].icon40Url,
     'm_t3_knowledge': SkillIcons['m_t3_knowledge'].icon40Url,
     'm_t4_teleport': SkillIcons['m_t4_teleport'].icon40Url,
     'm_t5_blackhole': SkillIcons['m_t5_blackhole'].icon40Url,
 
-    // Guerreiro
+  /* Guerreiro */
     'w_t1_strike': SkillIcons['w_t1_strike'].icon40Url,
     'w_t1_heavy_blow': SkillIcons['w_t1_heavy_blow'].icon40Url,
     'w_t1_iron_skin': SkillIcons['w_t1_iron_skin'].icon40Url,
@@ -40,12 +39,12 @@ const SKILL_ICON_MAP: Record<string, string> = {
     'w_t4_armor_breaker': SkillIcons['w_t4_armor_breaker'].icon40Url,
     'w_t5_avatar_of_war': SkillIcons['w_t5_avatar_of_war'].icon40Url,
 
-    // Gunslinger
+  /* Gunslinger */
     'gs_t1_quickdraw': SkillIcons['gs_t1_quickdraw'].icon40Url,
     'gs_t2_fanhammer': SkillIcons['gs_t2_fanhammer'].icon40Url,
     'gs_t3_deadeye': SkillIcons['gs_t3_deadeye'].icon40Url,
 
-    // Necromante
+  /* Necromante */
     'n_t1_reap': SkillIcons['n_t1_reap'].icon40Url,
     'n_t1_death_aura': SkillIcons['n_t1_death_aura'].icon40Url,
     'n_t1_soul_leech': SkillIcons['n_t1_soul_leech'].icon40Url,
@@ -59,13 +58,13 @@ const SKILL_ICON_MAP: Record<string, string> = {
     'n_t4_death_warden': SkillIcons['n_t4_death_warden'].icon40Url,
     'n_t5_dance_of_dead': SkillIcons['n_t5_dance_of_dead'].icon40Url,
 
-    // Pescador
+  /* Pescador */
     'pesc_t1_fisgada': SkillIcons['pesc_t1_fisgada'].icon40Url,
     'pesc_t2_net': SkillIcons['pesc_t2_net'].icon40Url,
     'pesc_t3_leviata': SkillIcons['pesc_t3_leviata'].icon40Url,
     'pesc_t4_fishpet': SkillIcons['pesc_t4_fishpet'].icon40Url,
 
-    // Broches Ativos
+  /* Broches Ativos */
     'brooch_active_heal': SkillIcons['brooch_active_heal'].icon40Url,
     'brooch_heal': SkillIcons['brooch_active_heal'].icon40Url,
     'brooch_active_meteor': SkillIcons['brooch_active_meteor'].icon40Url,
@@ -81,7 +80,7 @@ const SKILL_ICON_MAP: Record<string, string> = {
     'brooch_berserk': SkillIcons['brooch_active_berserk'].icon40Url,
     'brooch_chain': BULLET_ICON,
 
-    // 21 Efeitos Elementais & Axiomáticos Oficiais
+  /* 21 Efeitos Elementais & Axiomáticos Oficiais */
     'abys': ElementalEffectIcons['abys'].icon32Url,
     'air': ElementalEffectIcons['air'].icon32Url,
     'crystal': ElementalEffectIcons['crystal'].icon32Url,
@@ -180,7 +179,6 @@ export default class SkillCooldownHudGui {
         const rawCds = data.skillCooldowns;
         const now = Date.now();
 
-        // 1. Sincroniza novos cooldowns vindos do DTO
         if (rawCds) {
             for (const skillId in rawCds) {
                 const cd = rawCds[skillId];
@@ -189,13 +187,12 @@ export default class SkillCooldownHudGui {
                     const targetReady = now + cd.remainingMs;
 
                     if (existing) {
-                        // Corrige apenas em caso de desync considerável (> 350ms)
+        //? Corrige temporizador apenas em caso de desync considerável (> 350ms)
                         if (Math.abs(existing.readyAt - targetReady) > 350) {
                             existing.readyAt = targetReady;
                             existing.totalMs = cd.totalMs;
                         }
                     } else {
-                        // Cria o quadradinho uma única vez
                         const meta = this.resolveSkillMetadata(skillId, data);
                         const slot = this.createSquareNode(skillId, meta.name, meta.keybind, meta.type, cd.totalMs);
                         slot.readyAt = targetReady;
@@ -206,19 +203,17 @@ export default class SkillCooldownHudGui {
             }
         }
 
-        // Fast-path: Se nada está em cooldown, retorna imediatamente (0 operações de DOM!)
+    //! Fast-path: Se nada está em cooldown, retorna imediatamente evitando manipulação de DOM
         if (this.activeSlots.size === 0) {
             return;
         }
 
-        // 2. Atualiza o relógio radial e o contador numérico dos slots existentes
         for (const [skillId, slot] of this.activeSlots.entries()) {
             if (slot.isFinishing) continue;
 
             const remaining = slot.readyAt - now;
 
             if (remaining <= 0) {
-                // Cooldown finalizado: aciona animação de flash e remove do DOM
                 slot.isFinishing = true;
                 slot.overlay.style.setProperty('--cd-angle', '0deg');
                 slot.countdownText.textContent = '';
@@ -231,11 +226,9 @@ export default class SkillCooldownHudGui {
                     this.activeSlots.delete(skillId);
                 }, 320);
             } else {
-                // Atualiza ângulo do relógio (360 -> 0)
                 const angle = Math.min(360, Math.max(0, (remaining / slot.totalMs) * 360));
                 slot.overlay.style.setProperty('--cd-angle', `${angle.toFixed(1)}deg`);
 
-                // Atualiza texto em segundos apenas se o valor mudou
                 const formatted = remaining >= 10000 
                     ? `${Math.ceil(remaining / 1000)}s` 
                     : `${(remaining / 1000).toFixed(1)}s`;
@@ -252,7 +245,6 @@ export default class SkillCooldownHudGui {
      * Resolve nome, categoria e tecla de atalho de forma rápida
      */
     private resolveSkillMetadata(skillId: string, data: EntityRenderableState): { name: string; keybind: string; type: 'class' | 'primordial' | 'brooch' } {
-        // 1. Verifica se está no activeLoadout da classe (1 a 4)
         if (data.activeLoadout) {
             const idx = data.activeLoadout.indexOf(skillId);
             if (idx !== -1) {
@@ -261,7 +253,6 @@ export default class SkillCooldownHudGui {
             }
         }
 
-        // 2. Verifica se é habilidade primordial / essencial (Tecla F)
         if (data.skillTree) {
             const ess = data.skillTree.find((s: any) => s.id === skillId && s.type === 'essential');
             if (ess) {
@@ -269,7 +260,6 @@ export default class SkillCooldownHudGui {
             }
         }
 
-        // 3. Verifica se é broche ativo global (Teclas 5 a 8)
         const globalLoadout = (data as any).globalActiveLoadout;
         if (globalLoadout) {
             const idx = globalLoadout.indexOf(skillId);
@@ -279,7 +269,6 @@ export default class SkillCooldownHudGui {
             }
         }
 
-        // Fallback
         const fallbackName = this.findSkillName(skillId, data);
         const isBrooch = skillId.startsWith('brooch');
         return {
@@ -324,13 +313,11 @@ export default class SkillCooldownHudGui {
         square.className = `cd-square ${typeClass}`;
         square.title = `${name.toUpperCase()} (Recarga)`;
 
-        // Badge com tecla
         const badge = document.createElement('span');
         badge.className = 'cd-key-badge';
         badge.textContent = keybind;
         square.appendChild(badge);
 
-        // Ícone ou SVG
         const iconUrl = SKILL_ICON_MAP[skillId];
         if (iconUrl) {
             const img = document.createElement('img');
@@ -354,13 +341,11 @@ export default class SkillCooldownHudGui {
             this.createMonogram(square, name);
         }
 
-        // Overlay do Relógio Radial (conic-gradient)
         const overlay = document.createElement('div');
         overlay.className = 'cd-clock-overlay';
         overlay.style.setProperty('--cd-angle', '360deg');
         square.appendChild(overlay);
 
-        // Cronômetro textual
         const countdown = document.createElement('span');
         countdown.className = 'cd-timer-text';
         countdown.textContent = '';

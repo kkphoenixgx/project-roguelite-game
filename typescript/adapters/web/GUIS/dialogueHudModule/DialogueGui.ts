@@ -17,7 +17,6 @@ export default class DialogueGui {
     private typingInterval: number | null = null;
     private currentNpcId: number | undefined;
 
-    // Portrait animation state
     private portraitImage: HTMLImageElement | null = null;
     private portraitConfig: { frameCount: number; frameWidth: number; frameHeight: number; animationSpeed: number } | null = null;
     private portraitFrame: number = 0;
@@ -47,7 +46,7 @@ export default class DialogueGui {
         this.portraitCanvas = this.container.querySelector('#portrait-canvas') as HTMLCanvasElement;
         this.portraitCtx = this.portraitCanvas.getContext('2d')!;
 
-        // Click no texto para pular o efeito de digitação
+        //? Permite clicar no texto para pular imediatamente a animação de máquina de escrever
         this.textEl.addEventListener('click', () => {
             if (this.isTyping) {
                 this.finishTypingImmediately();
@@ -89,7 +88,7 @@ export default class DialogueGui {
         }
     }
 
-    // --- Portrait Sprite System ---
+    /* --- Portrait Sprite System --- */
 
     private loadPortrait(entityTypeId?: string): void {
         if (!entityTypeId) {
@@ -100,7 +99,7 @@ export default class DialogueGui {
             return;
         }
 
-        // Try idle first, then walking as fallback
+        //? Busca sprite 'idle' como prioridade e recorre a 'walking' como fallback visual
         const idleConfig = RenderRegistry.spriteConfigs.get(`${entityTypeId}-idle`);
         const walkConfig = RenderRegistry.spriteConfigs.get(`${entityTypeId}-walking`);
         
@@ -121,7 +120,6 @@ export default class DialogueGui {
             animationSpeed: idleConfig.animationSpeed,
         };
 
-        // Load the idle image
         const img = new Image();
         img.src = idleConfig.imageSrc;
         console.log(`[DialogueGui Portrait] Loading idle sprite: "${idleConfig.imageSrc}"`);
@@ -137,12 +135,11 @@ export default class DialogueGui {
             console.error(`[DialogueGui Portrait] ❌ Failed to load idle sprite: "${idleConfig.imageSrc}"`, e);
         };
 
-        // Pre-cache walking sprite for when NPC is talking
+        //? Pré-armazena em cache a sprite de fala/walking para alternância durante o diálogo
         if (walkConfig) {
             const walkImg = new Image();
             walkImg.src = walkConfig.imageSrc;
             walkImg.onload = () => {
-                // Store walking image and config for the talking state
                 (this as any)._walkImage = walkImg;
                 (this as any)._walkConfig = {
                     frameCount: walkConfig.frameCount,
@@ -172,7 +169,7 @@ export default class DialogueGui {
         const col = this.portraitFrame % columns;
         const row = Math.floor(this.portraitFrame / columns);
         
-        // Draw the sprite centered and scaled up to fill the 64x64 portrait
+        //? Renderiza o sprite centralizado e escalonado no quadro 64x64 do retrato
         const scale = Math.min(64 / config.frameWidth, 64 / config.frameHeight);
         const dw = config.frameWidth * scale;
         const dh = config.frameHeight * scale;
@@ -196,7 +193,7 @@ export default class DialogueGui {
                 return;
             }
 
-            // Decide which sprite to use: walking when talking, idle when waiting
+            //? Alterna dinamicamente entre animação de fala ('walking') e repouso ('idle')
             let activeImage = this.portraitImage;
             let activeConfig = this.portraitConfig;
 
@@ -212,7 +209,6 @@ export default class DialogueGui {
                     this.portraitFrame = (this.portraitFrame + 1) % activeConfig.frameCount;
                 }
                 
-                // Draw with the active sprite
                 const ctx = this.portraitCtx;
                 const img = activeImage;
                 const config = activeConfig;
@@ -264,7 +260,7 @@ export default class DialogueGui {
         }
     }
 
-    // --- End Portrait ---
+    /* --- End Portrait --- */
 
     private showWaitingState(customMessage?: string): void {
         this.inputEl.disabled = true;
@@ -293,12 +289,13 @@ export default class DialogueGui {
 
         this.fullTextToType = text;
         this.isTyping = true;
-        this.setTalking(true); // NPC is "talking" while typewriter runs
+        this.setTalking(true);
         this.inputEl.disabled = false;
         this.textEl.textContent = '';
         
         let charIndex = 0;
-        const speed = 18; // ms por caractere para ritmo natural
+        //? Cadência da máquina de escrever em ms por caractere
+        const speed = 18;
         
         this.typingInterval = window.setInterval(() => {
             if (charIndex < text.length) {
@@ -310,7 +307,7 @@ export default class DialogueGui {
                     this.typingInterval = null;
                 }
                 this.isTyping = false;
-                this.setTalking(false); // NPC stops "talking" when done
+                this.setTalking(false);
                 this.inputEl.focus();
             }
         }, speed);
@@ -330,7 +327,7 @@ export default class DialogueGui {
         if (text === "..." || text.startsWith("*(Conectando") || text.startsWith("*(Organizando") || text.startsWith("*(Sincronizando") || text.startsWith("*(Consultando") || text.startsWith("*(Despertando") || text.startsWith("*(Sintonizando")) {
             this.showWaitingState(text !== "..." ? text.replace(/^\*\(/, '').replace(/\)\*$/, '') : undefined);
         } else if (text.startsWith("*(") && text.endsWith(")*")) {
-            // Pensamento interno rápido
+            //? Intervalo curto para pensamentos internos sem fala vocalizada
             this.inputEl.disabled = false;
             this.setTalking(false);
             this.textEl.innerHTML = `<span class="internal-thought">${text}</span>`;

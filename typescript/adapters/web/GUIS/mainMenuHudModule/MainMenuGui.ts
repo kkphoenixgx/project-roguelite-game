@@ -2,7 +2,7 @@ import { logger } from "../../shared/Logger";
 import { SlotSvgAssets } from "../../shared/SlotSvgAssets";
 import html from './mainMenu.html?raw';
 
-// Imports dos sub-módulos CSS com o loader em string pura do Vite (?raw)
+//? Carregamento de módulos CSS via loader raw (?raw) do Vite
 import cssGlobalLayout from './styles/global-layout.css?raw';
 
 import progressionHtml from './partials/progression/progression.html?raw';
@@ -45,7 +45,6 @@ export interface WorldConfig {
 export default class MainMenuGui {
     private container!: HTMLElement;
 
-    // Estado da câmera do mapa
     private translateX: number = 0;
     private translateY: number = 0;
     private scale: number = 1;
@@ -54,7 +53,7 @@ export default class MainMenuGui {
     private startY: number = 0;
     private currentModel: string = "qwen2.5:0.5b";
     private progressionController!: ProgressionTabController;
-    public loadoutController!: LoadoutTabController; // Expose to get the choices
+    public loadoutController!: LoadoutTabController;
     private skipSubtabDefaultToSaves: boolean = false;
     public activeSlot: number = 1;
     public activeSlotData: any = null;
@@ -277,7 +276,6 @@ export default class MainMenuGui {
     public updateActiveSlotBanner(slotData?: any): void {
         const data = slotData !== undefined ? slotData : this.activeSlotData;
 
-        // Atualiza o indicador persistente no topo do Menu Principal
         const mmHeaderEl = this.container.querySelector('#mm-active-save-text') as HTMLElement;
         if (mmHeaderEl) {
             if (data) {
@@ -411,7 +409,6 @@ export default class MainMenuGui {
             return card;
         };
 
-        // Extrai atributos reais do jogador do save ativo
         const p = this.activeSlotData?.activeCheckpoint?.player
             || this.activeSlotData?.checkpoint?.player
             || this.activeSlotData?.playerState
@@ -419,7 +416,6 @@ export default class MainMenuGui {
             || (this.domain as any)?.player;
         const playerAttrs = p?.attributes || {};
 
-        // 1. Atributos Base
         const baseDefinitions = [
             { key: 'strength', alias: 'str', name: 'Força', desc: 'Aumenta dano físico e capacidade de impacto' },
             { key: 'dexterity', alias: 'dex', name: 'Destreza', desc: 'Aumenta agilidade, velocidade de ataque e esquiva' },
@@ -445,7 +441,6 @@ export default class MainMenuGui {
             baseContainer.appendChild(card);
         });
 
-        // 2. Atributos Derivados Primários do Personagem
         const derivedDefinitions = [
             { key: 'level', name: 'Nível', desc: 'Nível de maestria do personagem', val: playerAttrs.level ?? p?.level ?? 1 },
             { key: 'maxHp', name: 'Vida Máxima', desc: 'Pontos máximos de integridade vital', val: playerAttrs.maxHp ?? playerAttrs.hp ?? 100 },
@@ -463,10 +458,10 @@ export default class MainMenuGui {
             derivedContainer.appendChild(card);
         });
 
-        // 3. Distribui os bônus procedurais restantes (Secundários e Elementais)
         const baseKeySet = new Set(['str', 'dex', 'con', 'int', 'wis', 'cha', 'stat_str', 'stat_dex', 'stat_con', 'stat_int', 'stat_wis', 'stat_cha']);
         proceduralStats.forEach((stat: any) => {
-            if (baseKeySet.has(stat.type)) return; // Já consolidado nos Atributos Base
+            //? Ignora tipos de atributos já consolidados na base
+        if (baseKeySet.has(stat.type)) return;
             const card = createStatCard(stat, false);
             if (stat.category === 'elemental' || (stat.type && stat.type.endsWith('_dmg')) || stat.name.startsWith('Afinidade')) {
                 elementalContainer.appendChild(card);
@@ -475,7 +470,6 @@ export default class MainMenuGui {
             }
         });
 
-        // 4. Renderiza Broches Relicários Consolidados
         if (broochesContainer) {
             broochesContainer.innerHTML = '';
 
@@ -535,7 +529,6 @@ export default class MainMenuGui {
     /** Injeta a marcação estrutural e concatena as strings CSS para montagem do escopo */
     private injectUI(): void {
         const style = document.createElement('style');
-        // Concatenação linear sem quebras de regras
         style.textContent = [cssGlobalLayout, progressionCss, loadoutCss, worldCss, statsCss, systemCss].join('\n');
         document.head.appendChild(style);
         
@@ -598,7 +591,6 @@ export default class MainMenuGui {
         if (w && spotlightHole) {
             spotlightHole.setAttribute('cx', w.cx.toString());
             spotlightHole.setAttribute('cy', w.cy.toString());
-            // Ilha central (Vilgem) e ilhas secundarias com raio expandido
             spotlightHole.setAttribute('r', w.id === 'vilgem' ? '310' : '210');
         }
     }
@@ -623,11 +615,9 @@ export default class MainMenuGui {
         </radialGradient>
         </defs>`;
 
-        // Fog of war ziz-zag background
         svgContent += `<path class="doodle-ink" stroke-width="4" opacity="0.2" d="M 50 50 L 150 150 L 250 50 L 350 150 L 450 50 L 550 150 L 650 50 L 750 150" />`;
         svgContent += `<path class="doodle-ink" stroke-width="4" opacity="0.2" d="M 50 450 L 150 550 L 250 450 L 350 550 L 450 450 L 550 550 L 650 450 L 750 550" />`;
 
-        // Dashed paths connecting the maps
         svgContent += `<path d="M 180 300 Q 250 340 320 320" fill="none" stroke="var(--ui-border-primary)" stroke-width="4" stroke-dasharray="10,10" stroke-linecap="square" />`;
         svgContent += `<path d="M 480 320 Q 550 340 610 300" fill="none" stroke="var(--ui-border-primary)" stroke-width="4" stroke-dasharray="10,10" stroke-linecap="square" />`;
 
@@ -657,7 +647,6 @@ export default class MainMenuGui {
             </g>
         `;
 
-        // Fog overlay uniforme sem corte retangular nas bordas
         svgContent += `<rect x="-3000" y="-2000" width="6800" height="4600" fill="url(#spotlight-hole)" pointer-events="none" />`;
 
         svgContent += `</svg>`;
@@ -801,7 +790,6 @@ export default class MainMenuGui {
             node.addEventListener('pointerup', handleSelect);
         });
 
-        // Seleciona o mundo ativo por padrão
         this.selectWorld(this.selectedWorldId);
 
         const pois = this.container.querySelectorAll('.map-poi');
@@ -882,7 +870,6 @@ export default class MainMenuGui {
                         logger.log('init', '[Warmup] Modelo alvo não encontrado. Redirecionando...');
                         this.forceSetupModel();
                     } else {
-                        // Not online yet, unlock check
                         isChecking = false;
                     }
                 };
@@ -919,7 +906,7 @@ export default class MainMenuGui {
                         hideLoadingScreen();
                         this.unlockSonharBtn();
                     }
-                }, 15000); // 15s para dar tempo do warmup
+                }, 15000);
             } else {
                 clearInterval(phraseInterval);
                 if (loadingScreen) loadingScreen.style.display = 'none';
@@ -949,7 +936,7 @@ export default class MainMenuGui {
                             const p = checkpoint.player || checkpoint.playerState || {};
                             if (!checkpoint.player && checkpoint.playerState) checkpoint.player = checkpoint.playerState;
 
-                            // Mescla o loadout ativo: se o usuário configurou broches no menu, usa-os
+    //? Sincroniza loadout configurado no menu prioritariamente sobre o save restaurado
                             const hasMenuActives = menuActiveBrooches.some((b: any) => Boolean(b));
                             const hasMenuPassives = menuPassiveBrooches.some((b: any) => Boolean(b));
 
@@ -961,7 +948,6 @@ export default class MainMenuGui {
                                 ? menuActiveBrooches
                                 : (checkpoint.globalActiveLoadout || p.globalActiveLoadout || p.classes?.globalActiveLoadout || menuActiveBrooches);
 
-                            // Atualiza checkpoint para sincronizar save
                             checkpoint.globalActiveLoadout = [...effectiveGlobalActives];
                             checkpoint.passiveLoadout = [...effectivePassiveLoadout];
                             if (checkpoint.player) {
@@ -1004,7 +990,7 @@ export default class MainMenuGui {
     }
 
     private initVolumetricFog() {
-        // Volumetric fog removed for performance. Now using SVG mask.
+  //? Máscara SVG substitui névoa volumétrica por performance
     }
 
     private setupSaveSystem(): void {
@@ -1222,7 +1208,6 @@ export default class MainMenuGui {
                     } catch (e) {}
                 }
 
-                // Verifica se restou algum save gravado nos outros slots
                 let firstRemainingSlot: number | null = null;
                 for (let s = 1; s <= 5; s++) {
                     if (s === slot) continue;
@@ -1234,14 +1219,13 @@ export default class MainMenuGui {
                 }
 
                 if (!firstRemainingSlot) {
-                    // Nenhum save restante: cria automaticamente um save padrão no Slot 1 e o ativa
+    //? Nenhum save restante: cria automaticamente save padrão no Slot 1
                     await this.createAndPersistDefaultSlot(1);
                     await this.setActiveSlot(1, true);
                 } else if (this.activeSlot === slot) {
-                    // O slot ativo foi apagado mas existem outros: ativa o primeiro save disponível
+    //? Ativa primeiro save disponível caso o slot ativo tenha sido apagado
                     await this.setActiveSlot(firstRemainingSlot, true);
                 } else {
-                    // Slot não-ativo apagado: apenas sincroniza UI
                     await this.setActiveSlot(this.activeSlot, true);
                 }
 
@@ -1267,7 +1251,6 @@ export default class MainMenuGui {
                 { name: 'O Mestre dos Ossos', icon: '', classId: 'necromancer' }
             ];
 
-            // Carrega antecipadamente todos os slots para determinar o primeiro slot por saveId
             const allSystemSlots: { slot: number; slotData: any; saveId?: string }[] = [];
             const systemFirstSlotBySaveId = new Map<string, number>();
 
@@ -1300,7 +1283,6 @@ export default class MainMenuGui {
                               1;
                 const world = slotData?.world || slotData?.activeCheckpoint?.mapId || slotData?.checkpoint?.mapId || 'Vilgem';
 
-                // Consolida broches desbloqueados e equipados no slotData
                 const broochSet = new Set<string>();
                 const registerBrooch = (b: any) => {
                     const id = typeof b === 'string' ? b : b?.id;
@@ -1747,7 +1729,6 @@ export default class MainMenuGui {
 
             const query = currentSearchQuery.toLowerCase().trim();
             const filtered = catalogModels.filter(item => {
-                // Filtro por texto de busca
                 const matchesSearch = !query || 
                     item.id.toLowerCase().includes(query) || 
                     item.description.toLowerCase().includes(query) || 
@@ -1755,7 +1736,6 @@ export default class MainMenuGui {
 
                 if (!matchesSearch) return false;
 
-                // Filtro por categoria / pill
                 if (activeCategoryFilter === 'all') return true;
                 if (activeCategoryFilter === 'highend') {
                     return item.tags.some(t => ['high-end', '7b', '8b', '12b', '14b', 'gpu dedicada', 'rei absoluto'].includes(t.toLowerCase())) ||
@@ -1791,13 +1771,13 @@ export default class MainMenuGui {
 
             catalogGrid.innerHTML = '';
             filtered.forEach(item => {
-                // Correspondência de modelo instalado: id exato ou prefixado (ex: item 'qwen2.5:0.5b' ou 'qwen2.5' com tag instalada 'qwen2.5:0.5b')
+        //? Correspondência de modelo instalado por id exato ou prefixado
                 const matchedInstalled = installedModels.find(m => 
                     m === item.id || 
                     (item.id.includes(':') ? false : m.startsWith(`${item.id}:`))
                 );
                 const isInstalled = Boolean(matchedInstalled);
-                // Um modelo SÓ pode ser ativo se ele estiver EFETIVAMENTE instalado na máquina
+        //? Um modelo cognitivo só pode ser ativo se estiver instalado localmente
                 const isActive = isInstalled && (
                     this.currentModel === item.id || 
                     (matchedInstalled !== undefined && this.currentModel === matchedInstalled) ||
@@ -1840,7 +1820,6 @@ export default class MainMenuGui {
                         btnAction.disabled = true;
                     } else if (isInstalled) {
                         btnAction.onclick = async () => {
-                            // Ativa o modelo instalado correspondente
                             const targetModel = matchedInstalled || item.id;
                             await invoke('set_active_model', { model: targetModel }).catch(() => {});
                             this.currentModel = targetModel;
@@ -1855,7 +1834,6 @@ export default class MainMenuGui {
                         };
                     } else {
                         btnAction.onclick = () => {
-                            // Se tiver tags como 0.5b ou 1b, sugere a versão leve
                             let targetId = item.id;
                             if (!targetId.includes(':')) {
                                 const preferredTag = item.tags.find(t => ['0.5b', '1b', '1.5b', '2b'].includes(t.toLowerCase()));
@@ -1923,7 +1901,7 @@ export default class MainMenuGui {
         const fetchLibraryModels = async (): Promise<void> => {
             if (catalogStatusBadge) catalogStatusBadge.textContent = 'Buscando do site...';
 
-            // 1. Tenta comando nativo do Tauri (bypassa CORS diretamente e consulta /search + /library)
+    //? Consulta de modelos via comando nativo IPC Tauri com bypass de CORS
             try {
                 const tauriModels = await safeInvoke<CatalogModelItem[]>('fetch_ollama_library');
                 if (tauriModels && tauriModels.length > 0) {
@@ -1936,7 +1914,7 @@ export default class MainMenuGui {
                 console.warn('[Ollama Library] Tauri fetch indisponível, tentando proxy web...');
             }
 
-            // 2. Se estiver em ambiente web/Storybook, busca via proxy Vite (/ollama-search e /ollama-library)
+    //? Fallback web/Storybook via proxy Vite (/ollama-search)
             try {
                 const searchRes = await fetch('/ollama-search').catch(() => null);
                 if (searchRes && searchRes.ok) {
@@ -1963,13 +1941,12 @@ export default class MainMenuGui {
                 console.warn('[Ollama Library] Falha ao consultar proxy web do site:', err);
             }
 
-            // 3. Fallback de catálogo se estiver offline
+    //? Fallback de catálogo estático offline caso endpoints estejam inacessíveis
             catalogModels = DEFAULT_FALLBACK_CATALOG;
             if (catalogStatusBadge) catalogStatusBadge.textContent = `${catalogModels.length} modelos (offline)`;
             renderCatalog();
         };
 
-        // Filtros de categoria por clique
         const filterBtns = document.querySelectorAll('.filter-pill-btn');
         filterBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -1980,7 +1957,6 @@ export default class MainMenuGui {
             });
         });
 
-        // Campo de busca em tempo real com busca remota dinâmica
         let searchDebounceTimeout: any = null;
         if (searchInput) {
             searchInput.addEventListener('input', () => {
@@ -2012,7 +1988,6 @@ export default class MainMenuGui {
             });
         }
 
-        // Botão de recarregar catálogo
         if (btnRefreshCatalog) {
             btnRefreshCatalog.onclick = () => fetchLibraryModels();
         }
@@ -2023,7 +1998,6 @@ export default class MainMenuGui {
             const list = (typeof document !== 'undefined') ? (this.container?.querySelector('#llm-models-list') as HTMLElement || document.getElementById('llm-models-list')) : null;
             if (list) list.innerHTML = '';
 
-            // Atualiza status do daemon
             if (daemonChip && statusLabel) {
                 const dot = daemonChip.querySelector('.status-dot');
                 if (dot) {
@@ -2133,9 +2107,9 @@ export default class MainMenuGui {
                 let modelName = pullInput.value.trim();
                 if (!modelName) return;
 
-                // Normalização inteligente de links e repositórios Hugging Face para o prefixo nativo Ollama (hf.co/)
+    //? Normaliza URLs Hugging Face para o prefixo canônico hf.co/ do Ollama
                 if (modelName.includes('huggingface.co/')) {
-                    modelName = modelName.replace(/^https?:\/\/huggingface\.co\//, 'hf.co/').replace(/^huggingface\.co\//, 'hf.co/');
+                    modelName = modelName.replace(new RegExp('^https?:\\/\\/huggingface\\.co\\/'), 'hf.co/').replace(new RegExp('^huggingface\\.co\\/'), 'hf.co/');
                 }
 
                 btnPull.disabled = true;
@@ -2185,7 +2159,6 @@ export default class MainMenuGui {
                                     return;
                                 }
                             } catch (parseErr) {
-                                // Chunk parcial ignorado
                             }
                         }
                     }
@@ -2210,11 +2183,9 @@ export default class MainMenuGui {
             };
         }
 
-        // Botões de Presets de Hardware Recomendados
         const handlePresetClick = async (targetModel: string, presetName: string, settings: { num_ctx: number; timeout: number; temperature: number; max_tokens: number; stateless: boolean }) => {
             const isInstalled = installedModels.some(m => m === targetModel || m.startsWith(`${targetModel}:`) || targetModel.startsWith(m));
             if (isInstalled) {
-                // Ativa o modelo diretamente
                 const exactModel = installedModels.find(m => m === targetModel || m.startsWith(`${targetModel}:`) || targetModel.startsWith(m)) || targetModel;
                 await invoke('set_active_model', { model: exactModel }).catch(() => {});
                 await invoke('save_llm_settings', {
@@ -2228,7 +2199,6 @@ export default class MainMenuGui {
                 this.unlockSonharBtn();
                 loadModels();
             } else {
-                // Não está instalado: preenche o campo de download e foca para baixar com 1 clique
                 if (pullInput) {
                     pullInput.value = targetModel;
                     pullInput.focus();
@@ -2274,7 +2244,6 @@ export default class MainMenuGui {
             });
         }
 
-        // Toggle do Menu de Configurações e Presets Salvos
         const btnToggleConfig = document.getElementById('btn-toggle-config-menu');
         const customPresetContainer = document.getElementById('custom-preset-container');
         if (btnToggleConfig && customPresetContainer) {
@@ -2291,7 +2260,6 @@ export default class MainMenuGui {
             };
         }
 
-        // --- 1. Integração do Preset Customizado do Jogador (JSON & Form) ---
         interface UserCustomPreset {
             name?: string;
             llm_model: string;
@@ -2361,7 +2329,7 @@ export default class MainMenuGui {
         const inputNewPresetName = document.getElementById('input-new-preset-name') as HTMLInputElement;
         const btnSaveAsNewPreset = document.getElementById('btn-save-as-new-preset');
 
-        // Carrega preset salvo ou inicializa com o template padrão solicitado
+    //? Carrega preset salvo ou inicializa com o template padrão
         let currentCustomPreset: UserCustomPreset = defaultCustomPreset;
         try {
             const rawSaved = localStorage.getItem('rpg_custom_llm_preset');
@@ -2409,7 +2377,6 @@ export default class MainMenuGui {
             };
         };
 
-        // Renderiza as pills de presets salvos pelo usuário em Perfis Recomendados
         const renderSavedPresetsPills = () => {
             if (!savedPresetsPillsList) return;
             savedPresetsPillsList.innerHTML = '';
@@ -2432,7 +2399,6 @@ export default class MainMenuGui {
                 titleSpan.textContent = p.name || `Preset #${idx + 1}`;
                 pill.appendChild(titleSpan);
 
-                // Clique para usar o preset imediatamente
                 titleSpan.onclick = () => {
                     currentCustomPreset = {
                         llm_model: p.llm_model,
@@ -2446,7 +2412,6 @@ export default class MainMenuGui {
                     saveAndApplyCustomPreset();
                 };
 
-                // Botão de deletar para presets customizados criados pelo usuário
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'pill-delete-btn';
                 deleteBtn.textContent = 'X';
@@ -2515,7 +2480,6 @@ export default class MainMenuGui {
         updateCustomUIFromPreset(currentCustomPreset);
         renderSavedPresetsPills();
 
-        // Salvar e Ativar Preset Customizado
         const saveAndApplyCustomPreset = async () => {
             currentCustomPreset = getPresetFromInputs();
             localStorage.setItem('rpg_custom_llm_preset', JSON.stringify(currentCustomPreset));
@@ -2534,7 +2498,6 @@ export default class MainMenuGui {
             await invoke('set_active_model', { model: currentCustomPreset.llm_model }).catch(() => {});
             this.currentModel = currentCustomPreset.llm_model;
             
-            // Propaga para o domínio de forma desacoplada
             if (this.domain && typeof (this.domain as any).updateLLMPreset === 'function') {
                 (this.domain as any).updateLLMPreset(currentCustomPreset);
             }
@@ -2558,7 +2521,6 @@ export default class MainMenuGui {
             btnSaveCustomPreset.onclick = () => saveAndApplyCustomPreset();
         }
 
-        // Salvar Novo Preset Nomeado
         if (btnSaveAsNewPreset && inputNewPresetName) {
             btnSaveAsNewPreset.onclick = () => {
                 const name = inputNewPresetName.value.trim() || `Preset ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
@@ -2606,7 +2568,6 @@ export default class MainMenuGui {
             };
         }
 
-        // --- 2. Modding & Hugging Face Handlers ---
         document.querySelectorAll('.btn-apply-hf-example').forEach(btn => {
             btn.addEventListener('click', () => {
                 const hfModel = btn.getAttribute('data-hf');
@@ -2731,7 +2692,6 @@ export default class MainMenuGui {
             btnModels.addEventListener('click', () => this.switchSystemSubtab('models'));
         }
 
-        // Padrão obrigatório: Sub-aba de Saves
         this.switchSystemSubtab('saves');
     }
 

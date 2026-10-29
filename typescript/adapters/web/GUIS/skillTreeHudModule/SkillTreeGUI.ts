@@ -22,7 +22,6 @@ export default class SkillTreeGui {
     private nodeElements = new Map<string, HTMLButtonElement>();
     private pathElements = new Map<string, { path: SVGPathElement; parentId: string }>();
         
-    // Variáveis de estado do Pan & Zoom
     private isDragging: boolean = false;
     private startX: number = 0;
     private startY: number = 0;
@@ -51,7 +50,6 @@ export default class SkillTreeGui {
         const div = document.createElement('div'); 
         div.innerHTML = html;
         this.container = div.firstElementChild as HTMLElement;
-        // Garante que a árvore de skills fique por cima de outras UIs como o HUD da janela
         this.container.style.zIndex = '1000';
         document.body.appendChild(this.container);
 
@@ -85,7 +83,7 @@ export default class SkillTreeGui {
         };
 
         viewport.addEventListener('mousedown', (e) => {
-            // Impede que a movimentação do mapa (Pan) roube o Drag & Drop da habilidade
+    //? Impede que a navegação por pan intercepte o drag-and-drop de habilidades
             if ((e.target as HTMLElement).closest('.skill-node')) return;
             
             this.isDragging = true;
@@ -98,7 +96,6 @@ export default class SkillTreeGui {
                 this.customDragGhost.style.left = `${e.clientX - 24}px`;
                 this.customDragGhost.style.top = `${e.clientY - 24}px`;
                 
-                // Visual de hover nos slots
                 const hoverTarget = document.elementFromPoint(e.clientX, e.clientY);
                 const slotEl = hoverTarget?.closest('.loadout-slot:not(.locked)');
                 
@@ -132,7 +129,6 @@ export default class SkillTreeGui {
                     }
                 }
                 
-                // Limpa bordas
                 const allSlots = Array.from(this.container.querySelectorAll('.loadout-slot'));
                 allSlots.forEach(s => (s as HTMLElement).style.borderColor = '');
                 
@@ -145,18 +141,16 @@ export default class SkillTreeGui {
         viewport.addEventListener('wheel', (e) => {
             e.preventDefault();
             this.scale += e.deltaY * -0.001;
-            this.scale = Math.min(Math.max(0.4, this.scale), 2.5); // Limita o Zoom entre 0.4x e 2.5x
+            this.scale = Math.min(Math.max(0.4, this.scale), 2.5); //? Limite de zoom da árvore entre 0.4x e 2.5x
             scheduleTransform();
         }, { passive: false });
         
-        // Lógica do botão de abrir/fechar o painel lateral
         const toggleBtn = this.container.querySelector('#st-toggle-loadout') as HTMLElement;
         const loadoutPanel = this.container.querySelector('.loadout-panel') as HTMLElement;
         if (toggleBtn && loadoutPanel) {
             toggleBtn.onclick = () => { loadoutPanel.classList.toggle('collapsed'); };
         }
 
-        // Permite o arraste visual em toda a tela para evitar o cursor 🚫
         this.container.addEventListener('dragover', (e) => {
             e.preventDefault();
             if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
@@ -169,7 +163,6 @@ export default class SkillTreeGui {
         this.isVisible = !this.isVisible;
         this.container.style.display = this.isVisible ? 'flex' : 'none';
         
-        // Centraliza a visão na primeira vez que abre (olhando mais para a base da árvore)
         if (this.isVisible) {
             const canvas = this.container.querySelector('.skill-tree-canvas') as HTMLElement;
             const viewport = this.container.querySelector('.skill-tree-viewport') as HTMLElement;
@@ -180,9 +173,7 @@ export default class SkillTreeGui {
                 const canvasHeight = 1050;
                 
                 this.scale = 0.85;
-                // Centraliza no eixo X
                 this.translateX = (viewportWidth - (canvasWidth * this.scale)) / 2; 
-                // Coloca a visão centralizada verticalmente
                 this.translateY = Math.max(10, (viewportHeight - (canvasHeight * this.scale)) / 2); 
                 canvas.style.transform = `translate3d(${this.translateX.toFixed(2)}px, ${this.translateY.toFixed(2)}px, 0px) scale(${this.scale.toFixed(3)})`;
             }
@@ -196,7 +187,6 @@ export default class SkillTreeGui {
     public update(data: EntityRenderableState): void {
         if (!this.isVisible || !data.classes) return;
         
-        // 1. Atualiza os pontos disponíveis apenas se alterou
         const pointsEl = this.pointsEl;
         if (pointsEl && data.attributes) {
             const ptsStr = (data.attributes.availablePoints ?? 0).toString();
@@ -205,8 +195,7 @@ export default class SkillTreeGui {
             }
         }
 
-        // 2. Renderização dos Painéis de Loadout e Eventos de Soltar (Drop)
-        // Usa um hash isolado para o Loadout para não engatilhar recriação pesada na árvore central
+    //! Hash isolado de loadout para evitar renderização desnecessária da árvore de nós
         const level = data.level || 1;
         const loadoutHash = JSON.stringify(data.activeLoadout) + level;
         
@@ -222,7 +211,6 @@ export default class SkillTreeGui {
                     const reqLevel = slotRequirements[index]!;
                     const isUnlocked = level >= reqLevel;
 
-                    // Gerencia o visual de trancado/destrancado com base no Nível
                     if (isUnlocked) {
                         el.classList.remove('locked');
                         const reqSpan = el.querySelector('.slot-req');
@@ -243,7 +231,6 @@ export default class SkillTreeGui {
                         }
                     }
 
-                    // Renderiza o visual do item atualmente equipado
                     const equippedId = data.activeLoadout![index];
                     const existingImg = el.querySelector('.equipped-skill-indicator');
                     if (existingImg) existingImg.remove();
@@ -256,7 +243,6 @@ export default class SkillTreeGui {
                             const img = document.createElement('div');
                             img.className = 'equipped-skill-indicator';
                             
-                            // Verifica se a skill pertence à classe atual (Árvore atual)
                             const isFromActiveClass = data.skillTree?.some(s => s.id === equippedId);
                             if (!isFromActiveClass) {
                                 img.style.filter = 'grayscale(100%) opacity(0.4)';
@@ -284,7 +270,6 @@ export default class SkillTreeGui {
             }
         }
 
-        // 3. Atualiza a árvore visual (Pesada) - Uso estrito do Hash aqui!
         const activeClass = data.classes.find(c => c.isActive);
         const hasPoints = (data.attributes?.availablePoints ?? 0) > 0 ? 1 : 0;
         let skillsStateSignature = '';
@@ -408,14 +393,13 @@ export default class SkillTreeGui {
             if (existingIndicator) existingIndicator.remove();
         }
 
-        // Apenas habilidades liberáveis podem ser clicadas para desbloquear
         if (stateClass === 'can-unlock') {
             btn.onclick = () => this.skillActionCallback('unlock', { skillId: skill.id });
         } else {
             btn.onclick = null;
         }
 
-        // Apenas habilidades ativas/essenciais/raras e já desbloqueadas podem ser arrastadas
+        //? Apenas habilidades ativas ou essenciais desbloqueadas podem ser arrastadas
         if (stateClass === 'unlocked' && (skill.type === 'active' || skill.type === 'essential' || skill.type === 'rare')) {
             btn.onmousedown = (e) => {
                 e.preventDefault();
@@ -465,7 +449,7 @@ export default class SkillTreeGui {
         const skillsMap = new Map<string, any>(data.skillTree.map(s => [s.id, s]));
         const hasAvailablePoints = !!(data.attributes && data.attributes.availablePoints > 0);
 
-        // Se a estrutura (classe e IDs de nós) não mudou e os elementos estão montados, atualiza in-place (Zero DOM Destruction!)
+    //! Atualização in-place de nós sem recriar elementos DOM caso a topologia não tenha mudado
         if (this.lastStructureKey === structureKey && this.nodeElements.size === data.skillTree.length) {
             for (let i = 0; i < data.skillTree.length; i++) {
                 const skill = data.skillTree[i]!;
@@ -498,7 +482,6 @@ export default class SkillTreeGui {
 
         const layout = this.computeTreeLayout(data.skillTree, activeClass?.name);
 
-        // 1. Linhas Guias de Tier Horizontais (Fundo)
         const tierGuides = [
             { label: 'T4 / ÁPICE', y: 120 },
             { label: 'T3', y: 380 },
@@ -524,7 +507,6 @@ export default class SkillTreeGui {
             nodesLayer.appendChild(label);
         });
 
-        // 2. Cabeçalhos dos Ramos Independentes
         if (layout.branches?.titleA && layout.branches.xA !== undefined) {
             const headerA = document.createElement('div');
             headerA.className = 'branch-header';
@@ -542,7 +524,6 @@ export default class SkillTreeGui {
             nodesLayer.appendChild(headerB);
         }
 
-        // 3. Conexões Bézier Cúbicas SVG
         data.skillTree.forEach(skill => {
             const parentId = skill.dependencies?.[0] || skill.requiredSkillId;
             if (parentId && layout.positions.has(parentId) && layout.positions.has(skill.id)) {
@@ -575,7 +556,6 @@ export default class SkillTreeGui {
             }
         });
 
-        // 4. Renderização dos Nós da Árvore
         data.skillTree.forEach(skill => {
             const pos = layout.positions.get(skill.id);
             if (!pos) return;
@@ -600,7 +580,6 @@ export default class SkillTreeGui {
 
             this.updateNodeElementState(btn, skill, hasAvailablePoints);
 
-            // Floating details tooltip
             btn.addEventListener('mouseenter', (e) => {
                 const currentSkill = (btn as any).__currentSkill || skill;
                 const currentStateClass = (btn as any).__currentStateClass || 'locked';
@@ -636,11 +615,10 @@ export default class SkillTreeGui {
             }
         });
 
-        // Raiz (nó que não tem parentId presente na lista de habilidades)
         const roots = skills.filter(s => !parentMap.has(s.id));
         const rootId = roots[0]?.id;
 
-        // Rastreia o tronco base (Stem) até o primeiro ponto de bifurcação
+    //? Rastreia o tronco base (Stem) da árvore até o ponto de bifurcação de ramos
         const stem: string[] = [];
         let forkNodeId: string | null = null;
         let currId: string | null = rootId;
@@ -660,7 +638,7 @@ export default class SkillTreeGui {
 
         const centerX = 480;
 
-        // Se houver bifurcação em 2 ramos independentes
+    //? Posiciona bifurcação em dois ramos independentes (Ramo A à esquerda e Ramo B à direita)
         if (forkNodeId && (childrenMap.get(forkNodeId)?.length || 0) >= 2) {
             const forkChildren = childrenMap.get(forkNodeId)!;
             const branchAChild = forkChildren[0]!;
@@ -680,7 +658,6 @@ export default class SkillTreeGui {
             const branchA = collectBranch(branchAChild);
             const branchB = collectBranch(branchBChild);
 
-            // Posiciona os nós da base (Stem)
             if (stem.length === 1) {
                 positions.set(stem[0]!, { x: centerX, y: 840 });
             } else if (stem.length >= 2) {
@@ -692,7 +669,6 @@ export default class SkillTreeGui {
                 });
             }
 
-            // Posiciona Ramo A (Esquerda) e Ramo B (Direita)
             const leftX = 260;
             const rightX = 700;
             const branchStartY = 640;
@@ -730,7 +706,7 @@ export default class SkillTreeGui {
             };
         }
 
-        // Caso Linear sem ramificações (Mago, Gunslinger, Pescador)
+    //? Disposição linear para classes sem ramificação (Mago, Gunslinger, Pescador)
         const allOrdered: string[] = [];
         let traceId: string | null = rootId;
         while (traceId) {

@@ -6,7 +6,7 @@ import { EventHandler } from "../../domain/eventDispacher/eventDispacher";
 import { logger } from "./shared/Logger";
 import { CollisionAdapter } from "../../domain/ports/CollisionAdapter";
 
-//* Auto-carrega todos os arquivos de representação visual para disparar os Decorators de Registro
+//? Auto-carrega todos os arquivos de representação visual para disparar os Decorators de Registro
 import.meta.glob('./components/gameObjectModule/**/*.ts', { eager: true });
 
 /** Configuração inicial do jogo. O jogador nasce no spawn oficial da vila: a praça octogonal em frente à Fonte do Despertar (Chunk Central 0,0). */

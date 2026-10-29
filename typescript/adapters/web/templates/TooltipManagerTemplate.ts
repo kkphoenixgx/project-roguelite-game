@@ -74,12 +74,12 @@ export class TooltipManagerTemplate {
     let x = clientX + offset;
     let y = clientY + offset;
 
-    // Clamping Horizontal: se vazar da direita, inverte para a esquerda do cursor
+    //? Clamping horizontal: inverte orientação para a esquerda do cursor se vazar a borda direita
     if (x + rect.width > winWidth - 10) {
       x = clientX - rect.width - offset;
     }
 
-    // Clamping Vertical: se vazar de baixo, inverte para cima do cursor
+    //? Clamping vertical: inverte orientação para cima do cursor se ultrapassar a borda inferior
     if (y + rect.height > winHeight - 10) {
       y = clientY - rect.height - offset;
     }

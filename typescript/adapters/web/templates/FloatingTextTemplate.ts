@@ -122,8 +122,8 @@ export class FloatingTextEntity {
       return;
     }
 
-    const t = this.elapsed / this.duration; // 0.0 -> 1.0
-    // Subida com desaceleração e pequeno arco
+    const t = this.elapsed / this.duration;
+    //? Trajetória parabólica de elevação do texto flutuante com desaceleração suave
     const rise = (1 - Math.pow(1 - t, 2)) * 40;
     this.y = this.initialY - rise;
     this.x += (this.driftX * deltaTime);
@@ -141,12 +141,11 @@ export class FloatingTextEntity {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Borda preta de contraste para legibilidade em qualquer fundo
+    //? Contorno escuro para garantir contraste em cenários claros e escuros
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 3;
     ctx.strokeText(this.text, this.x, this.y);
 
-    // Preenchimento com cor vibrante
     ctx.fillStyle = this.color;
     ctx.fillText(this.text, this.x, this.y);
 

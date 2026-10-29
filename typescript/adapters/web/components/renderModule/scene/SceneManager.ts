@@ -67,13 +67,13 @@ export default class SceneManager {
       visual.timeRemaining -= deltaTime;
       if (visual.timeRemaining <= 0) {
         this.transientVisuals.delete(id);
-        if (this.debugRenderables.has(id)) this.debugRenderables.delete(id); // Efeitos usam ID negativo como debug ID
+        if (this.debugRenderables.has(id)) this.debugRenderables.delete(id);
       } else {
         if (visual.animationManager) {
             visual.animationManager.update(deltaTime);
         }
         
-        // Cola o VFX no player e faz acompanhar o mouse continuamente!
+        //? Vincula VFX à entidade e orienta rotação continuamente em direção ao cursor do mouse
         const config = RenderRegistry.spriteConfigs.get(`${visual.state.entityTypeId}-active`) || RenderRegistry.spriteConfigs.get(`${visual.state.entityTypeId}-travelling`);
         if (playerRenderable && config && config.anchor && config.anchor !== 'center') {
             const pCenterX = playerRenderable.coordinates.x + playerRenderable.size.width / 2;
@@ -116,8 +116,7 @@ export default class SceneManager {
         finalRotation = Math.atan2(payload.direction.y, payload.direction.x);
     }
 
-    // Identifica a âncora visual para alinhar o ponto de origem do Domínio (payload.coordinates)
-    // com o pivô geométrico da sprite, ajustando o top-left do DTO.
+    //? Alinha a âncora visual do sprite com as coordenadas de origem enviadas pelo Domínio
     let anchor: any = 'center';
     const config = RenderRegistry.spriteConfigs.get(`${payload.type}-active`) || RenderRegistry.spriteConfigs.get(`${payload.type}-travelling`);
     if (config && config.anchor) {
@@ -137,8 +136,7 @@ export default class SceneManager {
         case 'bottom-center': anchorX = 0.0; anchorY = 0.5; break;
     }
 
-    // O Domínio normalmente envia as coordenadas como o Top-Left de uma caixa já centralizada.
-    // Portanto, o "centro alvo" real do ataque no mundo é:
+    //? O Domínio envia o Top-Left da caixa; calcula o centro real geométrico no mundo
     let targetCenterX = payload.coordinates.x + payload.size.width / 2;
     let targetCenterY = payload.coordinates.y + payload.size.height / 2;
 
@@ -147,8 +145,7 @@ export default class SceneManager {
         const pCenterX = playerRenderable.coordinates.x + playerRenderable.size.width / 2;
         const pCenterY = playerRenderable.coordinates.y + playerRenderable.size.height / 2;
         
-        // SNAP MÁGICO: Se for um VFX com âncora corporal (ex: espada),
-        // anulamos o offset físico do Domínio e cravamos o pivô visual estritamente no centro do personagem!
+        //? Para VFX com ancoragem corporal, centraliza o pivô visual exatamente no centro da entidade
         if (config?.anchor && config.anchor !== 'center') {
             targetCenterX = pCenterX;
             targetCenterY = pCenterY;
@@ -158,12 +155,12 @@ export default class SceneManager {
         }
     }
 
-    // Calcula o novo Top-Left da sprite para que a 'âncora' (ex: bottom-left) caia milimetricamente no alvo
+    //? Calcula o novo Top-Left da sprite para que a âncora caia milimetricamente no alvo
     const topLeftX = targetCenterX - (payload.size.width / 2) - (anchorX * payload.size.width);
     const topLeftY = targetCenterY - (payload.size.height / 2) - (anchorY * payload.size.height);
 
     const state: EntityRenderableState = {
-      id: this.nextTransientId--, // Mock ID negativo para não colidir com entidades reais
+      id: this.nextTransientId--,
       entityTypeId: payload.type as any,
       coordinates: { x: topLeftX, y: topLeftY },
       size: payload.size,
@@ -197,7 +194,7 @@ export default class SceneManager {
             const config = (transientData.renderable as any).config;
             if (config) { anchor = config.anchor; rotationOffset = config.rotationOffset || 0; }
         }
-        this.debugRenderables.set(state.id, new DebugRectangle(state.id, state, anchor, rotationOffset)); // O próprio ID negativo age como âncora
+        this.debugRenderables.set(state.id, new DebugRectangle(state.id, state, anchor, rotationOffset));
     }
   }
 
@@ -209,7 +206,7 @@ export default class SceneManager {
     for (const state of domainStates) {
       this.activeIds.add(state.id);
       
-      // A MÁGICA: Emissão de Aura Contínua se o DTO tiver elementos dinâmicos
+      //? Emite partículas elementais contínuas vinculadas à entidade quando houver elementos ativos
       if (state.spellElements && state.spellElements.length > 0) {
           const centerX = state.coordinates.x + state.size.width / 2;
           const centerY = state.coordinates.y + state.size.height / 2;
@@ -241,7 +238,7 @@ export default class SceneManager {
 
       if (this.isDebugMode) {
         state.hitboxes?.forEach((hitboxState, index) => {
-          // Deslocamento de bits destrói o GC Thrashing da interpolação de strings
+          //! Otimização Zero-GC: hash numérico com bitwise shift substitui interpolação de string
           const debugId = (state.id << 4) | index;
           this.activeDebugIds.add(debugId);
 
@@ -269,7 +266,7 @@ export default class SceneManager {
     }
     if (this.isDebugMode) {
       for (const id of this.debugRenderables.keys()) {
-        // IDs transitórios de VFX são nativamente negativos. Preservamos-os do apagão ativo.
+        //? IDs transitórios de VFX são preservados da limpeza de entidades ativas
         if (id >= 0 && !this.activeDebugIds.has(id)) {
             this.debugRenderables.delete(id);
         }

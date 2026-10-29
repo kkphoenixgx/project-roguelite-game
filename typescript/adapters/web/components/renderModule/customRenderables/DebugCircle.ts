@@ -5,7 +5,6 @@ import type IRenderable from "../visuals/IRenderable";
  * Uma implementação de IRenderable específica para desenhar uma hitbox circular para depuração.
  */
 export default class DebugCircle implements IRenderable {
-    // Propriedades do contrato IRenderable
     id: number;
     coordinates: { x: number; y: number };
     size: { width: number; height: number };
@@ -32,7 +31,7 @@ export default class DebugCircle implements IRenderable {
     draw(ctx: CanvasRenderingContext2D): void {
         ctx.beginPath();
         ctx.arc(this.center.x, this.center.y, this.radius, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)'; // Vermelho semitransparente
+        ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
         ctx.lineWidth = 1;
         ctx.stroke();
     }

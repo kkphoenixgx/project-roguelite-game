@@ -31,7 +31,7 @@ export class Exporter {
                 </p>
 
                 <div class="code-preview-container">
-                    <pre><code id="export-code-block">// Código será gerado aqui...</code></pre>
+                    <pre><code id="export-code-block">/* Código será gerado aqui... */</code></pre>
                 </div>
 
                 <div class="modal-actions-bar">
@@ -72,7 +72,7 @@ export class Exporter {
             return `// Nenhum asset posicionado no mapa ${mapConfig.name}. Arraste assets da gaveta para adicioná-los!`;
         }
 
-        // Agrupa por Chunks de 1024px para organização exemplar do código
+        //? Agrupa por Chunks de 1024px para organização espacial do código gerado
         const chunkSize = mapConfig.chunkSize || 1024;
         const chunkGroups = new Map<string, PlacedAssetModel[]>();
 

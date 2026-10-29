@@ -21,8 +21,6 @@ export default class Renderer implements IRenderer<IRenderableObject> {
   }
 
   public async initialize(): Promise<void> {
-    // O renderizador Canvas 2D não precisa de inicialização assíncrona,
-    // então apenas retornamos uma promessa resolvida.
     return Promise.resolve();
   }
 
@@ -44,10 +42,10 @@ export default class Renderer implements IRenderer<IRenderableObject> {
     ctx.save();
     this.camera.applyTransform(ctx, world);
     
-    // Pixel-art nítido e renderização ultrarrápida: desativa interpolação pesada na CPU
+    //! Pixel-art nítido e renderização ultrarrápida: desativa interpolação pesada na CPU
     ctx.imageSmoothingEnabled = false;
 
-    // Desenha a matriz dinâmica de 9 chunks em volta do jogador
+    //? Desenha a matriz dinâmica de 9 chunks em volta do jogador
     let targetX = 0; let targetY = 0;
     if (cameraTarget) {
         targetX = cameraTarget.coordinates.x + cameraTarget.size.width / 2;
@@ -55,7 +53,7 @@ export default class Renderer implements IRenderer<IRenderableObject> {
     }
     map?.draw(ctx, targetX, targetY, this.camera);
     
-    // Frustum Culling: Renderiza apenas objetos dentro da viewport da câmera (Zero-GC loop)
+    //! Frustum Culling: Renderiza apenas objetos dentro da viewport da câmera (Zero-GC loop)
     this.lastDrawnCount = 0;
     this.lastCulledCount = 0;
 

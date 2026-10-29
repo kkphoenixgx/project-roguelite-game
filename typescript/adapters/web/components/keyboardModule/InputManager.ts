@@ -86,7 +86,7 @@ export class InputManager {
       oldKeys.forEach(k => this.keyMap.delete(k));
     }
 
-    this.actionMap.set(action, []); // Limpa o array antigo para o novo remapeamento
+    this.actionMap.set(action, []);
     this.setKeyForAction(action, normalizedNewKey);
     logger.log('init', `Action '${action}' remapped to key '${normalizedNewKey}'.`);
   }
@@ -101,17 +101,15 @@ export class InputManager {
       }
     });
 
-    // Fallback de Segurança: Garante que a tecla F invoque a magia F se não estiver no JSON
+    //? Fallbacks de segurança: atalhos essenciais são garantidos mesmo se keymap.json estiver desatualizado
     if (!this.actionMap.has('spell_f')) {
       this.setKeyForAction('spell_f', 'f');
     }
 
-    // Fallback de Segurança: Garante que o Z funcione para interação mesmo se o keymap.json estiver desatualizado ou com erro.
     if (!this.actionMap.has('interact')) {
       this.setKeyForAction('interact', 'z');
     }
 
-    // Fallback de Segurança: Atalhos padrão para os slots de habilidade (Loadout) independentes do Mago
     if (!this.actionMap.has('slot_1')) this.setKeyForAction('slot_1', '1');
     if (!this.actionMap.has('slot_2')) this.setKeyForAction('slot_2', '2');
     if (!this.actionMap.has('slot_3')) this.setKeyForAction('slot_3', '3');
@@ -141,8 +139,7 @@ export class InputManager {
   }
 
   private handleBlur(): void {
-    // Quando a janela perde o foco (alt+tab ou clique fora), limpamos as teclas
-    // para evitar que o personagem continue andando sozinho ("sticky keys").
+    //? Limpa estado de teclas em 'blur' para prevenir movimento involuntário contínuo (sticky keys)
     logger.log('input', 'Window lost focus. Clearing pressed keys.');
     this.pressedKeys.clear();
     this.justPressedKeys.clear();
@@ -157,8 +154,7 @@ export class InputManager {
   }
 
   private handleBeforeUnload(e: BeforeUnloadEvent): void {
-    // Zero modais nativos: confirmações de saída são gerenciadas exclusivamente pelo ConfirmationModal
-    // e interceptadores de janela do Tauri, impedindo que o navegador/webview gere diálogos nativos.
+    //! Zero modais nativos: confirmações de saída delegadas ao ConfirmationModal e Tauri sem diálogos nativos do browser
   }
 
   private handleClick(e: MouseEvent) {
@@ -167,12 +163,11 @@ export class InputManager {
   }
 
   private handleMouseDown(e: MouseEvent) {
-
-    // Força a atualização imediata da mira na hora do clique
+    //? Atualiza mira imediatamente no momento do clique pointerdown
     this.mouseLastCoordinates.x = e.clientX;
     this.mouseLastCoordinates.y = e.clientY;
 
-    // Previne comportamentos padrão (seleção de texto no canvas, auto-scroll do middle click)
+    //? Previne seleção de texto e auto-scroll no canvas
     if (e.target instanceof HTMLCanvasElement || e.button === 1 || e.button === 2) {
       e.preventDefault();
     }
@@ -212,8 +207,6 @@ export class InputManager {
     this.justPressedKeys.delete(key);
   }
 
-  // private handleLeftClick(e: PointerEvent ) {}
-
   private handleRightClick(e: MouseEvent) {
     e.preventDefault()
   }
@@ -221,15 +214,15 @@ export class InputManager {
   private handleKeyDown(e: KeyboardEvent): void {
     let key = e.key.toLowerCase();
 
-    // Diferencia os números do teclado físico superior dos números do Numpad
+    //? Normaliza leitura de números entre teclas de topo (DigitX) e Numpad
     if (e.location === KeyboardEvent.DOM_KEY_LOCATION_NUMPAD) {
       key = `numpad_${key}`;
     }
 
     const isBrowserShortcut =
-      ((e.ctrlKey || e.metaKey) && ['s', 'p', 'f', 'g', 'r', 'j', 'u', 'd', 'h', 'w', 't', 'n'].includes(key)) || // Atalhos com Ctrl
-      ['f3', 'f5', 'f6', 'f7'].includes(key) || // Teclas de função
-      (e.altKey && ['arrowleft', 'arrowright'].includes(key)); // Alt + Setas (Voltar/Avançar página)
+      ((e.ctrlKey || e.metaKey) && ['s', 'p', 'f', 'g', 'r', 'j', 'u', 'd', 'h', 'w', 't', 'n'].includes(key)) ||
+      ['f3', 'f5', 'f6', 'f7'].includes(key) ||
+      (e.altKey && ['arrowleft', 'arrowright'].includes(key));
 
     if (isBrowserShortcut) {
       e.preventDefault();

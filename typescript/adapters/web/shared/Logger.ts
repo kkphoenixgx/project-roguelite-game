@@ -12,7 +12,7 @@ import { TelemetryAdapter } from "../../TelemetryAdapter/TelemetryAdapterSinglet
  */
 class Logger implements ILogger {
   /** @private Um Set contendo os canais de log que estão atualmente ativos. */
-  private activeChannels: Set<LogChannel> = new Set(['init', 'error']); // Ativa 'init', 'error' e 'npc' por padrão.
+  private activeChannels: Set<LogChannel> = new Set(['init', 'error']);
   /** @private Um Set contendo os canais que devem exibir um stack trace completo. */
   private traceEnabledChannels: Set<LogChannel> = new Set();
 
@@ -51,7 +51,7 @@ class Logger implements ILogger {
 
   /** Ativa o modo de stack trace para um ou mais canais. Eles também serão ativados se já não estiverem. @param channels Os canais para os quais o trace será ativado. */
   public enableTrace(...channels: LogChannel[]): void {
-    this.enable(...channels); // Garante que o canal esteja ativo
+    this.enable(...channels);
     channels.forEach(c => this.traceEnabledChannels.add(c));
     console.log(`[Logger] Enabled TRACE for channels: ${channels.join(', ')}. Active traces: [${Array.from(this.traceEnabledChannels).join(', ')}]`);
   }

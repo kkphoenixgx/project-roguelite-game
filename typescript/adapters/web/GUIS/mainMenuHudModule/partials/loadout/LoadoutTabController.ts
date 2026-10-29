@@ -7,7 +7,6 @@ export default class LoadoutTabController {
     private container: HTMLElement;
     private domain: IGameDomain;
     
-    // Armazena as seleções no front-end para despachar quando o jogo iniciar
     public selectedActiveLoadout: (string | null)[] = [null, null, null, null];
     public selectedPassiveLoadout: (string | null)[] = [null, null, null, null];
     
@@ -21,7 +20,6 @@ export default class LoadoutTabController {
         this.injectStructure();
         this.renderLoadout();
         
-        // Listen to tab activation (fallback)
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.attributeName === 'class' && this.container.classList.contains('active')) {
@@ -197,7 +195,6 @@ export default class LoadoutTabController {
             </div>
         `;
 
-        // Bind tab switching
         const tabs = this.container.querySelectorAll('.inv-tab-btn');
         tabs.forEach(tab => {
             (tab as HTMLElement).onclick = () => {
@@ -208,16 +205,13 @@ export default class LoadoutTabController {
                 (tab as HTMLElement).style.color = 'var(--accent-gold)';
                 tab.classList.add('active');
                 
-                // Set new tab
                 this.currentTab = (tab as HTMLElement).dataset.tab as 'todos' | 'ativo' | 'passivo';
-                // Reset tag filter on tab change
                 this.currentTagFilter = 'todos';
                 
                 this.renderLoadout();
             };
         });
 
-        // Bind filter dropdown
         const filterBtn = this.container.querySelector('#filter-dropdown-btn') as HTMLElement;
         const filterMenu = this.container.querySelector('#filter-dropdown-menu') as HTMLElement;
         filterBtn.onclick = () => {
@@ -229,7 +223,7 @@ export default class LoadoutTabController {
         const domainBrooches = (this.domain.globalMetaSummary as any)?.brooches || [];
         const broochMap = new Map<string, any>();
 
-        // Registra os do domínio (broches legitimamente desbloqueados)
+    //? Registra broches legitimamente desbloqueados no domínio
         domainBrooches.forEach((b: any) => {
             const id = typeof b === 'string' ? b : b?.id;
             if (id && typeof id === 'string' && id.startsWith('brooch_')) {
@@ -238,7 +232,7 @@ export default class LoadoutTabController {
             }
         });
 
-        // Garante que qualquer broche equipado no loadout atual esteja presente
+    //? Garante que qualquer broche equipado no loadout atual esteja presente na lista
         [...this.selectedActiveLoadout, ...this.selectedPassiveLoadout].forEach(id => {
             if (id && typeof id === 'string' && id.startsWith('brooch_') && !broochMap.has(id)) {
                 const found = GlobalBroochPool.find(b => b.id === id);
@@ -262,7 +256,6 @@ export default class LoadoutTabController {
         
         filterMenu.innerHTML = '';
         
-        // Coletar tags únicas para a tab atual
         const allTags = new Set<string>();
         brooches.forEach(b => {
             const matchTab = this.currentTab === 'todos' || b.type === this.currentTab;
@@ -271,7 +264,6 @@ export default class LoadoutTabController {
             }
         });
 
-        // Update button text to reflect selected filter
         filterBtn.textContent = this.currentTagFilter === 'todos' ? 'FILTRAR ▼' : `#${this.currentTagFilter.toUpperCase()} ▼`;
 
         const createOption = (label: string, filterVal: string) => {
@@ -300,7 +292,6 @@ export default class LoadoutTabController {
         const inventory = this.container.querySelector('#brooch-inventory') as HTMLElement;
         inventory.innerHTML = '';
         
-        // Aplicar filtro
         const filtered = brooches.filter(b => {
             if (this.currentTab !== 'todos' && b.type !== this.currentTab) return false;
             if (this.currentTagFilter === 'todos') return true;
@@ -332,7 +323,7 @@ export default class LoadoutTabController {
             const el = this.createBroochElement(brooch);
 
             if (this.isBroochEquipped(brooch.id)) {
-                // Broche já equipado: estado "disabled" em escala de cinza, sem arraste
+    //? Broche já equipado: exibe estado disabled em escala de cinza impedindo drag duplo
                 el.draggable = false;
                 el.classList.add('brooch-equipped-disabled');
                 el.style.filter = 'grayscale(100%) brightness(0.6)';
@@ -366,7 +357,6 @@ export default class LoadoutTabController {
         const getBrooch = (id: string | null) => allBrooches.find((b: any) => b.id === id) || (id ? GlobalBroochPool.find(b => b.id === id) : null);
 
         for (let i = 0; i < 4; i++) {
-            // Active Slots: Half-Pill glued to the left
             activeContainer.appendChild(this.createSlotElement(i, 'ativo', getBrooch(this.selectedActiveLoadout[i] || null), `
                 width: 100%; height: 70px;
                 border: 2px dashed rgba(255,255,255,0.2);
@@ -377,7 +367,6 @@ export default class LoadoutTabController {
                 background: rgba(0,0,0,0.3);
             `));
             
-            // Passive Slots: Pedestals in the top row
             passiveContainer.appendChild(this.createSlotElement(i, 'passivo', getBrooch(this.selectedPassiveLoadout[i] || null), `
                 width: 80px; height: 80px;
                 border: 2px dashed rgba(255,255,255,0.2);
@@ -391,7 +380,6 @@ export default class LoadoutTabController {
 
     private createBroochElement(brooch: any): HTMLElement {
         const div = document.createElement('div');
-        // Define as classes para estilização via CSS do jogo
         div.className = `brooch-inventory-item ${brooch.type === 'ativo' ? 'sun-brooch-slot' : 'triangle-passive-slot'} filled`;
         div.style.cssText = `
             width: 72px; height: 72px; 
@@ -401,18 +389,16 @@ export default class LoadoutTabController {
             border: none;
         `;
         
-        // Use standard svgs
         if (brooch.type === 'ativo') {
             div.innerHTML = SlotSvgAssets.sunBrooch;
         } else {
             div.innerHTML = SlotSvgAssets.trianglePassive;
         }
 
-        // Prioriza o ícone em alta resolução (x2) para nitidez no tamanho ampliado
+      //? Prioriza ícone em alta resolução (x2) para nitidez no tamanho ampliado
         const iconEntry = (SkillIcons as any)[brooch.id];
         const broochIcon: string | undefined = iconEntry?.icon80Url || iconEntry?.icon40Url;
 
-        // Ajusta o SVG: com ícone, vira apenas moldura de raios atrás do medalhão
         const svgEl = div.querySelector('svg');
         if (svgEl) {
             svgEl.setAttribute('width', '72');
@@ -442,7 +428,6 @@ export default class LoadoutTabController {
             div.appendChild(iconImg);
         }
 
-        // Tooltip logic
         const tooltip = document.getElementById('brooch-tooltip') as HTMLElement;
         div.onmouseenter = (e) => {
             tooltip.style.display = 'block';
@@ -466,23 +451,21 @@ export default class LoadoutTabController {
         slot.style.cssText = customStyle;
 
         const reqLevel = [1, 5, 10, 15][index];
-        const isLocked = false; // Substitua pela lógica real do nível do personagem global no meta, se houver
+        const isLocked = false;
         
         if (brooch) {
             const bEl = this.createBroochElement(brooch);
             bEl.style.transform = 'scale(0.8)';
             bEl.style.position = 'relative';
             
-            // Allow removing
             bEl.onclick = () => {
                 if (type === 'ativo') this.selectedActiveLoadout[index] = null;
                 else this.selectedPassiveLoadout[index] = null;
-                this.renderLoadout(); // Atualiza inventário (remove o estado cinza) e slots
+                this.renderLoadout();
             };
             
             slot.appendChild(bEl);
         } else {
-            // Desenha o Empty State do Wireframe (Sinal de + ou Cadeado)
             const iconSpan = document.createElement('span');
             iconSpan.style.fontSize = '24px';
             iconSpan.style.color = '#555';
@@ -495,7 +478,6 @@ export default class LoadoutTabController {
             slot.appendChild(iconSpan);
         }
 
-        // Drop logic
         slot.ondragover = (e) => e.preventDefault();
         slot.ondrop = (e) => {
             e.preventDefault();
@@ -503,11 +485,11 @@ export default class LoadoutTabController {
                 const allBrooches = this.getConsolidatedBrooches();
                 const draggedObj = allBrooches.find((b: any) => b.id === this.draggedBrooch) || GlobalBroochPool.find(b => b.id === this.draggedBrooch);
                 
-                // Cada broche só pode ocupar um único slot
+    //? Regra de unicidade: cada broche só pode ocupar um único slot no loadout
                 if (draggedObj && draggedObj.type === type && !this.isBroochEquipped(this.draggedBrooch)) {
                     if (type === 'ativo') this.selectedActiveLoadout[index] = this.draggedBrooch;
                     else this.selectedPassiveLoadout[index] = this.draggedBrooch;
-                    this.renderLoadout(); // Atualiza inventário (aplica o estado cinza) e slots
+                    this.renderLoadout();
                 }
                 this.draggedBrooch = null;
             }

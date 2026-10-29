@@ -141,14 +141,13 @@ export default class ConfirmationModalGui extends BaseGuiTemplate {
                 this.btnCancel.style.display = options.showCancel === false ? 'none' : 'inline-block';
             }
 
-            // Atualiza classe de variante no dialog
             if (this.dialogEl) {
                 this.dialogEl.classList.remove('variant-danger', 'variant-warning', 'variant-info', 'variant-success');
                 this.dialogEl.classList.add(`variant-${variant}`);
             }
 
             this.show();
-            // Foco inicial no botão de confirmação ou cancelamento
+            //? Em variantes de perigo ('danger'), focaliza 'Cancelar' por segurança ergonômica
             if (options.variant === 'danger') {
                 this.btnCancel?.focus();
             } else {
@@ -170,7 +169,7 @@ export default class ConfirmationModalGui extends BaseGuiTemplate {
 
     public override show(): void {
         this.container.style.display = 'flex';
-        // Força reflow mínimo para transição suave de opacidade
+        //? Força reflow no DOM para disparar transição CSS de abertura sem salto de renderização
         void this.container.offsetWidth;
         this.container.classList.remove('is-hidden');
         this.container.classList.add('is-open');
