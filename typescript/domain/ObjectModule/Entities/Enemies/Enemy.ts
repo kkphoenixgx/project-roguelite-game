@@ -30,7 +30,9 @@ export default abstract class Enemy extends Entity {
   }
 
   public onStrike(): Attack | null {
-    if (this.activeStatuses.has('stun') || this.activeStatuses.has('paralyze')) return null; // CC previne ataques inimigos
+    //? Efeitos de controle de grupo (stun/paralyze) impedem ataques inimigos
+
+    if (this.activeStatuses.has('stun') || this.activeStatuses.has('paralyze')) return null;
 
     const now = Date.now();
     if (now - this.lastAttackTimestamp < this.attackCooldown) return null;

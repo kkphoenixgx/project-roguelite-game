@@ -64,7 +64,6 @@ export default class EvolvingClassBase extends Class {
       this._currentStage = minKey;
     }
 
-    // Aplica visual e bônus do estágio inicial
     const currentDef = this.currentStageDefinition;
     if (currentDef && currentDef.visualTint && (this.player as any)) {
       (this.player as any).visualTint = currentDef.visualTint;
@@ -123,12 +122,10 @@ export default class EvolvingClassBase extends Class {
     const reqs = nextDef.evolutionRequirements;
     if (!reqs) return true;
 
-    // 1. Validação de Nível do Jogador
     if (reqs.minPlayerLevel && this.player.attributes.level < reqs.minPlayerLevel) {
       return false;
     }
 
-    // 2. Validação de Marcos de História (Narrative Story Milestones)
     if (reqs.requiredMilestones && reqs.requiredMilestones.length > 0) {
       if (!metaManager) return false;
       for (const milestone of reqs.requiredMilestones) {
@@ -138,7 +135,6 @@ export default class EvolvingClassBase extends Class {
       }
     }
 
-    // 3. Validação Customizada
     if (reqs.customCheck && !reqs.customCheck(this.player, metaManager)) {
       return false;
     }
@@ -169,7 +165,6 @@ export default class EvolvingClassBase extends Class {
     this._currentStage++;
     const newDef = this.currentStageDefinition!;
 
-    // 1. Aplica Modificadores Visuais
     if (newDef.visualTint && (this.player as any)) {
       (this.player as any).visualTint = newDef.visualTint;
     }
@@ -177,7 +172,6 @@ export default class EvolvingClassBase extends Class {
       (this.player as any).visualScale = newDef.visualScale;
     }
 
-    // 2. Aplica Bônus de Atributos Permanentes do Estágio
     if (newDef.attributeBonuses && this.player.attributes) {
       const b = newDef.attributeBonuses;
       if (b.strength) this.player.attributes.strength += b.strength;
@@ -188,12 +182,10 @@ export default class EvolvingClassBase extends Class {
       if (b.charisma) this.player.attributes.charisma += b.charisma;
     }
 
-    // 3. Executa Hook de Entrada do Novo Estágio
     if (newDef.onStageEnter) {
       newDef.onStageEnter(this.player, this.eventManager);
     }
 
-    // 4. Despacha Eventos Semânticos
     this.eventManager.dispatch('classStageAscended', {
       className: this.name,
       oldStage: prevStage,
@@ -208,7 +200,6 @@ export default class EvolvingClassBase extends Class {
       params: []
     });
 
-    // 5. Notifica a UI para atualizar a Skill Tree
     this.eventManager.dispatch('skillTreeUpdated', {
       skills: Array.from((this.player as any).unlockedSkills || []),
       loadout: (this.player as any).activeLoadout,

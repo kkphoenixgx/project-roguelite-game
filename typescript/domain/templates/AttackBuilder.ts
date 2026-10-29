@@ -6,7 +6,6 @@ import type { IEventManager, ParticleEffectType } from "../eventDispacher/IGameE
 import Attack from "../ObjectModule/Items/Attack";
 import Vector2D from "../shared/Vector2D";
 
-// Status importáveis para injeção fluente no OnHit
 import StunStatus from "../ObjectModule/Entities/Status/StunStatus";
 import BurnStatus from "../ObjectModule/Entities/Status/BurnStatus";
 import FreezeStatus from "../ObjectModule/Entities/Status/FreezeStatus";
@@ -41,25 +40,22 @@ export default class AttackBuilder {
   private _damageType: DamageType = 'physical';
   private _onHitActions: OnHitAction[] = [];
 
-  // Escalonamentos customizados além do padrão
   private _strScaling: number = 0;
   private _dexScaling: number = 0;
   private _intScaling: number = 0;
   private _wisScaling: number = 0;
   private _conScaling: number = 0;
 
-  // Modificadores de Crítico
   private _extraCritChance: number = 0;
   private _extraCritDamageMultiplier: number = 1.0;
   private _guaranteedCrit: boolean = false;
 
-  // Condicionais de Combate
-  private _executeThreshold: number = 0; // % de vida do alvo para ativar bônus de execução
+  /** % de vida máxima do alvo para ativar o bônus de execução (Coup de Grâce). */
+  private _executeThreshold: number = 0;
   private _executeBonusDamageMultiplier: number = 1.0;
   private _undeadBonusMultiplier: number = 1.0;
   private _bossBonusMultiplier: number = 1.0;
 
-  // Lifesteal e Manasteal adicionais
   private _extraLifestealPercent: number = 0;
   private _manaLeechAmount: number = 0;
 
@@ -73,10 +69,6 @@ export default class AttackBuilder {
   public static create(attacker: any): AttackBuilder {
     return new AttackBuilder(attacker);
   }
-
-  // ============================================================================
-  // 1. CONFIGURAÇÃO DE DANO BASE E TIPOS
-  // ============================================================================
 
   public withBaseDamage(damage: number): this {
     this._baseDamage = Math.max(0, damage);
@@ -128,10 +120,6 @@ export default class AttackBuilder {
     return this;
   }
 
-  // ============================================================================
-  // 2. ESCALONAMENTO DE ATRIBUTOS (STAT SCALING)
-  // ============================================================================
-
   /** Escala dano baseado na Força do atacante */
   public withStrengthScaling(ratio: number): this {
     this._strScaling += ratio;
@@ -161,10 +149,6 @@ export default class AttackBuilder {
     this._conScaling += ratio;
     return this;
   }
-
-  // ============================================================================
-  // 3. FÍSICAS DE IMPACTO, KNOCKBACK E CONTROLE ESPACIAL
-  // ============================================================================
 
   /**
    * Aplica empurrão (knockback) no alvo atingido na direção do golpe
@@ -202,10 +186,6 @@ export default class AttackBuilder {
     return this;
   }
 
-  // ============================================================================
-  // 4. CRÍTICOS E EXECUÇÕES (COUP DE GRÂCE)
-  // ============================================================================
-
   /** Adiciona bônus fixo de chance crítica (ex: +20%) */
   public withExtraCritChance(chancePercent: number): this {
     this._extraCritChance = chancePercent;
@@ -240,10 +220,6 @@ export default class AttackBuilder {
     this._undeadBonusMultiplier = multiplier;
     return this;
   }
-
-  // ============================================================================
-  // 5. STATUS EFFECTS & DEBUFFS NO IMPACTO
-  // ============================================================================
 
   /** Aplica atordoamento com chance percentual */
   public withStun(durationSeconds: number = 1.5, chancePercent: number = 100): this {
@@ -315,10 +291,6 @@ export default class AttackBuilder {
     return this;
   }
 
-  // ============================================================================
-  // 6. SUSTENTAÇÃO DE RECURSOS (VAMPIRISMO, MANA, COINS)
-  // ============================================================================
-
   /** Adiciona vampirismo percentual baseado no dano causado */
   public withLifesteal(percent: number): this {
     this._extraLifestealPercent += percent;
@@ -330,10 +302,6 @@ export default class AttackBuilder {
     this._manaLeechAmount += amount;
     return this;
   }
-
-  // ============================================================================
-  // 7. DANO EM ÁREA (AoE) E EFEITOS DE CONTATO
-  // ============================================================================
 
   /**
    * Causa dano radial em inimigos ao redor do alvo atingido
@@ -399,16 +367,11 @@ export default class AttackBuilder {
     return this;
   }
 
-  // ============================================================================
-  // 8. MÉTODO DE CONSTRUÇÃO (BUILD)
-  // ============================================================================
-
   public build(): Attack {
     if (!this._attacker) {
       throw new Error("AttackBuilder: O atacante (_attacker) é obrigatório.");
     }
 
-    // Calcula o dano base acrescido dos escalonamentos de atributos configurados
     let computedBaseDamage = this._baseDamage;
     const attrs = this._attacker.attributes;
 
@@ -420,10 +383,8 @@ export default class AttackBuilder {
       if (this._conScaling > 0) computedBaseDamage += (attrs.constitution || 0) * this._conScaling;
     }
 
-    // Prepara interceptadores de regras especiais pré-impacto
     const finalOnHitActions: OnHitAction[] = [];
 
-    // Interceptador de Mana Leech
     if (this._manaLeechAmount > 0) {
       finalOnHitActions.push((attacker) => {
         if (attacker && attacker.attributes && typeof attacker.attributes.mana === 'number') {
@@ -432,7 +393,6 @@ export default class AttackBuilder {
       });
     }
 
-    // Interceptador de Vampirismo Extra
     if (this._extraLifestealPercent > 0) {
       finalOnHitActions.push((attacker, _target, damageDealt) => {
         if (attacker && attacker.attributes && damageDealt > 0) {
@@ -442,7 +402,6 @@ export default class AttackBuilder {
       });
     }
 
-    // Encapsula todas as ações de impacto configuradas
     finalOnHitActions.push(...this._onHitActions);
 
     return new Attack(

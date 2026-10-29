@@ -44,12 +44,10 @@ export default class TemplateConsumableTemplate extends Consumable {
   public override use(target: Entity): boolean {
     if (!target || !target.attributes) return false;
 
-    // Exemplo de verificação: se for cura, não gasta se o HP estiver cheio
     if (target.attributes.hp >= target.attributes.maxHp) {
       return false;
     }
 
-    // Aplica os efeitos associados ao item
     for (let i = 0; i < this.effects.length; i++) {
       this.effects[i]!.apply(target);
     }

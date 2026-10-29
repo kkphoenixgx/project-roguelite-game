@@ -11,7 +11,7 @@ export default class Derocar extends CognitiveNPC {
     constructor(id: number, coordinates: { x: number, y: number }, attributes: Attributes, eventManager: IEventManager) {
         super(id, coordinates, { width: 16, height: 16 }, 'derocar', attributes, eventManager);
 
-        // Equip and configure Class (Derocar is a Prodigy Mage)
+    //? Configuração da classe de Mago Prodígio para Derocar
         this.classManager.unlockClass('Mago');
         this.classManager.setActiveClass('Mago');
         this.classManager.unlockSkill('m_t4_teleport');

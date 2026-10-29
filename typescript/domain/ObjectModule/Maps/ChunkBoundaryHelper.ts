@@ -67,7 +67,7 @@ export class ChunkBoundaryHelper {
       return [];
     }
 
-    // 1. Mapeia todos os chunks válidos (cx, cy)
+    //? 1. Mapeia todos os chunks válidos em coordenadas de grid relativas à origem.
     const validChunks = new Set<string>();
     for (let r = 0; r < chunks.length; r++) {
       const row = chunks[r];
@@ -88,12 +88,9 @@ export class ChunkBoundaryHelper {
 
     const hasChunk = (cx: number, cy: number): boolean => validChunks.has(`${cx},${cy}`);
 
-    // 2. Coleta segmentos de borda por face
-    // Horizontal (Norte / Sul): chave y -> lista de intervalos [x1, x2]
+    //? 2. Coleta segmentos de borda expostos por face (onde o chunk vizinho não existe).
     const northSegments = new Map<number, { x1: number; x2: number }[]>();
     const southSegments = new Map<number, { x1: number; x2: number }[]>();
-
-    // Vertical (Oeste / Leste): chave x -> lista de intervalos [y1, y2]
     const westSegments = new Map<number, { y1: number; y2: number }[]>();
     const eastSegments = new Map<number, { y1: number; y2: number }[]>();
 
@@ -107,32 +104,28 @@ export class ChunkBoundaryHelper {
       const chunkMinY = cy * chunkSize;
       const chunkMaxY = (cy + 1) * chunkSize;
 
-      // Face Norte: vizinho (cx, cy - 1)
       if (!hasChunk(cx, cy - 1)) {
         if (!northSegments.has(chunkMinY)) northSegments.set(chunkMinY, []);
         northSegments.get(chunkMinY)!.push({ x1: chunkMinX, x2: chunkMaxX });
       }
 
-      // Face Sul: vizinho (cx, cy + 1)
       if (!hasChunk(cx, cy + 1)) {
         if (!southSegments.has(chunkMaxY)) southSegments.set(chunkMaxY, []);
         southSegments.get(chunkMaxY)!.push({ x1: chunkMinX, x2: chunkMaxX });
       }
 
-      // Face Oeste: vizinho (cx - 1, cy)
       if (!hasChunk(cx - 1, cy)) {
         if (!westSegments.has(chunkMinX)) westSegments.set(chunkMinX, []);
         westSegments.get(chunkMinX)!.push({ y1: chunkMinY, y2: chunkMaxY });
       }
 
-      // Face Leste: vizinho (cx + 1, cy)
       if (!hasChunk(cx + 1, cy)) {
         if (!eastSegments.has(chunkMaxX)) eastSegments.set(chunkMaxX, []);
         eastSegments.get(chunkMaxX)!.push({ y1: chunkMinY, y2: chunkMaxY });
       }
     }
 
-    // 3. Mescla intervalos contíguos (ex: [-1024..0] e [0..1024] -> [-1024..1024])
+    //? 3. Mescla intervalos contíguos colineares para reduzir o número de polígonos colisionais.
     const merge1DIntervals = (intervals: { a: number; b: number }[]): { a: number; b: number }[] => {
       if (intervals.length <= 1) return intervals;
       intervals.sort((i1, i2) => i1.a - i2.a);
@@ -155,11 +148,10 @@ export class ChunkBoundaryHelper {
     const hitboxes: ChunkBoundaryHitbox[] = [];
     let borderSeq = 1;
 
-    // Constrói Paredes Norte (imediatamente acima de y, com espessura para cima)
     for (const [y, segs] of northSegments.entries()) {
       const merged = merge1DIntervals(segs.map(s => ({ a: s.x1, b: s.x2 })));
       for (const seg of merged) {
-        // Expande levemente nos cantos para fechar quinas com paredes perpendiculares
+        //? Expande nos cantos pela espessura da parede para fechar quinas entre paredes perpendiculares.
         const startX = seg.a - wallThickness;
         const endX = seg.b + wallThickness;
         hitboxes.push({
@@ -183,7 +175,6 @@ export class ChunkBoundaryHelper {
       }
     }
 
-    // Constrói Paredes Sul (imediatamente abaixo de y, com espessura para baixo)
     for (const [y, segs] of southSegments.entries()) {
       const merged = merge1DIntervals(segs.map(s => ({ a: s.x1, b: s.x2 })));
       for (const seg of merged) {
@@ -210,7 +201,6 @@ export class ChunkBoundaryHelper {
       }
     }
 
-    // Constrói Paredes Oeste (imediatamente à esquerda de x, com espessura para esquerda)
     for (const [x, segs] of westSegments.entries()) {
       const merged = merge1DIntervals(segs.map(s => ({ a: s.y1, b: s.y2 })));
       for (const seg of merged) {
@@ -237,7 +227,6 @@ export class ChunkBoundaryHelper {
       }
     }
 
-    // Constrói Paredes Leste (imediatamente à direita de x, com espessura para direita)
     for (const [x, segs] of eastSegments.entries()) {
       const merged = merge1DIntervals(segs.map(s => ({ a: s.y1, b: s.y2 })));
       for (const seg of merged) {

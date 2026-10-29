@@ -20,7 +20,6 @@ export default abstract class Helmet extends Armor {
         isUnique: boolean = false,
         isTradable: boolean = true
     ) {
-        // O "helmet" é passado fixo para a classe Armor, resolvendo a âncora visual automaticamente!
         super(damageReductionPercent, dodgePercent, 'helmet', name, description, itemId, rarity, iconId, price, durability, effects, requiredLevel, requiredAttributes, isUnique, isTradable);
     }
 }

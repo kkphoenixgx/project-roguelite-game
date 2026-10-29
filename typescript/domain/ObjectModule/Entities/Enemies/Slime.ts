@@ -13,7 +13,7 @@ export default class Slime extends Enemy {
   /** @private Armazena a última posição conhecida do jogador para a perseguição. */
   private lastPlayerPos: {x: number; y: number} = {x:0,y:0}
   /** @private Um multiplicador para ajustar a velocidade de movimento específica do Slime. */
-  private readonly speedModifier: number = 0.50; // Reduz a velocidade para 50% do valor base.
+  private readonly speedModifier: number = 0.50;
 
   //? ----------- Constructor -----------
   constructor(
@@ -75,13 +75,11 @@ export default class Slime extends Enemy {
   public moveSlime(deltaTime: number, neighbors: ObjectElement[]): void {
     this.state = 'walking';
   
-    //* 1. Define linha reta até a última posição conhecida do jogador.
     const primaryDirection = new Vector2D(
       this.lastPlayerPos.x - (this.coordinates.x + this.size.width / 2),
       this.lastPlayerPos.y - (this.coordinates.y + this.size.height / 2)
     ).normalizeMut();
   
-    //* 2. Verifica se vai colidir
     const willCollideInDirection = (direction: Vector2D): boolean => {
 
       const dx = direction.x * (this.attributes.speed * this.speedModifier * deltaTime);
@@ -92,11 +90,12 @@ export default class Slime extends Enemy {
       for (let i = 0; i < neighbors.length; i++) {
         const other = neighbors[i];
         if (other instanceof Slime && other.id !== this.id) {
-          // Usa a matemática direta ao invés de instanciar novas Hitboxes de forma descartável
+          //! Avaliação geométrica euclidiana direta sem alocar novas hitboxes no hot path (Zero-GC).
           const otherX = other.coordinates.x + other.size.width / 2;
           const otherY = other.coordinates.y + other.size.height / 2;
           const distSq = (futureX - otherX) * (futureX - otherX) + (futureY - otherY) * (futureY - otherY);
-          if (distSq < 256) { // (8 + 8)^2 = 256. Assumindo raio de colisão de 8 para cada Slime
+          //? Raio somado de colisão ao quadrado: (8 + 8)^2 = 256.
+          if (distSq < 256) {
             return true;
           }
         }
@@ -106,25 +105,19 @@ export default class Slime extends Enemy {
   
     let finalDirection = null;
   
-    //* 3. Tenta a direção primária primeiro
     if (!willCollideInDirection(primaryDirection)) {
       finalDirection = primaryDirection;
     } 
-    else { //* 4. Se a rota principal está bloqueada, tenta desviar.
-      
+    else {
+      //? Algoritmo de desvio de obstáculos: testa rotas ortogonais (esquerda/direita) se a direção primária estiver obstruída.
       //? 45 graus para a esquerda e 45 para a direita.
       const leftDirection = primaryDirection.clone().rotateMut(-45);
       const rightDirection = primaryDirection.clone().rotateMut(45);
   
-      //* Tenta a rota da esquerda
       if (!willCollideInDirection(leftDirection)) finalDirection = leftDirection; 
-      //* Se não der, rota da direita
       else if (!willCollideInDirection(rightDirection)) finalDirection = rightDirection;
-
-      //* Se todas as três direções (frente, esquerda, direita) estiverem bloqueadas, fica parado mesmo
     }
   
-    //* 5. Aplica o movimento se uma direção válida foi encontrada.
     if (finalDirection) {
       this.velocity = finalDirection.clone().multiplyMut(this.attributes.speed * this.speedModifier * deltaTime);
       super.updatePosition();

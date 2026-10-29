@@ -8,7 +8,7 @@ export default class ExperienceEffect extends Effect {
     }
 
     public apply(target: Entity): void {
-        // Subida de nível direta através de itens (Ex: Tomos Antigos)
+    //? Concede experiência imediata através do uso de consumível
         if ('gainXp' in target) (target as Player).gainXp(this.amount);
     }
 }

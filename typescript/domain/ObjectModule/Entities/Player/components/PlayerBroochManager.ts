@@ -20,7 +20,7 @@ export default class PlayerBroochManager {
   public globalActiveLoadout: (string | null)[] = [null, null, null, null];
   private _activeExecutedBrooches: Set<string> = new Set();
 
-  // Estrutura reutilizável para Zero-GC no hot path de takeDamage
+  //! Estrutura reutilizável de payload para preservar Zero-GC no hot path de dano
   private _cachedDamageResult: BroochDamageHookResult = {
     absorbed: false,
     extraDodge: 0,
@@ -149,7 +149,6 @@ export default class PlayerBroochManager {
       }
     }
 
-    // Executa updates de broches ativos disparados diretamente
     for (const extraId of this._activeExecutedBrooches) {
       if (!this.globalActiveLoadout.some(b => b && BroochRegistry.getCanonicalId(b) === extraId)) {
         const def = BroochRegistry.get(extraId);
@@ -168,7 +167,6 @@ export default class PlayerBroochManager {
 
     const ctx = { player: this.player, eventManager: this.eventManager };
 
-    // Executa hooks de broches ativos e passivos equipados
     for (let i = 0; i < 4; i++) {
       const activeId = this.globalActiveLoadout[i];
       if (activeId) {
@@ -188,7 +186,6 @@ export default class PlayerBroochManager {
       }
     }
 
-    // Executa hooks de broches ativos disparados diretamente
     for (const extraId of this._activeExecutedBrooches) {
       if (!this.globalActiveLoadout.some(b => b && BroochRegistry.getCanonicalId(b) === extraId)) {
         const def = BroochRegistry.get(extraId);

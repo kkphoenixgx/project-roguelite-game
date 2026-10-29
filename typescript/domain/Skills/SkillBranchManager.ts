@@ -11,7 +11,7 @@ import type Skill from "./Skill";
  * dos ramos concorrentes derivados do mesmo nó de bifurcação.
  */
 export default class SkillBranchManager {
-    // Cache em memória das análises de ramos para garantir Zero-GC em tempo de execução
+  //! Cache em memória das análises de ramos para manter Zero-GC em runtime
     private static branchCache = new Map<string, Array<Set<string>[]>>();
 
     /**
@@ -46,7 +46,7 @@ export default class SkillBranchManager {
             }
         }
 
-        // Descobre nós de bifurcação (onde há 2 ou mais filhos)
+    //? Identifica nós de bifurcação onde existem ramos mutuamente concorrentes
         const groups: Array<Set<string>[]> = [];
 
         parentToChildren.forEach((children, forkNodeId) => {
@@ -114,15 +114,14 @@ export default class SkillBranchManager {
                 }
             }
 
-            // Se a skill procurada faz parte de um dos ramos bifurcados desse fork
             if (targetBranchIndex !== -1) {
-                // Checa se qualquer OUTRO ramo irmão dessa bifurcação já possui skills desbloqueadas
+        //? Impede desbloqueio caso outro ramo irmão da bifurcação já possua habilidades liberadas
                 for (let b = 0; b < branches.length; b++) {
                     if (b === targetBranchIndex) continue;
                     const opposingBranch = branches[b]!;
                     for (const unlockedId of unlockedSkills) {
                         if (opposingBranch.has(unlockedId)) {
-                            return true; // Bloqueado pelo ramo concorrente!
+                            return true;
                         }
                     }
                 }

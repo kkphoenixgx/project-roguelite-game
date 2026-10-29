@@ -13,7 +13,6 @@ export default abstract class RangedWeapon extends Weapon {
   //? ----------- Constructor -----------
   
   constructor(
-    // --- Atributos herdados de Weapon ---
     baseDamage: number,
     attackSpeed: number,
     name: string,
@@ -23,7 +22,7 @@ export default abstract class RangedWeapon extends Weapon {
     iconId: number,
     price: number,
     durability: number,
-    effects: any[], // Substitua 'any' por 'Effect[]' quando a classe Effect for definida
+    effects: any[],
     requiredLevel: number = 1,
     requiredAttributes: Partial<baseAttributes> = {},
     isUnique: boolean = false,

@@ -60,7 +60,6 @@ export default class ToolActionGateway {
             return;
         }
 
-        // Aplica o desgaste padrão de durabilidade
         activeTool.durability = -1;
 
         this.logger.log('actions', `[ToolActionGateway] Ação executada: ${activeTool.name} (tipo: ${activeTool.toolType}) na zona '${zone}' em (${payload.targetPosition.x}, ${payload.targetPosition.y}).`);

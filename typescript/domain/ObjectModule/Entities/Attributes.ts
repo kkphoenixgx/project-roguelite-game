@@ -17,8 +17,8 @@ export default class Attributes {
   private _mana: number = 0;
   private _currentXp: number = 0;
   private _xpToNextLevel: number = 0;
-  private _manaRegen: number = 5; // Mana por segundo base
-  private _availablePoints: number = 1; // Começa com 1 ponto para poder liberar a primeira skill da classe!
+  private _manaRegen: number = 5;
+  private _availablePoints: number = 1; //? Jogador inicia com 1 ponto de atributo disponível para liberar a primeira habilidade de classe imediatamente
 
   //? Modificação vai ser pelos bonus
   private _bonusSpeed: number = 0;
@@ -38,7 +38,7 @@ export default class Attributes {
   private _bonusArea: number = 0;
 
   constructor(
-    private hpDiceFaces :number, // Tornado private para guardarmos na memória do objeto
+    private hpDiceFaces: number,
     private _level: number, 
     
     private _strength: number,
@@ -50,7 +50,6 @@ export default class Attributes {
   ){ 
     this.setHp();
     this._mana = this.maxMana;
-    // Inicializa o XP necessário para o primeiro level up.
   }
   
   //? ----------- Methods -----------
@@ -69,9 +68,8 @@ export default class Attributes {
    * @param xpTable A tabela de XP que define a curva de progressão.
    */
   public addXp(xpAmount: number, xpTable: IXPTable) {
-    this._currentXp += xpAmount * (1 + (this.insight / 100)); // Aplica o bônus de Insight
+    this._currentXp += xpAmount * (1 + (this.insight / 100)); //? Aplica bônus percentual de Insight ao ganho de experiência
 
-    // Inicializa o XP para o próximo nível se ainda não foi feito
     if (this._xpToNextLevel === 0) {
       this._xpToNextLevel = xpTable.fixedBase * Math.pow(xpTable.levelScale, this._level - 1);
     }
@@ -84,7 +82,6 @@ export default class Attributes {
       const hpGain = Math.max(1, Dice.rollDice(this.hpDiceFaces) + this._constitution);
       this._maxHp += hpGain;
 
-      // Restaura HP e Mana ao subir de nível
       this._hp = this._maxHp;
       this._mana = this.maxMana;
     }
@@ -96,7 +93,7 @@ export default class Attributes {
       if (attribute === 'strength') this._strength++;
       else if (attribute === 'constitution') {
         this._constitution++;
-        this._maxHp += this._level; // Bônus retroativo de vida para todos os níveis que ele já possui!
+        this._maxHp += this._level; //? Bônus retroativo de vida máxima proporcional ao nível acumulado do personagem
         this._hp += this._level;
       }
       else if (attribute === 'dexterity') this._dexterity++;
@@ -105,7 +102,7 @@ export default class Attributes {
         if (attribute === 'intelligence') this._intelligence++;
         if (attribute === 'wisdom') this._wisdom++;
         if (attribute === 'charisma') this._charisma++;
-        this._mana += Math.max(0, this.maxMana - oldMaxMana); // Aumenta a mana atual proporcionalmente
+        this._mana += Math.max(0, this.maxMana - oldMaxMana); //? Preserva ganho proporcional de mana atual ao expandir a reserva máxima
       }
       return true;
     }

@@ -6,6 +6,6 @@ export default class StunStatus extends StatusEffect {
     
     protected override onTick(target: Entity): void {
         const cx = target.coordinates.x + target.size.width / 2; const cy = target.coordinates.y + target.size.height / 2;
-        (target as any).eventManager?.dispatch('particle', { effect: 'magicAura', x: cx, y: cy, color: '#9400D3' }); // Roxinho de atordoado
+        (target as any).eventManager?.dispatch('particle', { effect: 'magicAura', x: cx, y: cy, color: '#9400D3' });
     }
 }

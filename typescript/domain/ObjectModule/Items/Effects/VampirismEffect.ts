@@ -8,7 +8,7 @@ export default class VampirismEffect extends Effect {
 
     public apply(target: Entity): void {
         if ('lifesteal' in target.attributes) {
-            target.attributes.lifesteal = this.lifestealAmount; // Acumula no setter
+            target.attributes.lifesteal = this.lifestealAmount; //? Modificador aditivo de roubo de vida
             
             const attackerAny = target as any;
             if (attackerAny.eventManager) {

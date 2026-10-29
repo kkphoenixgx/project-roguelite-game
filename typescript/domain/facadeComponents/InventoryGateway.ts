@@ -9,10 +9,10 @@ export default class InventoryGateway {
         private eventManager: IEventManager,
         private setViewedClass: (cls: string | null) => void
     ) {
-        // [DECOUPLED] Reage a intenções da UI de forma reativa, sem passar pela Facade
+    //? Reage a intenções da interface de forma reativa via barramento de eventos
         this.eventManager.on('inventoryAction', (payload) => {
             this.manage(payload.action, payload.payload);
-            this.broadcastState(); // Avisa a UI que o inventário mudou
+            this.broadcastState();
         });
     }
 
@@ -38,9 +38,9 @@ export default class InventoryGateway {
         if (action === 'equip' && payload.index !== undefined) {
             this.player.equipItem(payload.index);
             
-            // Game Feel (UX): Auto-equipa a classe associada à arma para poupar cliques na UI!
+      //? Auto-equipa classe correspondente à arma selecionada para fluidez de gameplay
             const equipment = (this.player as any).equipment;
-            const handItem = equipment?.mainHand || equipment?.hand || equipment?.weapon; // O slot real no Player.ts é 'mainHand'!
+            const handItem = equipment?.mainHand || equipment?.hand || equipment?.weapon; //? Slot canônico da mão principal no inventário
             
             this.logger.log('actions', `[DomainFacade] Item equipado. Arma atual: ${handItem?.name} | Desbloqueia: ${handItem?.unlocksClass}`);
 
@@ -49,7 +49,7 @@ export default class InventoryGateway {
                     this.player.unlockedClasses.push(handItem.unlocksClass);
                 }
                 this.player.setActiveClass(handItem.unlocksClass);
-                this.setViewedClass(null); // Reseta a classe visualizada para acompanhar a arma atual
+                this.setViewedClass(null);
                 this.logger.log('actions', `[DomainFacade] Forçando classe do jogador para: ${handItem.unlocksClass}`);
                 this.eventManager.dispatch('classChanged', { oldClassInstance: null, newClassInstance: null });
             }

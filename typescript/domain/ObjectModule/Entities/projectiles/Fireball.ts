@@ -41,7 +41,7 @@ export class Fireball extends Bullet {
                 
                 this.attack.execute(otherElement as any, this.direction);
                 this.effects.forEach(effect => effect.apply(otherElement as any));
-                super.destroy(); // Explosão no contato!
+                super.destroy();
             }
         })];
     }

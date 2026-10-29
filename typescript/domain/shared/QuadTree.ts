@@ -102,7 +102,7 @@ export default class Quadtree<T> {
         this.subdivide();
       }
 
-      // Iteração reversa para garantir Swap and Pop O(1) sem pular índices
+    //! Iteração reversa com Swap and Pop O(1) sem alocação nem pulo de índices
       let i = this.elements.length;
       while (i--) {
         const el = this.elements[i];
@@ -112,7 +112,7 @@ export default class Quadtree<T> {
         if (index !== -1 && this.nodes[index]) {
           this.nodes[index].insert(el);
           
-          // Remoção O(1) (Swap and Pop)
+      //! Remoção O(1) via Swap and Pop preservando estabilidade do buffer
           const last = this.elements.pop();
           if (i < this.elements.length && last !== undefined) {
             this.elements[i] = last;

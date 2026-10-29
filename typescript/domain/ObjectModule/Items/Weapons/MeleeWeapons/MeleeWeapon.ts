@@ -8,8 +8,8 @@ import type Entity from "../../../Entities/Entity";
 import type Effect from "../../Effects/Effect";
 
 export default abstract class MeleeWeapon extends Weapon {
-    public attackRange: number = 32; // Alcance do golpe em pixels
-    public attackAngle: number = 120; // Ângulo de abertura do golpe em graus (Cone)
+    public attackRange: number = 32; //? Alcance do golpe em pixels
+    public attackAngle: number = 120; //? Ângulo de abertura do golpe em graus (Cone)
 
     constructor(
         baseDamage: number,
@@ -33,7 +33,7 @@ export default abstract class MeleeWeapon extends Weapon {
     }
 
     public attack(attacker: Entity, direction: Vector2D, eventManager: IEventManager): void {
-        // Dano de armas Melee escala fortemente com Força
+    //? Dano de armas corpo a corpo escala primariamente com Força
         const scaledDamage = this.baseDamage + Math.floor(attacker.attributes.strength);
         const weaponAttack = new Attack(attacker, scaledDamage, 'physical', this.onHitActions);
         const areaMult = (attacker.attributes as any).areaMultiplier || 1;
@@ -41,7 +41,6 @@ export default abstract class MeleeWeapon extends Weapon {
 
         const attackDir = direction.clone().normalizeMut();
 
-        // 1. Lógica de Negócio (O Dano) - Query Espacial Instantânea
         eventManager.dispatch('requestNeighbors', {
             requester: attacker,
             radius: currentRange,
@@ -54,13 +53,12 @@ export default abstract class MeleeWeapon extends Weapon {
                         neighbor.objectId === 'fishPet';
 
                     if (!isFriendly && 'takeDamage' in neighbor) {
-                        // Calcula o vetor entre o atacante e o vizinho
                         const toNeighborX = (neighbor.coordinates.x + neighbor.size.width / 2) - (attacker.coordinates.x + attacker.size.width / 2);
                         const toNeighborY = (neighbor.coordinates.y + neighbor.size.height / 2) - (attacker.coordinates.y + attacker.size.height / 2);
                         const distance = Math.sqrt(toNeighborX * toNeighborX + toNeighborY * toNeighborY);
                         
                         if (distance > 0) {
-                            // Produto Escalar para verificar se o inimigo está dentro do "cone" de visão do corte
+      //? Produto escalar verifica se o alvo está no cone angular do corte
                             const dot = attackDir.x * (toNeighborX / distance) + attackDir.y * (toNeighborY / distance);
                             const angle = Math.acos(Math.max(-1, Math.min(1, dot))) * (180 / Math.PI);
 
@@ -73,17 +71,16 @@ export default abstract class MeleeWeapon extends Weapon {
             }
         });
 
-        // 2. Apresentação Visual - Desacoplada da Física
         const visualDistance = currentRange / 2;
         const visualX = attacker.coordinates.x + attacker.size.width / 2 + attackDir.x * visualDistance;
         const visualY = attacker.coordinates.y + attacker.size.height / 2 + attackDir.y * visualDistance;
 
         eventManager.dispatch('spawnVisual', {
             type: 'slash',
-            coordinates: { x: visualX - (16 * areaMult), y: visualY - (16 * areaMult) }, // Centralizando
+            coordinates: { x: visualX - (16 * areaMult), y: visualY - (16 * areaMult) },
             duration: 0.15,
             size: { width: 32 * areaMult, height: 32 * areaMult },
-            rotation: Math.atan2(attackDir.y, attackDir.x) + Math.PI / 4 // Rotação dinâmica
+            rotation: Math.atan2(attackDir.y, attackDir.x) + Math.PI / 4
         });
 
         eventManager.dispatch('particle', {

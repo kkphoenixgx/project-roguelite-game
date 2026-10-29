@@ -59,22 +59,19 @@ export default class WorldChunkManager {
     };
   }
 
-  // Estado da Janela Ativa
   private currentCenterChunk: ChunkCoordDTO = { cx: 0, cy: 0 };
   private activeChunkKeys: Set<number> = new Set();
   private activeChunkCoords: ChunkCoordDTO[] = [];
   private isPartitioningEnabled: boolean = true;
 
-  // Particionamento de Entidades
   private chunkElements: Map<number, Set<ObjectElement>> = new Map();
-  private elementChunkMap: Map<number, number> = new Map(); // element.id -> chunkKey
-  private alwaysActiveElements: Set<ObjectElement> = new Set(); // Entidades globais (ex: limites de mapa / environmentCollider)
+  private elementChunkMap: Map<number, number> = new Map(); //? Mapeamento de element.id para chave numérica de chunk
+  private alwaysActiveElements: Set<ObjectElement> = new Set(); //? Entidades globais imunes a culling (ex: barreiras de borda do mapa)
 
-  // Buffer reutilizável de entidades ativas para Zero-GC no hot path
+  //! Buffer reutilizável de entidades ativas para manter Zero-GC no hot path de tick e colisão
   private activeElementsBuffer: ObjectElement[] = [];
   private isBufferDirty: boolean = true;
 
-  // Geração Procedural e Chunks Carregados
   private loadedChunks: Set<number> = new Set();
   private proceduralGenerator?: (cx: number, cy: number, manager: WorldChunkManager) => void;
 
@@ -94,7 +91,6 @@ export default class WorldChunkManager {
 
     this.recomputeActiveWindow(initialCx, initialCy, false);
 
-    // Marca como carregados os chunks dentro dos limites conhecidos do mundo
     const minCx = Math.floor(world.minX / WorldChunkManager.CHUNK_SIZE);
     const maxCx = Math.floor((world.maxX - 1) / WorldChunkManager.CHUNK_SIZE);
     const minCy = Math.floor(world.minY / WorldChunkManager.CHUNK_SIZE);
@@ -210,7 +206,7 @@ export default class WorldChunkManager {
   public updateElementPosition(element: ObjectElement): void {
     if (!element || (element as any).isDestroyed) return;
     const oldKey = this.elementChunkMap.get(element.id);
-    // Se a entidade não está no mapa de chunks (ex: já removida ou despawnada), não ressuscita nem atualiza
+    //? Ignora entidades não mapeadas em chunks (já removidas ou despawnadas) para evitar reativação espúria
     if (oldKey === undefined) return;
 
     const midX = element.coordinates.x + (element.size?.width || 0) * 0.5;

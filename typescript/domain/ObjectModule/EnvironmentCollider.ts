@@ -21,7 +21,7 @@ export default class EnvironmentCollider extends ObjectElement {
         passable: boolean = true,
         speedModifier?: number
     ) {
-        // Colocamos o estado como 'static'. Ele não terá representação no VisualConfigMap.
+        //? Entidade de barreira física com estado 'static' sem renderização visual
         super(size, coordinates, id, objectId, eventManager, 'static', hitboxes);
         this.tileType = tileType;
         this.passable = passable;
@@ -29,11 +29,10 @@ export default class EnvironmentCollider extends ObjectElement {
     }
 
     public override update(_deltaTime: number): void {
-        // Paredes e obstáculos estáticos não se movem, poupando CPU
     }
 
     public static createSpawn(id: number, payload: SpawnPayload, eventManager: IEventManager): EnvironmentCollider {
-        // O tamanho base pode ser 0, pois a hitbox poligonal enviada na carga dita os limites reais
+        //? Dimensões determinadas integralmente pela hitbox poligonal
         const size = payload.size || { width: 0, height: 0 };
         const hitboxes = payload.hitboxes || [];
         const metadata = payload.metadata || {};

@@ -80,7 +80,6 @@ export default class DomainFacade implements IGameDomain {
     
     this.initPlayer();
 
-    // Listeners para a Meta-Progressão e Fim de Run
     this.eventManager.on('featAchieved', (payload) => {
         this.metaProgressionManager.recordFeat(payload.name, payload.essenceReward);
     });
@@ -114,9 +113,9 @@ export default class DomainFacade implements IGameDomain {
     this.eventManager.on('mapTransitionRequested', (payload: any) => {
         const currentWorldId = (this.world as any)?.mapId || 'vilgem';
         if (this.player && !IntermapRegistry.has(currentWorldId) && IntermapRegistry.has(payload.targetMapId)) {
-          // Quando o jogador entra em um InnerMap a partir de um mundo raiz (ex: Vilgem -> interior_black_default),
-          // registra a coordenada segura em frente à porta que ele acabou de usar para que a saída do InnerMap
-          // devolva o jogador na frente da mesma casa ( a menos que o portal de saída aponte para um destino customizado diferente do default).
+          //? Quando o jogador entra em um InnerMap a partir de um mundo raiz (ex: Vilgem -> interior_black_default),
+          //? registra a coordenada segura em frente à porta usada para que a saída do InnerMap
+          //? devolva o jogador na frente da mesma casa (a menos que haja destino customizado).
           const entities = this.objectManager.getEntities();
           let entrancePortal: any = null;
           let minDist = Infinity;
@@ -136,8 +135,8 @@ export default class DomainFacade implements IGameDomain {
           }
         }
 
-        // Permite que adaptadores externos (ex: GameAdapter) orquestrem a transição com collisionData e assets.
-        // Se após um microtask nenhuma transição foi iniciada pelo adaptador, o domínio executa o fallback autônomo (ex: em testes headless).
+        //? Permite que adaptadores externos (ex: GameAdapter) orquestrem a transição com collisionData e assets.
+        //? Se após um microtask nenhuma transição foi iniciada pelo adaptador, o domínio executa o fallback autônomo (ex: em testes headless).
         queueMicrotask(() => {
           if (payload?.handledByAdapter) {
             return;
@@ -150,14 +149,12 @@ export default class DomainFacade implements IGameDomain {
         });
     });
 
-    // Register the IPC listener for BDI events coming from Rust/Panteão
     TauriPanteaoBridge.setupIpcListeners(this.logger, this.eventManager, this.objectManager, (p) => this.updateLLMPreset(p), this.config);
   }
 
   /** Fase de Update (Lógica): Avança o estado de todas as entidades do domínio. Chamado a cada frame pelo Adapter. @param deltaTime O tempo em segundos decorrido desde o último frame. */
   public update(deltaTime: number): void {
-    // Limita o deltaTime a um valor máximo razoável (ex: 1/30 de segundo)
-    // para evitar "saltos" de física se o jogo engasgar.
+    //? Limita o deltaTime a no máximo 1/30s para evitar saltos bruscos ou tunnelling de física se houver engasgo.
     const clampedDeltaTime = Math.min(deltaTime, 1 / 30);
 
     this.logger.log('update-cycles', 'Update cycle started (deltaTime:)', clampedDeltaTime);
@@ -165,7 +162,6 @@ export default class DomainFacade implements IGameDomain {
     const tPlayer = typeof performance !== 'undefined' ? performance.now() : 0;
     this.player.update(clampedDeltaTime);
     
-    // Regeneração passiva do Jogador (Apenas se estiver vivo)
     const attrs = this.player.attributes;
     if (attrs.hp > 0 && attrs.hp < attrs.maxHp) {
         attrs.hp = Math.min(attrs.maxHp, attrs.hp + (attrs.constitution * 0.1) * clampedDeltaTime);
@@ -217,7 +213,7 @@ export default class DomainFacade implements IGameDomain {
       const def = IntermapRegistry.get(mapId)!;
       return new IntermapWorld(def, this.eventManager);
     }
-    // Fallback genérico caso viaje para mapas sem classe registrada ainda
+    //? Fallback genérico caso viaje para mapas sem classe concreta registrada.
     return new VilgemWorld(this.eventManager);
   }
 
@@ -226,7 +222,7 @@ export default class DomainFacade implements IGameDomain {
       if (mapId === 'vilgem' && ((customPos.x === 1536 && customPos.y === 1615) || (customPos.x === 0 && customPos.y === 0))) {
         return { x: 512, y: 591 };
       }
-      // Se customPos for o initialPos global de Vilgem e estivermos carregando outro mundo que possui seu próprio defaultSpawn, prioriza o defaultSpawn do mundo!
+      //? Se customPos for o initialPos global de Vilgem e estivermos carregando outro mundo com defaultSpawn próprio, prioriza o defaultSpawn do mundo.
       if (mapId !== 'vilgem' && this.world?.defaultSpawn && customPos === this.config?.player?.initialPos) {
         return { ...this.world.defaultSpawn };
       }
@@ -268,7 +264,6 @@ export default class DomainFacade implements IGameDomain {
       this.objectManager.setCollectedWorldItems(this.player.collectedWorldItems);
     }
     
-    // Aguarda a geração do mundo (agora async)
     await this.world.generate(collisionData);
     
     this.objectManager.setWorldBounds(this.world.bounds);
@@ -277,7 +272,6 @@ export default class DomainFacade implements IGameDomain {
     if (!this.player) {
       this.initPlayer();
     } else {
-      // Reposiciona o jogador na posição inicial do mapa
       const initPos = this.resolveInitialSpawn(mapId, this.config?.player?.initialPos);
       this.player.coordinates = { x: initPos.x, y: initPos.y };
       if (this.player.hitboxes) {
@@ -302,22 +296,22 @@ export default class DomainFacade implements IGameDomain {
     this.activeTransitionPromise = (async () => {
       this.logger.log('domain', `Transitioning to world: ${targetMapId}`);
 
-      // 1. Limpa todas as entidades antigas preservando o jogador
+      //? 1. Limpa todas as entidades antigas preservando o jogador (ver ARCHITECTURE.md 3.16)
       this.objectManager.clearWorldElements(true);
 
-      // Sincroniza os itens coletados pelo jogador antes de gerar o novo mundo
+      //? 2. Sincroniza os itens coletados pelo jogador antes de gerar o novo mundo
       if (this.player && this.player.collectedWorldItems) {
         this.objectManager.setCollectedWorldItems(this.player.collectedWorldItems);
       }
 
-      // 2. Instancia o novo mundo
+      //? 3. Instancia o novo mundo
       this.world = this.createWorldInstance(targetMapId);
 
-      // 3. Atualiza os limites do mundo no gerenciador de elementos
+      //? 4. Atualiza os limites do mundo e reinicia o gerenciador de chunks
       this.objectManager.setWorldBounds(this.world.bounds);
       this.objectManager.getChunkManager().initForWorld(this.world);
 
-      // 4. Reposiciona o jogador no ponto de spawn especificado ou default do mundo antes de gerar entidades
+      //? 5. Reposiciona o jogador no ponto de spawn especificado ou default do mundo antes de gerar entidades
       let targetX = 0;
       let targetY = 0;
 
@@ -368,10 +362,10 @@ export default class DomainFacade implements IGameDomain {
         }
       }
 
-      // 5. Gera os elementos do novo mundo
+      //? 6. Gera os elementos do novo mundo
       await this.world.generate(collisionData);
 
-      // 6. Notifica os adaptadores sobre a conclusão da transição
+      //? 7. Notifica os adaptadores sobre a conclusão da transição
       this.eventManager.dispatch('mapTransitionCompleted', {
         mapId: targetMapId,
         coordinates: { x: targetX, y: targetY }
@@ -389,9 +383,7 @@ export default class DomainFacade implements IGameDomain {
     this.actionManager.checkEvent(command.actions, mouseLastCoordinates)
   }
 
-  // [ARCH] Os métodos manageInventory, manageSkillTree e allocateAttribute foram
-  // removidos para evitar o antipattern "God Class". As UIs agora devem se comunicar
-  // com os sistemas internos disparando eventos semânticos no EventBus.
+  //? [ARCH] Os métodos manageInventory, manageSkillTree e allocateAttribute foram delegados a gateways e eventos semânticos no EventBus para evitar o antipattern God Class (ver ARCHITECTURE.md 3.18).
 
   public sendDialogue(message: string, targetNpcId?: number): void {
     this.dialogueGateway.sendDialogue(message, targetNpcId);
@@ -417,19 +409,15 @@ export default class DomainFacade implements IGameDomain {
   public updateLLMPreset(preset: CustomLLMPresetDTO): void {
       this.logger.log('domain', 'Aplicando novo preset de LLM no Domínio:', preset);
 
-      // Atualiza a configuração interna do domínio
       (this.config as any).activeLlmModel = preset.llm_model;
       (this.config as any).llmPreset = preset;
 
-      // Notifica as entidades e sistemas de domínio através do barramento de eventos
       this.eventManager.dispatch('llmPresetChanged', { preset });
 
-      // Aplica via porta secundária de infraestrutura
       this.llmConfigPort.applyPreset(preset).catch((err: any) => {
           this.logger.log('error', 'Falha ao aplicar preset na porta ILLMConfigPort:', err);
       });
 
-      // Notifica NPCs cognitivos ativos no mundo via porta secundária
       const npcs = this.objectManager.getEntities().filter(e => (e as any).agentName != null);
       npcs.forEach(npc => {
           const agentName = (npc as any).agentName;
@@ -506,23 +494,23 @@ export default class DomainFacade implements IGameDomain {
   public resetRunState(): void {
     if (!this.player) return;
 
-    // 1. Preserva o loadout atual de broches (passivos e ativos globais da meta-progressão)
+    //? 1. Preserva o loadout atual de broches (passivos e ativos globais da meta-progressão) - ver ARCHITECTURE.md 3.17
     const preservedPassiveLoadout = [...(this.player.classManager?.passiveLoadout || [])];
     const preservedGlobalActiveLoadout = [...(this.player.classManager?.globalActiveLoadout || [])];
 
-    // 2. Reseta os atributos para o nível 1 base da run
+    //? 2. Reseta os atributos para o nível 1 base da run
     const level = this.config?.player?.level ?? 1;
     this.player.attributes = new Attributes(8, level, 10, 10, 10, 10, 10, 10);
-    // Re-aplica os bônus permanentes da árvore global
+    //? Re-aplica os bônus permanentes da árvore global
     this.metaProgressionManager.applyGlobalBonuses(this.player.attributes);
     this.player.attributes.hp = this.player.attributes.maxHp;
     this.player.attributes.mana = this.player.attributes.maxMana;
 
-    // 3. Reseta inventário da run (mochila e moedas)
+    //? 3. Reseta inventário da run (mochila e moedas)
     this.player.inventory.backpack = [];
     this.player.inventory.coins = 0;
 
-    // 4. Reseta equipamentos da run
+    //? 4. Reseta equipamentos da run
     this.player.equipmentManager.equipment = {
       mainHand: undefined,
       secondHand: undefined,
@@ -539,17 +527,17 @@ export default class DomainFacade implements IGameDomain {
     };
     this.player.equipmentManager.syncEquipedItens();
 
-    // 5. Reseta habilidades e cooldowns da classe para a nova run
+    //? 5. Reseta habilidades e cooldowns da classe para a nova run
     this.player.classManager.resetRun();
 
-    // 6. Restaura os broches da meta-progressão no loadout
+    //? 6. Restaura os broches da meta-progressão no loadout
     for (let i = 0; i < 4; i++) {
       this.player.classManager.equipPassiveInLoadout(preservedPassiveLoadout[i] || null, i);
       this.player.classManager.equipGlobalActiveBrooch(preservedGlobalActiveLoadout[i] || null, i);
     }
     BroochRegistry.resetAll();
 
-    // 7. Revive e reseta cinemática, estado motor e coordenadas de spawn
+    //? 7. Revive e reseta cinemática, estado motor e coordenadas de spawn
     this.player.revive();
     const initPos = this.resolveInitialSpawn(this.world?.mapId || 'vilgem', this.config?.player?.initialPos);
     this.player.coordinates = { x: initPos.x, y: initPos.y };
@@ -564,7 +552,7 @@ export default class DomainFacade implements IGameDomain {
     this.player.collectedWorldItems.clear();
     this.objectManager.setCollectedWorldItems(new Set());
 
-    // 8. Despacha eventos de sincronização para a interface
+    //? 8. Despacha eventos de sincronização para a interface
     this.eventManager.dispatch('inventoryUpdated', {
       backpack: this.player.backpack,
       equipment: this.player.equipment
@@ -619,7 +607,7 @@ export default class DomainFacade implements IGameDomain {
       || 'vilgem';
     const savedMapId = rawSavedMapId.toString().toLowerCase();
 
-    // 1. Se o jogador escolheu iniciar em outro mundo diferente do save, usa o spawn do mundo atual
+    //? 1. Se o jogador escolheu iniciar em outro mundo diferente do save, usa o spawn do mundo atual
     if (this.world && savedMapId && savedMapId !== currentMapId) {
       const spawn = this.resolveInitialSpawn(currentMapId, this.world.defaultSpawn);
       this.player.coordinates.x = spawn.x;
@@ -627,8 +615,7 @@ export default class DomainFacade implements IGameDomain {
     } else if (currentMapId === 'vilgem') {
       const cx = this.player.coordinates.x;
       const cy = this.player.coordinates.y;
-      // 2. Migra apenas coordenadas legadas da antiga grade positiva [0..3072] (onde o spawn central era 1536, 1615 no Chunk 1,1)
-      // ou (0, 0) para o spawn oficial da Praça Central (512, 591) dentro do Chunk (0, 0) [0..1024, 0..1024]
+      //? 2. Migra apenas coordenadas legadas da antiga grade positiva [0..3072] ou (0, 0) para a Praça Central (512, 591) no Chunk (0, 0).
       if ((cx === 1536 && cy === 1615) || (cx === 0 && cy === 0)) {
         this.player.coordinates.x = 512;
         this.player.coordinates.y = 591;
@@ -675,7 +662,7 @@ export default class DomainFacade implements IGameDomain {
       }
     }
 
-    // Garante que todos os broches equipados no loadout ou salvos no save sejam conhecidos pela meta-progressão
+    //? Garante que todos os broches equipados no loadout ou salvos no save sejam registrados pela meta-progressão.
     const broochesToUnlock = new Set<string>();
     if (Array.isArray(metaState?.unlockedBrooches)) metaState.unlockedBrooches.forEach((b: string) => b && broochesToUnlock.add(b));
     [

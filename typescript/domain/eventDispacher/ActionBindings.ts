@@ -1,6 +1,6 @@
 import type { action } from "./actions.type";
 
-// Mapeamento global de "Qual classe escuta qual ação" a nível de Prototype
+//? Mapeamento de handlers de ações aos prototypes das classes gerenciadas
 export const ClassActionBindings = new Map<string, Map<action, string>>();
 
 /**
@@ -9,7 +9,7 @@ export const ClassActionBindings = new Map<string, Map<action, string>>();
  */
 export function BindAction(actionName: action) {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-        // Usa o nome da classe em string para evitar perda de identidade por referência circular do Vite
+    //? Identificador textual de classe para evitar referências circulares em bundles
         const className = target.constructor.name;
         if (!ClassActionBindings.has(className)) {
             ClassActionBindings.set(className, new Map());

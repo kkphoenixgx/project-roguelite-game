@@ -74,7 +74,7 @@ export default class SkillTemplate {
   private _onPassiveApply?: SkillPassiveApplyHandler | undefined;
   private _onPassiveRemove?: SkillPassiveRemoveHandler | undefined;
 
-  // Vetor de direção reutilizável em memória (Zero-GC)
+  //! Vetor de direção reutilizável em memória para evitar alocações de GC no loop de ataque
   private static readonly _dirCache: Vector2D = new Vector2D(0, 0);
 
   private constructor(id: string, name: string, description: string) {
@@ -235,7 +235,6 @@ export default class SkillTemplate {
   ): boolean {
     const def = this.build();
 
-    // 1. Valida Cooldown
     const isPlayerCooldown = (player as any).isSkillOnCooldown?.(def.id) ?? false;
     if (isPlayerCooldown) {
       eventManager.dispatch('log', {
@@ -246,7 +245,6 @@ export default class SkillTemplate {
       return false;
     }
 
-    // 2. Valida Custo de Mana
     if (def.manaCost > 0) {
       const currentMana = player.attributes?.mana ?? 0;
       if (currentMana < def.manaCost) {
@@ -259,7 +257,6 @@ export default class SkillTemplate {
       }
     }
 
-    // 3. Valida Custo de Vida
     if (def.hpCost > 0) {
       const currentHp = player.attributes?.hp ?? 0;
       if (currentHp <= def.hpCost) {
@@ -272,7 +269,6 @@ export default class SkillTemplate {
       }
     }
 
-    // 4. Valida Arma na Mão Principal
     if (def.requiresMainHandWeapon) {
       const mainHandWeapon = (player as any).equipment?.mainHand;
       if (!mainHandWeapon) {
@@ -285,7 +281,6 @@ export default class SkillTemplate {
       }
     }
 
-    // 5. Consome Recursos
     if (def.manaCost > 0 && player.attributes) {
       player.attributes.mana -= def.manaCost;
     }
@@ -293,12 +288,10 @@ export default class SkillTemplate {
       player.attributes.hp -= def.hpCost;
     }
 
-    // 5. Aplica Cooldown
     if (def.cooldownMs > 0) {
       (player as any).setSkillCooldown?.(def.id, def.cooldownMs);
     }
 
-    // 6. Calcula centro e direção de mira sem alocações
     const cx = player.coordinates.x + player.size.width / 2;
     const cy = player.coordinates.y + player.size.height / 2;
 
@@ -315,7 +308,6 @@ export default class SkillTemplate {
       params: []
     });
 
-    // 7. Executa Handler específico
     if (def.onExecute) {
       def.onExecute({
         player,

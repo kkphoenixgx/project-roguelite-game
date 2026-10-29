@@ -59,7 +59,7 @@ export const abyssalDemonTransformation: ITransformationDefinition = Transformat
 export const abyssalDemonDynamicRule: DynamicSpellRule = {
   id: 'dynamic_abyssal_demon',
   name: 'Transmutação Dinâmica: Demônio Abissal',
-  priority: 100, // Prioridade alta sobre o solver genérico de Self AoE
+  priority: 100, //? Prioridade alta sobre o solver genérico de Self AoE
   matcher: (ctx) => {
     const isSelf = ctx.forms.includes('self');
     const hasAbyssFused = ctx.elements.includes('abys') && ctx.elements.includes('fire');
@@ -74,7 +74,7 @@ export const abyssalDemonDynamicRule: DynamicSpellRule = {
 
     const active = new ActiveTransformation(abyssalDemonTransformation, player as any, eventManager);
 
-    // Registra como status temporário gerenciado pelo loop de entidades
+    //? Registra transformação abissal como status temporário no loop de entidades
     player.applyStatus?.({
       id: 'abyssal_demon_active',
       duration: 15,

@@ -10,9 +10,6 @@ export class PassiveBrooches {
     getRerollCharges: () => number;
     useRerollCharge: () => boolean;
   } {
-    // -------------------------------------------------------------------------
-    // 9. Broche da Fênix (Ressurreição Passiva)
-    // -------------------------------------------------------------------------
     let phoenixUsed = false;
     registerFn(
       BroochTemplate.createPassive('brooch_phoenix', 'Broche da Fênix', 'Ressuscita uma vez com 50% de HP ao morrer.')
@@ -43,9 +40,6 @@ export class PassiveBrooches {
       'phoenix'
     );
 
-    // -------------------------------------------------------------------------
-    // 10. Broche do Titã (Imunidade a Stun e Knockback)
-    // -------------------------------------------------------------------------
     registerFn(
       BroochTemplate.createPassive('brooch_titan', 'Broche do Titã', 'Garante imunidade a atordoamentos e empurrões.')
         .withTags('defesa', 'imunidade')
@@ -69,9 +63,6 @@ export class PassiveBrooches {
       'titan'
     );
 
-    // -------------------------------------------------------------------------
-    // 11. Broche das Sombras (Furtividade pós-dash)
-    // -------------------------------------------------------------------------
     let shadowStealthTimer = 0;
     registerFn(
       BroochTemplate.createPassive('brooch_shadow', 'Broche das Sombras', 'Fica invisível e inalvejável por 3s após usar um dash.')
@@ -107,9 +98,6 @@ export class PassiveBrooches {
       'shadow'
     );
 
-    // -------------------------------------------------------------------------
-    // 12. Núcleo Piromante (Chance de Queimadura)
-    // -------------------------------------------------------------------------
     registerFn(
       BroochTemplate.createPassive('brooch_pyro_core', 'Núcleo Piromante', 'Seus ataques normais têm 20% de chance de causar queimadura.')
         .withTags('dano', 'fogo')
@@ -126,9 +114,6 @@ export class PassiveBrooches {
       'pyro_core'
     );
 
-    // -------------------------------------------------------------------------
-    // 13. Amuleto do Leprechaun (Dobro de Loot Raro)
-    // -------------------------------------------------------------------------
     registerFn(
       BroochTemplate.createPassive('brooch_luck_charm', 'Amuleto do Leprechaun', 'Inimigos têm o dobro de chance de dropar itens raros.')
         .withTags('sorte', 'loot')
@@ -144,9 +129,6 @@ export class PassiveBrooches {
       'luck_charm'
     );
 
-    // -------------------------------------------------------------------------
-    // 14. Dente do Vampiro (Cura no Crítico)
-    // -------------------------------------------------------------------------
     registerFn(
       BroochTemplate.createPassive('brooch_vampiric', 'Dente do Vampiro', 'Cura 5% do HP máximo sempre que causar dano crítico.')
         .withTags('sustento', 'dano')
@@ -171,9 +153,6 @@ export class PassiveBrooches {
       'vampiric'
     );
 
-    // -------------------------------------------------------------------------
-    // 15. Ampulheta do Destino (Reroll de Nível)
-    // -------------------------------------------------------------------------
     let rerollCharges = 3;
     registerFn(
       BroochTemplate.createPassive('brooch_reroll_master', 'Ampulheta do Destino', 'Permite roletar as opções de recompensa ao subir de nível até 3 vezes por run.')

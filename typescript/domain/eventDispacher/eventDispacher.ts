@@ -32,9 +32,9 @@ export class EventHandler implements IEventManager {
   dispatch<K extends EventKey>(key: K, payload: GameEventMap[K]): void {
     this.telemetry.incrementEvent();
     
-    // Loga o disparo do evento na nova channel 'events', filtrando os que rodam a 60fps para não floodar o console
+            //? Registra eventos na channel 'events' filtrando eventos de alta frequência (60fps)
     if (key !== 'log' && key !== 'playerMoved' && key !== 'requestNeighbors') {
-        // Envia direto para a lista de listeners de 'log' para evitar loop recursivo no dispatch
+            //? Despacha diretamente aos listeners de log evitando recursão infinita
         const logPayload = { channel: 'events', message: `[EventDispatcher] Disparado: ${key}`, params: [payload] };
         this.listeners['log']?.forEach(listener => listener(logPayload as any));
     }

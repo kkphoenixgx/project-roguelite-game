@@ -10,7 +10,7 @@ export default class CrystalEffect extends Effect {
     }
     
     public apply(target: Entity): void {
-        // Filtra o 'crystal' para que os estilhaços não estilhacem de novo (Loop Infinito)
+      //? Filtra elemento 'crystal' para evitar estilhaçamento recursivo infinito
         const shrapnelElements = this.elements.filter(e => e !== 'crystal'); 
         
         const originalDamage = (this.originalAttack as any).baseDamage || 10;

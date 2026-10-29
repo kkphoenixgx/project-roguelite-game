@@ -20,13 +20,10 @@ export default class VortexArcanistTemplate extends ComplexClassBase {
   constructor(xpTable: IXPTable, player: IPlayer, eventManager: IEventManager) {
     super('ArcanistaDoVortice', xpTable, player, eventManager);
 
-    // --------------------------------------------------------------------------
-    // 1. Skill Nível 1: Disparo Dimensional Perfurante
-    // --------------------------------------------------------------------------
     this.registerSkill(
       1,
       ClassSkillBuilder.create('va_t1_piercing_ray', 'Raio Dimensional', 'Dispara um feixe arcano perfurante que atravessa inimigos.')
-        .asEssential(1, 1500) // 1.5s cooldown
+        .asEssential(1, 1500)
         .withManaCost(10)
         .onExecute(({ player, eventManager, playerCenter, direction }) => {
           const attack = AttackBuilder.create(player)
@@ -46,17 +43,13 @@ export default class VortexArcanistTemplate extends ComplexClassBase {
         })
     );
 
-    // --------------------------------------------------------------------------
-    // 2. Skill Nível 4: Vórtice Gravitacional (Black Hole / Pull em Área)
-    // --------------------------------------------------------------------------
     this.registerSkill(
       4,
       ClassSkillBuilder.create('va_t2_gravity_well', 'Poço de Gravidade', 'Cria um vácuo no cursor puxando todos os inimigos para o centro e causando dano contínuo.')
-        .asActive(2, 6000) // 6s cooldown
+        .asActive(2, 6000)
         .withManaCost(35)
         .withPrerequisite('va_t1_piercing_ray')
         .onExecute(({ player, eventManager, mouseCoords }) => {
-          // Despacha efeito visual de pulso sombrio na tela
           eventManager.dispatch('spawnVisual', {
             type: 'darkPulse',
             coordinates: { x: mouseCoords.x - 64, y: mouseCoords.y - 64 },
@@ -64,7 +57,6 @@ export default class VortexArcanistTemplate extends ComplexClassBase {
             size: { width: 128, height: 128 }
           });
 
-          // Puxa e esmaga inimigos usando a query espacial
           eventManager.dispatch('requestNeighbors', {
             coordinates: mouseCoords,
             radius: 140,
@@ -73,8 +65,8 @@ export default class VortexArcanistTemplate extends ComplexClassBase {
                 .withBaseDamage(40)
                 .asDark()
                 .withIntelligenceScaling(1.2)
-                .withPull(30) // Puxão violento para o centro
-                .withSlow(2.0) // Reduz velocidade ao sair do poço
+                .withPull(30)
+                .withSlow(2.0)
                 .withParticle(eventManager, 'darkPulse')
                 .build();
 
@@ -94,17 +86,13 @@ export default class VortexArcanistTemplate extends ComplexClassBase {
         })
     );
 
-    // --------------------------------------------------------------------------
-    // 3. Skill Nível 8: Translocação Astral (Blink & Heal)
-    // --------------------------------------------------------------------------
     this.registerSkill(
       8,
       ClassSkillBuilder.create('va_t3_astral_blink', 'Translocação Astral', 'Teletransporta instantaneamente para a posição do mouse, curando parte do HP.')
-        .asRare(3, 8000) // 8s cooldown
+        .asRare(3, 8000)
         .withManaCost(25)
         .withPrerequisite('va_t2_gravity_well')
         .onExecute(({ player, eventManager, mouseCoords, playerCenter }) => {
-          // Partícula de saída
           eventManager.dispatch('particle', {
             effect: 'magicPulse',
             x: playerCenter.x,
@@ -112,15 +100,12 @@ export default class VortexArcanistTemplate extends ComplexClassBase {
             color: '#00E5FF'
           });
 
-          // Teletransporte in-place
           player.coordinates.x = mouseCoords.x - player.size.width / 2;
           player.coordinates.y = mouseCoords.y - player.size.height / 2;
 
-          // Cura proporcional à Inteligência
           const healAmount = 20 + Math.floor(player.attributes.intelligence * 0.5);
           player.heal(healAmount);
 
-          // Partícula de chegada
           eventManager.dispatch('particle', {
             effect: 'levelUp',
             x: mouseCoords.x,
@@ -130,13 +115,10 @@ export default class VortexArcanistTemplate extends ComplexClassBase {
         })
     );
 
-    // --------------------------------------------------------------------------
-    // 4. Skill Nível 16: Meteoro Cataclísmico (Ultimate AoE)
-    // --------------------------------------------------------------------------
     this.registerSkill(
       16,
       ClassSkillBuilder.create('va_t4_astral_meteor', 'Meteoro Cataclísmico', 'Invoca uma estrela cadente que colide causando destruição em massa e queimadura.')
-        .asActive(4, 15000) // 15s cooldown
+        .asActive(4, 15000)
         .withManaCost(60)
         .withPrerequisite('va_t3_astral_blink')
         .onExecute(({ player, eventManager, mouseCoords }) => {

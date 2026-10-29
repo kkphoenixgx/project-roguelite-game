@@ -8,14 +8,14 @@ import { RegisterSpawner, type SpawnPayload } from "../../SpawnRegistry";
 
 @RegisterSpawner('fishPet')
 export default class FishPet extends Entity {
-    private lifeTime: number = 5.0; // Dura exatos 5 segundos
+    private lifeTime: number = 5.0; //? Tempo de vida ativo do peixe evocado em segundos
 
     constructor(
         id: number,
         initialCoordinates: { x: number, y: number },
         eventManager: IEventManager
     ) {
-        // Alta velocidade (150) para ele conseguir acompanhar o player enquanto o segue
+    //? Velocidade elevada para acompanhar a movimentação do jogador ao segui-lo
         const attrs = new Attributes(10, 1, 10, 10, 10, 10, 0, 150);
         
         super(id, initialCoordinates, { width: 16, height: 16 }, 'fishPet', attrs, eventManager);
@@ -25,11 +25,10 @@ export default class FishPet extends Entity {
                 { x: this.coordinates.x + this.size.width / 2, y: this.coordinates.y + this.size.height / 2 },
                 0,
                 8,
-                (other: ObjectElement) => {} // Passivo, não ataca por conta própria
+                (other: ObjectElement) => {} //? Invocação puramente passiva; não ataca inimigos
             )
         ];
         
-        // Efeito visual de nascer da água
         this.eventManager.dispatch('particle', { effect: 'waterSplash', x: this.coordinates.x, y: this.coordinates.y });
     }
 
@@ -52,7 +51,6 @@ export default class FishPet extends Entity {
             const cy = this.coordinates.y + this.size.height / 2;
 
             const dist = Math.hypot(px - cx, py - cy);
-            // Segue o player feito um Pet fiel se estiver longe
             if (dist > 40) {
                 const dir = new Vector2D(px - cx, py - cy).normalizeMut();
                 this.direction = dir;
@@ -71,13 +69,13 @@ export default class FishPet extends Entity {
         this.hitboxes?.forEach(hb => hb.updatePosition({ x: cx, y: cy }));
     }
 
-    // Imortalidade Absoluta: Ignora o dano, mas emite partículas para dar feedback tátil nas colisões
+    //? Imortalidade total: ignora o dano mas emite partículas táteis de colisão
     public override takeDamage(damageInfo: DamageInfo): number {
         const centerX = this.coordinates.x + this.size.width / 2;
         const centerY = this.coordinates.y + this.size.height / 2;
         
         this.eventManager.dispatch('particle', { effect: 'waterSplash', x: centerX, y: centerY });
-        return 0; // Sobrevive infinitamente dentro dos 5 segundos
+        return 0; //? Permanece indestrutível durante o seu tempo de vida
     }
 
     public static createSpawn(id: number, payload: SpawnPayload, eventManager: IEventManager): FishPet {

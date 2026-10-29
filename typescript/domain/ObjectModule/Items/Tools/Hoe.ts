@@ -15,7 +15,7 @@ export default class Hoe extends Tool {
     }
 
     public canUseInZone(zoneType: 'city' | 'wilderness' | 'farmland'): boolean {
-        // Enxada só pode ser usada em farmland ou wilderness (fora das cidades)
+    //? Enxada restrita a solos aráveis ou fora do perímetro urbano
         return zoneType === 'farmland' || zoneType === 'wilderness';
     }
 }

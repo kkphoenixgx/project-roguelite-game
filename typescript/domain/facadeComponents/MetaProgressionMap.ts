@@ -9,21 +9,23 @@ export interface GeneratedGlobalNode {
     description: string;
     cost: number;
     rarity: Rarity;
-    dependencies: string[]; // IDs
+    dependencies: string[];
     
-    // Para Níveis 1-3
+    /** Tipo e valor de atributo para nós de nível 1 a 3. */
     statType?: string; 
     statValue?: number;
     
-    // Para Nível 4 (Broche)
+    /** ID do broche para nós ápice de nível 4. */
     broochId?: string;
 }
 
 export interface BroochConfig {
     id: string;
     type: 'ativo' | 'passivo';
-    shape: 'circle' | 'triangle'; // circle = ativo, triangle = passivo
-    tags: string[]; // ex: ['fogo', 'dano'], ['sorte', 'utilidade']
+    /** 'circle' para broches ativos, 'triangle' para broches passivos. */
+    shape: 'circle' | 'triangle';
+    /** Tags descritivas de afinidade (ex: ['fogo', 'dano']). */
+    tags: string[];
     name: string;
     description: string;
 }
@@ -37,7 +39,6 @@ export const RarityMultipliers: Record<Rarity, number> = {
 };
 
 export const GlobalStatPool = [
-    // --- ATRIBUTOS BASE ---
     { type: 'str', category: 'base', name: 'Força', desc: 'Aumenta a Força Base', baseValue: 1, apply: (attr: Attributes, val: number) => { attr.strength += val; } },
     { type: 'dex', category: 'base', name: 'Destreza', desc: 'Aumenta a Destreza Base', baseValue: 1, apply: (attr: Attributes, val: number) => { attr.dexterity += val; } },
     { type: 'con', category: 'base', name: 'Constituição', desc: 'Aumenta a Constituição Base', baseValue: 1, apply: (attr: Attributes, val: number) => { attr.constitution += val; } },
@@ -45,7 +46,6 @@ export const GlobalStatPool = [
     { type: 'wis', category: 'base', name: 'Sabedoria', desc: 'Aumenta a Sabedoria Base', baseValue: 1, apply: (attr: Attributes, val: number) => { attr.wisdom += val; } },
     { type: 'cha', category: 'base', name: 'Carisma', desc: 'Aumenta o Carisma Base', baseValue: 1, apply: (attr: Attributes, val: number) => { attr.charisma += val; } },
 
-    // --- ATRIBUTOS DERIVADOS ---
     { type: 'hp', category: 'derived', name: 'Vida Máxima', desc: 'Aumenta a Vida Máxima', baseValue: 15, apply: (attr: Attributes, val: number) => { attr.addBonusMaxHp(val); } },
     { type: 'mana', category: 'derived', name: 'Mana Máxima', desc: 'Aumenta a Mana Máxima', baseValue: 10, apply: (attr: Attributes, val: number) => { attr.mana += val; } },
     { type: 'speed', category: 'derived', name: 'Velocidade', desc: 'Aumenta a Velocidade de Movimento', baseValue: 5, apply: (attr: Attributes, val: number) => { attr.speed = val; } },
@@ -65,7 +65,6 @@ export const GlobalStatPool = [
     { type: 'area', category: 'derived', name: 'Área de Efeito', desc: 'Aumenta o tamanho e área de efeito dos ataques e projéteis', baseValue: 5, apply: (attr: Attributes, val: number) => { attr.bonusArea = val; } },
     { type: 'dash', category: 'derived', name: 'Cargas de Dash', desc: 'Aumenta Cargas de Dash', baseValue: 1, apply: (attr: Attributes, val: number) => { /* Handled in ActionManager */ } },
 
-    // --- AFINIDADES ELEMENTAIS ---
     { type: 'fire_dmg', category: 'elemental', name: 'Afinidade Ígnea', desc: 'Aumenta a Potência e Dano de Fogo', baseValue: 5, apply: (attr: Attributes, val: number) => { /* Handled in damage calculation */ } },
     { type: 'water_dmg', category: 'elemental', name: 'Afinidade Aquática', desc: 'Aumenta a Potência e Dano de Água', baseValue: 5, apply: (attr: Attributes, val: number) => { /* Handled in damage calculation */ } },
     { type: 'ground_dmg', category: 'elemental', name: 'Afinidade com a Terra', desc: 'Aumenta a Potência e Dano de Terra', baseValue: 5, apply: (attr: Attributes, val: number) => { /* Handled in damage calculation */ } },
@@ -90,7 +89,6 @@ export const GlobalStatPool = [
 ];
 
 export const GlobalBroochPool: BroochConfig[] = [
-    // BROCHES PASSIVOS (Triangulares)
     { id: 'brooch_phoenix', type: 'passivo', shape: 'triangle', tags: ['sobrevivência', 'vida'], name: 'Broche da Fênix', description: 'Ressuscita uma vez com 50% de HP ao morrer.' },
     { id: 'brooch_titan', type: 'passivo', shape: 'triangle', tags: ['defesa', 'imunidade'], name: 'Broche do Titã', description: 'Garante imunidade a atordoamentos e empurrões.' },
     { id: 'brooch_shadow', type: 'passivo', shape: 'triangle', tags: ['agilidade', 'furtividade'], name: 'Broche das Sombras', description: 'Fica invisível e inalvejável por 3s após usar um dash.' },
@@ -99,7 +97,6 @@ export const GlobalBroochPool: BroochConfig[] = [
     { id: 'brooch_vampiric', type: 'passivo', shape: 'triangle', tags: ['sustento', 'dano'], name: 'Dente do Vampiro', description: 'Cura 5% do HP máximo sempre que causar dano crítico.' },
     { id: 'brooch_reroll_master', type: 'passivo', shape: 'triangle', tags: ['sorte', 'utilidade'], name: 'Ampulheta do Destino', description: 'Permite roletar as opções de recompensa ao subir de nível até 3 vezes por run.' },
 
-    // BROCHES ATIVOS (Redondos)
     { id: 'brooch_active_heal', type: 'ativo', shape: 'circle', tags: ['cura', 'vida'], name: 'Cálice da Vida', description: 'Ativo: Cura 30% da Vida Máxima. Recarga: 60s.' },
     { id: 'brooch_active_meteor', type: 'ativo', shape: 'circle', tags: ['dano', 'fogo'], name: 'Chamado do Meteoro', description: 'Ativo: Evoca um meteoro na posição do cursor causando dano em área massivo. Recarga: 90s.' },
     { id: 'brooch_active_luck', type: 'ativo', shape: 'circle', tags: ['sorte', 'buff'], name: 'Dados da Fortuna', description: 'Ativo: Aumenta a Sorte e Evasão em 100% por 10 segundos. Recarga: 45s.' },

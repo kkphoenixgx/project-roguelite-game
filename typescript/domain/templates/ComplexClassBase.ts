@@ -159,7 +159,6 @@ export abstract class ComplexClassBase extends Class {
       return;
     }
 
-    // 1. Verificação de Cooldown
     if (builder.cooldownMs > 0 && (this.player as any).isSkillOnCooldown?.(skillId)) {
       this.eventManager.dispatch('log', {
         channel: 'domain',
@@ -169,7 +168,6 @@ export abstract class ComplexClassBase extends Class {
       return;
     }
 
-    // 2. Verificação de Custo de Mana
     if (builder.manaCost > 0) {
       if (!this.player.attributes || this.player.attributes.mana < builder.manaCost) {
         this.eventManager.dispatch('log', {
@@ -182,12 +180,10 @@ export abstract class ComplexClassBase extends Class {
       this.player.attributes.mana -= builder.manaCost;
     }
 
-    // 3. Aplica o Cooldown no sistema de recarga do jogador
     if (builder.cooldownMs > 0 && typeof (this.player as any).setSkillCooldown === 'function') {
       (this.player as any).setSkillCooldown(skillId, builder.cooldownMs);
     }
 
-    // 4. Executa o Handler de Combate
     if (builder.handler) {
       const px = this.player.coordinates.x + this.player.size.width / 2;
       const py = this.player.coordinates.y + this.player.size.height / 2;

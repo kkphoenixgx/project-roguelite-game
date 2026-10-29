@@ -176,10 +176,8 @@ export default abstract class CognitiveNPC extends Entity {
         let targetX = 0;
         let targetY = 0;
         
-        // Ataca na direção do inimigo atual ou do destino
         if (this.currentTargetEnemyId !== -1) {
              const target = (this as any).eventManager?.requestEnemyPosition ? (this as any).eventManager.requestEnemyPosition(this.currentTargetEnemyId) : null;
-             // Como não temos isso fácil, vamos apenas usar o destino que ele estava indo
              if (this.targetDestination) {
                  targetX = this.targetDestination.x;
                  targetY = this.targetDestination.y;
@@ -197,18 +195,17 @@ export default abstract class CognitiveNPC extends Entity {
         }
         
         if (directionToTarget.x === 0 && directionToTarget.y === 0) {
-            directionToTarget.x = 1; // Default direction if standing still
+            directionToTarget.x = 1; //? Direção horizontal padrão caso o alvo e atacante ocupem a mesma coordenada
         }
 
         directionToTarget.normalizeMut();
 
         const weapon = (this as any).equipment?.mainHand;
         if (!weapon) {
-            // Ataque base / Soco Mágico usando o sistema de colisão e dispatch nativo
-            // Simula um projétil ou golpe mágico na frente
+    //? Emite golpe mágico frontal usando o sistema nativo de colisão de projéteis
             const baseAttack = new Attack(this, this.attributes.strength || 5, 'physical');
             this.eventManager.dispatch('spawn', {
-                type: 'simpleBullet', // Alterado para simpleBullet para compatibilidade com o construtor do projeto
+                type: 'simpleBullet',
                 coordinates: { 
                     x: this.coordinates.x + this.size.width / 2 + directionToTarget.x * 20, 
                     y: this.coordinates.y + this.size.height / 2 + directionToTarget.y * 20 

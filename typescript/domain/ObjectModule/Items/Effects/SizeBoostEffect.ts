@@ -8,7 +8,7 @@ export default class SizeBoostEffect extends Effect {
 
     public apply(target: Entity): void {
         if ('bonusArea' in target.attributes) {
-            (target.attributes as any).bonusArea = this.areaAmount; // Acumula infinitamente
+            (target.attributes as any).bonusArea = this.areaAmount; //? Modificador aditivo de área de efeito
             
             const attackerAny = target as any;
             if (attackerAny.eventManager) {

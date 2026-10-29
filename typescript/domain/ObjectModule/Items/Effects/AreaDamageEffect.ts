@@ -20,7 +20,7 @@ export default class AreaDamageEffect extends Effect {
             callback: (neighbors) => {
                 neighbors.forEach(neighbor => {
                     if (neighbor !== target && 'takeDamage' in neighbor && neighbor.id !== this.originalAttack.attacker.id) {
-                        // A explosão agora causa muito dano, escalando com a Inteligência do mago + bônus de Splash!
+    //? Dano em área radial escalando com Inteligência do conjurador e bônus de splash
                         const baseMagicalDamage = this.originalAttack.attacker.attributes.intelligence * 1.5;
                         const splashDamage = Math.floor(baseMagicalDamage + (this.originalAttack.attacker.attributes.splashDamage || 0));
                                 (neighbor as Entity).takeDamage({ totalDamage: splashDamage || 10, damageType: 'magical', isCritical: false, direction: new Vector2D(0, 0), attacker: this.originalAttack.attacker });

@@ -15,7 +15,7 @@ export default class Axe extends Tool {
     }
 
     public canUseInZone(zoneType: 'city' | 'wilderness' | 'farmland'): boolean {
-        // Machado só pode ser usado em áreas selvagens/bosques
+    //? Machado restrito a áreas de vegetação e bosques
         return zoneType === 'wilderness';
     }
 }

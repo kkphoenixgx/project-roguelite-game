@@ -97,7 +97,6 @@ export class SynergyReactionRegistry {
       eventManager.dispatch('particle', particlePayload);
     }
 
-    // Aplicação de Dano de Reação
     if (def.bonusDamage > 0 && typeof target.takeDamage === 'function') {
       target.takeDamage({
         totalDamage: def.bonusDamage,
@@ -108,7 +107,7 @@ export class SynergyReactionRegistry {
       });
     }
 
-    // Explosão em área para vizinhos
+      //? Propaga dano e efeitos elementais aos vizinhos dentro do raio da reação em cadeia
     if (def.explosionRadius > 0) {
       eventManager.dispatch('requestNeighbors', {
         coordinates: target.coordinates,
@@ -134,7 +133,6 @@ export class SynergyReactionRegistry {
       });
     }
 
-    // Consumo de status
     if (def.consumeFirst) {
       target.activeStatuses.delete(elemA);
     }
@@ -142,13 +140,11 @@ export class SynergyReactionRegistry {
       target.activeStatuses.delete(elemB);
     }
 
-    // Aplicação de status resultante
     if (def.resultingStatusFactory && typeof target.applyStatus === 'function') {
       const resStatus = def.resultingStatusFactory(target);
       if (resStatus) target.applyStatus(resStatus);
     }
 
-    // Callback de gancho
     if (def.onTrigger) {
       def.onTrigger({
         target,
@@ -160,7 +156,7 @@ export class SynergyReactionRegistry {
   }
 
   private static registerDefaults(): void {
-    // 1. Vaporização (Fogo + Molhado / Queimadura + Água)
+    //? Reação 1: Vaporização (Fogo + Molhado / Queimadura + Água)
     this.register(
       SynergyReactionTemplate.create('reaction_vaporize', 'Evaporação Explosiva')
         .between('burn', 'wet')
@@ -170,7 +166,7 @@ export class SynergyReactionRegistry {
         .build()
     );
 
-    // 2. Choque em Cadeia (Eletricidade + Molhado / Paralisia + Água)
+    //? Reação 2: Choque em Cadeia (Eletricidade + Molhado / Paralisia + Água)
     this.register(
       SynergyReactionTemplate.create('reaction_electro_charge', 'Arco Elétrico Condutivo')
         .between('paralyze', 'wet')
@@ -180,7 +176,7 @@ export class SynergyReactionRegistry {
         .build()
     );
 
-    // 3. Combustão Tóxica (Veneno + Queimadura)
+    //? Reação 3: Combustão Tóxica (Veneno + Queimadura)
     this.register(
       SynergyReactionTemplate.create('reaction_toxic_combustion', 'Combustão Tóxica')
         .between('poison', 'burn')
@@ -190,7 +186,7 @@ export class SynergyReactionRegistry {
         .build()
     );
 
-    // 4. Fragmentação de Gelo (Congelamento + Atordoamento)
+    //? Reação 4: Fragmentação de Gelo (Congelamento + Atordoamento)
     this.register(
       SynergyReactionTemplate.create('reaction_shatter', 'Fragmentação Congelada')
         .between('freeze', 'stun')
@@ -286,5 +282,4 @@ export default class SynergyReactionTemplate {
   }
 }
 
-// Inicializa reações padrão após a definição de SynergyReactionTemplate
 (SynergyReactionRegistry as any).registerDefaults();

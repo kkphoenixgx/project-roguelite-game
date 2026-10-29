@@ -79,7 +79,7 @@ export class RuneGrammarEngine {
       }
     }
 
-    // Fusão adjacente (Deep-2 & Meta-Fusão Engine)
+      //? Fusão adjacente canônica Deep-2 entre glifos sequenciais
     let currentElements: string[] = [...rawElements];
     let fused = true;
     while (fused && currentElements.length > 1) {
@@ -95,7 +95,7 @@ export class RuneGrammarEngine {
           if (combo) {
             nextRound.push(combo);
             fused = true;
-            i++; // Consome o elemento fundido adjacente
+            i++; //? Avança o cursor consumindo a segunda runa da fusão
             continue;
           }
         }
@@ -121,15 +121,12 @@ export class RuneGrammarEngine {
   public static createDefault(): RuneGrammarEngine {
     const engine = new RuneGrammarEngine();
 
-    // Formas
     engine.registerRune('spell_0', 'form', 'projectile');
     engine.registerRune('spell_1', 'form', 'self');
 
-    // Forças
     engine.registerRune('spell_2', 'force', 'knockback');
     engine.registerRune('spell_3', 'force', 'pull');
 
-    // Elementos Primários
     engine.registerRune('spell_4', 'element', 'fire');
     engine.registerRune('spell_5', 'element', 'water');
     engine.registerRune('spell_6', 'element', 'ground');
@@ -137,7 +134,7 @@ export class RuneGrammarEngine {
     engine.registerRune('spell_8', 'element', 'light');
     engine.registerRune('spell_9', 'element', 'magic');
 
-    // Matriz de Fusão Elemental Canônica (Deep-2)
+    //? Matriz de Fusão Elemental Canônica (Deep-2) entre elementos primários
     const combos: [string, string, string][] = [
       ['magic', 'fire', 'potencia'],
       ['magic', 'water', 'ice'],
@@ -153,7 +150,7 @@ export class RuneGrammarEngine {
       ['water', 'light', 'holy'],
       ['ground', 'dark', 'decay'],
       ['ground', 'light', 'crystal'],
-      // Operador de Negação / Dispel Axiomático
+    //? Regra axiomática de anulação/dispel mágico via runa de negação
       ['ordem', 'caos', 'negation'],
       ['caos', 'ordem', 'negation'],
       ['ordem', 'dark', 'negation'],

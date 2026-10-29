@@ -7,6 +7,6 @@ export default class ManaRestoreEffect extends Effect {
     }
 
     public apply(target: Entity): void {
-        target.attributes.mana += this.amount; // Setter de Attributes.ts segura o cap máximo
+        target.attributes.mana += this.amount; //? Setter em Attributes limita restauração ao teto maxMana
     }
 }

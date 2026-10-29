@@ -34,7 +34,6 @@ export const bladeInfusionAirDynamicRule: DynamicSpellRule = {
     const { player, eventManager, manaCost } = ctx;
     const duration = 5;
 
-    // Aplica bônus de velocidade temporário
     player.attributes.speed = 25;
     (player as any).elementalType = 'air';
 
@@ -93,7 +92,7 @@ export const bladeInfusionLightDynamicRule: DynamicSpellRule = {
     const { player, eventManager, manaCost } = ctx;
     const duration = 5;
 
-    // Bônus temporário de Área e Splash nativos em Attributes.ts
+    //? Bônus temporário de Área e Splash nativos em Attributes
     player.attributes.bonusArea = 50;
     player.attributes.splashDamage = 30;
 

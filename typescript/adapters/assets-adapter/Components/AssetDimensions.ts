@@ -5,7 +5,6 @@
  */
 
 export const KNOWN_ASSET_DIMENSIONS: Record<string, { width: number; height: number }> = {
-    // Fortificações
     'fortified_gatehouse_clean': { width: 320, height: 351 },
     'stone_wall_corner_clean': { width: 316, height: 250 },
     'stone_wall_corner_ne_clean': { width: 316, height: 250 },
@@ -19,10 +18,8 @@ export const KNOWN_ASSET_DIMENSIONS: Record<string, { width: number; height: num
     'stone_wall_straight_vertical_east_clean': { width: 128, height: 208 },
     'stone_watchtower_clean': { width: 212, height: 340 },
 
-    // Fontes
     'fountain_awakening_clean': { width: 170, height: 165 },
 
-    // Casas / Construções
     'house_alchemist_curio_clean': { width: 250, height: 330 },
     'house_apothecary_greenhouse_clean': { width: 320, height: 330 },
     'house_arcane_tower_clean': { width: 220, height: 326 },
@@ -48,7 +45,6 @@ export const KNOWN_ASSET_DIMENSIONS: Record<string, { width: number; height: num
     'house_witch_turret_clean': { width: 290, height: 330 },
     'house_woodcutter_shack_clean': { width: 230, height: 240 },
 
-    // Mercado
     'crate_apples': { width: 189, height: 173 },
     'crate_pumpkins': { width: 194, height: 175 },
     'market_crate_apples_clean': { width: 93, height: 90 },
@@ -59,7 +55,6 @@ export const KNOWN_ASSET_DIMENSIONS: Record<string, { width: number; height: num
     'market_stall_purple_clean': { width: 86, height: 93 },
     'market_tent_canopy_clean': { width: 178, height: 152 },
 
-    // Natureza
     'bush_flowering_clean': { width: 55, height: 50 },
     'nature_berry_bush_clean': { width: 103, height: 77 },
     'nature_cattails_reeds_clean': { width: 51, height: 94 },
@@ -73,13 +68,11 @@ export const KNOWN_ASSET_DIMENSIONS: Record<string, { width: number; height: num
     'tree_pine_clean': { width: 80, height: 128 },
     'pond_nature_clearing_clean': { width: 220, height: 195 },
 
-    // Pontes e Cais
     'bridge_stepping_stones_clean': { width: 164, height: 132 },
     'bridge_stone_arch_clean': { width: 176, height: 142 },
     'bridge_wood_planks_clean': { width: 168, height: 234 },
     'pier_wooden_dock_clean': { width: 182, height: 131 },
 
-    // Acampamento e Props
     'barrel_stack_clean': { width: 66, height: 52 },
     'barrel_single_clean': { width: 28, height: 36 },
     'barrel_lying_clean': { width: 34, height: 26 },
@@ -114,7 +107,6 @@ export const KNOWN_ASSET_DIMENSIONS: Record<string, { width: number; height: num
     'street_lantern_clean': { width: 35, height: 78 },
     'wooden_bench_clean': { width: 54, height: 50 },
 
-    // Cercas
     'wooden_fence_broken_clean': { width: 147, height: 103 },
     'wooden_fence_corner_clean': { width: 143, height: 106 },
     'wooden_fence_diagonal_clean': { width: 101, height: 110 },
@@ -123,7 +115,6 @@ export const KNOWN_ASSET_DIMENSIONS: Record<string, { width: number; height: num
     'wooden_fence_horizontal_clean': { width: 150, height: 74 },
     'wooden_fence_post_clean': { width: 25, height: 143 },
 
-    // Estradas de Pedra
     'road_corner_90': { width: 202, height: 188 },
     'road_crossroad_4way': { width: 260, height: 260 },
     'road_dead_end': { width: 145, height: 220 },
@@ -144,7 +135,6 @@ export const KNOWN_ASSET_DIMENSIONS: Record<string, { width: number; height: num
     'road_straight_horizontal': { width: 460, height: 116 },
     'road_straight_vertical': { width: 145, height: 460 },
 
-    // Estradas de Terra
     'road_dirt_corner_90': { width: 300, height: 260 },
     'road_dirt_crossroad_4way': { width: 350, height: 245 },
     'road_dirt_straight_horizontal': { width: 450, height: 230 },
@@ -153,7 +143,6 @@ export const KNOWN_ASSET_DIMENSIONS: Record<string, { width: number; height: num
     'road_dirt_ruts': { width: 190, height: 70 },
     'road_dirt_clods': { width: 96, height: 56 },
 
-    // Rios e Águas
     'river_curve_ne': { width: 230, height: 230 },
     'river_curve_nw': { width: 230, height: 230 },
     'river_curve_se': { width: 230, height: 230 },

@@ -49,7 +49,7 @@ export default abstract class Entity extends ObjectElement {
   public applyStatus(status: any): void {
     const existing = this.activeStatuses.get(status.id);
     if (existing) {
-        existing.duration = Math.max(existing.duration, status.duration); // Renova a duração
+        existing.duration = Math.max(existing.duration, status.duration);
         existing.elapsed = 0;
     } else {
         this.activeStatuses.set(status.id, status);
@@ -108,39 +108,36 @@ export default abstract class Entity extends ObjectElement {
 
     let finalDamage = damageInfo.totalDamage;
 
-    // VULNERABILIDADES ELEMENTAIS (A Sinergia)
+    //? Processa sinergias elementais, debuffs e resistências intrínsecas (ver ARCHITECTURE.md 3.6)
     if (this.activeStatuses.has('wet')) {
-        if (damageInfo.damageType === 'dark') finalDamage *= 1.5; // Água conduz eletricidade (Trovão virou Trevas)
-        if (damageInfo.damageType === 'fire') finalDamage *= 0.5;    // Água apaga fogo
+        if (damageInfo.damageType === 'dark') finalDamage *= 1.5;
+        if (damageInfo.damageType === 'fire') finalDamage *= 0.5;
     }
-    // DEBUFF DE VENENO
     if (this.activeStatuses.has('poison')) {
-        finalDamage *= 1.15; // 15% a mais de dano recebido de todas as fontes
+        finalDamage *= 1.15;
     }
-    // DANO SAGRADO VS MORTOS-VIVOS
     if (damageInfo.damageType === 'light' && ['skeleton', 'zombie', 'vampire', 'lich', 'demon', 'bdiAgent', 'shadowmob'].includes(this.objectId)) {
         finalDamage *= 2.0;
     }
 
-    // FRAQUEZAS E RESISTÊNCIAS INTRÍNSECAS DA ENTIDADE
     if (this.elementalType) {
         const weaknesses: { [key in DamageType]?: DamageType } = {
-            'ground': 'fire', // Fogo > Terra
-            'fire': 'water',  // Água > Fogo
-            'water': 'dark'   // Trevas > Água
+            'ground': 'fire',
+            'fire': 'water',
+            'water': 'dark'
         };
         const resistances: { [key in DamageType]?: DamageType } = {
-            'fire': 'ground', // Terra resiste a Fogo
-            'water': 'fire',  // Fogo resiste a Água
-            'dark': 'light'   // Luz resiste a Trevas
+            'fire': 'ground',
+            'water': 'fire',
+            'dark': 'light'
         };
 
         if (weaknesses[this.elementalType] === damageInfo.damageType) {
-            finalDamage *= 1.5; // 50% a mais de dano
+            finalDamage *= 1.5;
         } else if (resistances[this.elementalType] === damageInfo.damageType) {
-            finalDamage *= 0.5; // 50% de resistência
+            finalDamage *= 0.5;
         } else if (this.elementalType === damageInfo.damageType) {
-            finalDamage *= 0.5; // Dano do mesmo tipo também é resistido
+            finalDamage *= 0.5;
         }
     }
 
@@ -151,7 +148,6 @@ export default abstract class Entity extends ObjectElement {
       finalDamage = Math.max(1, finalDamage - currentDefence);
     }
 
-    // Aplica o dano ao HP
     this.attributes.hp -= finalDamage;
     
     const centerX = this.coordinates.x + this.size.width / 2;
@@ -160,7 +156,7 @@ export default abstract class Entity extends ObjectElement {
     if (this.attributes.hp <= 0) {
       this.state = 'dead';
       
-      // Despacha evento puro de negócio ao invés de acoplar as partículas visualmente
+      //? Despacha evento semântico de domínio (entityDied) desacoplado da apresentação visual
       this.eventManager.dispatch('entityDied', { 
          entityId: this.id, 
          objectId: this.objectId,
@@ -172,7 +168,6 @@ export default abstract class Entity extends ObjectElement {
       return finalDamage;
     }
 
-    // Informa aos adaptadores sobre o dano recebido para tocarem sons e efeitos
     this.eventManager.dispatch('entityDamaged', {
       entityId: this.id,
       damage: finalDamage,
@@ -181,7 +176,7 @@ export default abstract class Entity extends ObjectElement {
       coordinates: { x: centerX, y: centerY }
     });
 
-    // Calcula a força do knockback com base no fator de lançamento, não mais na vida do alvo.
+    //? Calcula impulso de knockback com base no fator de lançamento (hurtLaunchFactor) da entidade
     const safeDirection = damageInfo.direction instanceof Vector2D ? damageInfo.direction : new Vector2D((damageInfo.direction as any).x || 0, (damageInfo.direction as any).y || 0);
     const acceleratorVectorInfluency = safeDirection.clone().multiplyMut(this.hurtLaunchFactor);
     this.accelerator.addMut(acceleratorVectorInfluency)
@@ -241,12 +236,12 @@ export default abstract class Entity extends ObjectElement {
                 const curPx = this.coordinates.x + this.size.width / 2;
                 const curPy = this.coordinates.y + this.size.height / 2;
 
-                // Broadphase rápida via AABB expandida pelo raio
+                //? Broadphase rápida via AABB expandida pelo raio
                 if (curPx + radius < minX || curPx - radius > maxX || curPy + radius < minY || curPy - radius > maxY) {
                     continue;
                 }
 
-                // 1. Ray-casting para detectar se o centro do círculo está contido dentro do polígono
+                //? 1. Ray-casting para detectar se o centro do círculo está contido dentro do polígono
                 let inside = false;
                 for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
                     const xi = pts[i]!.x, yi = pts[i]!.y;
@@ -256,7 +251,7 @@ export default abstract class Entity extends ObjectElement {
                     if (intersect) inside = !inside;
                 }
 
-                // 2. Busca pelo ponto mais próximo no perímetro do polígono
+                //? 2. Busca pelo ponto mais próximo no perímetro do polígono
                 let closestDistSq = Infinity;
                 let closestX = curPx;
                 let closestY = curPy;
@@ -285,7 +280,7 @@ export default abstract class Entity extends ObjectElement {
                 const dist = Math.sqrt(closestDistSq);
 
                 if (inside) {
-                    // Centro está dentro do obstáculo sólido: empurra na direção de saída mais curta
+                    //? Centro dentro do obstáculo sólido: empurra na direção de saída mais curta
                     const dx = curPx - closestX;
                     const dy = curPy - closestY;
                     if (dist > 0.0001) {
@@ -296,7 +291,7 @@ export default abstract class Entity extends ObjectElement {
                         this.coordinates.y += radius;
                     }
                 } else if (dist < radius && dist > 0.0001) {
-                    // Centro está fora, mas o raio intercepta o segmento do polígono
+                    //? Centro fora do obstáculo: raio intercepta segmento do polígono
                     const dx = curPx - closestX;
                     const dy = curPy - closestY;
                     const overlap = radius - dist;
@@ -325,7 +320,7 @@ export default abstract class Entity extends ObjectElement {
         this.coordinates.x += (dx / distance) * overlap;
         this.coordinates.y += (dy / distance) * overlap;
     } else if (distance === 0) {
-        // Centro perfeitamente dentro do AABB (Penetração Profunda devido a Física Atrasada)
+        //? Centro contido no AABB: resolve penetração profunda direcionando para a aresta mais próxima
         const distLeft = px - boxX;
         const distRight = (boxX + boxW) - px;
         const distTop = py - boxY;
@@ -356,15 +351,15 @@ export default abstract class Entity extends ObjectElement {
 
   public move(deltaTime: number):void {
     if (this.activeStatuses.has('stun') || this.activeStatuses.has('paralyze')) {
-        // Controle de Grupo! A entidade perde a vontade própria de se mover
+        //? Efeito de controle de grupo (CC): zera velocidade intencional do alvo
         this.velocity.resetMut();
     }
 
     //? Calcula o deslocamento base para este frame (velocidade * tempo)
     this.velocity.multiplyMut(deltaTime * this.currentSpeedModifier);
-    this.currentSpeedModifier = 1; // Reseta para ler novo terreno no próx frame
+    this.currentSpeedModifier = 1; //? Reseta modificador para amostragem do próximo frame
     
-    // A física reage: Adiciona Forças Externas (Knockback/Pull) como deslocamento absoluto
+    //? Adiciona forças externas (knockback/puxão) acumuladas no acelerador
     this.velocity.addMut(this.accelerator);
     
     this.updatePosition();
@@ -384,7 +379,6 @@ export default abstract class Entity extends ObjectElement {
   public getDistanceTo(otherElement: ObjectElement): number {
     const dx = (this.coordinates.x + this.size.width / 2) - (otherElement.coordinates.x + otherElement.size.width / 2);
     const dy = (this.coordinates.y + this.size.height / 2) - (otherElement.coordinates.y + otherElement.size.height / 2);
-    // Usa o Teorema de Pitágoras para encontrar a distância
     return Math.sqrt(dx * dx + dy * dy);
   }
 

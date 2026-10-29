@@ -7,7 +7,7 @@ export default class AddCoinsEffect extends Effect {
     }
 
     public apply(target: Entity): void {
-        // Apenas o jogador possui uma carteira no momento
+    //? Apenas entidades do tipo Player possuem carteira de moedas
         if ('coins' in target) (target as any).coins += this.amount;
     }
 }

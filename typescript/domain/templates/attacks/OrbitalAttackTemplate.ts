@@ -16,12 +16,18 @@ export interface IOrbitalAttackDefinition {
   readonly id: string;
   readonly name: string;
   readonly baseRadius: number;
-  readonly baseAngularSpeed: number; // radianos por segundo (ex: 2 * Math.PI = 1 volta por segundo)
-  readonly rotations: number; // quantidade de voltas (<= 0 para infinito / canalizado)
-  readonly dexterityScaling: number; // cada ponto de destreza acelera a rotação
-  readonly strengthRadiusScaling: number; // cada ponto de força aumenta o raio de alcance
-  readonly hitboxRadius: number; // tamanho da lâmina giratória
-  readonly targetHitCooldownMs: number; // previne múltiplos hits seguidos no mesmo inimigo no mesmo giro
+  /** Radianos por segundo (ex: 2 * Math.PI = 1 volta por segundo). */
+  readonly baseAngularSpeed: number;
+  /** Quantidade de voltas (<= 0 para infinito / canalizado). */
+  readonly rotations: number;
+  /** Cada ponto de destreza acelera a rotação. */
+  readonly dexterityScaling: number;
+  /** Cada ponto de força aumenta o raio de alcance. */
+  readonly strengthRadiusScaling: number;
+  /** Tamanho da lâmina giratória. */
+  readonly hitboxRadius: number;
+  /** Previne múltiplos hits seguidos no mesmo inimigo no mesmo giro. */
+  readonly targetHitCooldownMs: number;
   readonly knockbackMode: OrbitalKnockbackMode;
   readonly visualEffect?: string | undefined;
   readonly particleEffect?: string | undefined;
@@ -53,7 +59,6 @@ export class ActiveOrbitalAttack {
   private _dirCache: Vector2D = new Vector2D(0, 0);
   private _attackInstance: Attack;
 
-  // Parâmetros computados baseados nos atributos do mestre
   public readonly angularSpeed: number;
   public readonly radius: number;
 
@@ -67,11 +72,9 @@ export class ActiveOrbitalAttack {
     this._maxRotation = definition.rotations > 0 ? definition.rotations * Math.PI * 2 : Infinity;
     this._attackInstance = definition.attackFactory(owner);
 
-    // 1. Velocidade Angular escalonada por Destreza
     const dex = owner.attributes?.dexterity || 10;
     this.angularSpeed = definition.baseAngularSpeed + (dex * definition.dexterityScaling);
 
-    // 2. Raio da órbita escalonado por Força e Área de Efeito
     const str = owner.attributes?.strength || 10;
     const bonusAreaPercent = (owner.attributes as any)?.bonusArea || 0;
     const baseWithStr = definition.baseRadius + (str * definition.strengthRadiusScaling);
@@ -100,21 +103,17 @@ export class ActiveOrbitalAttack {
   public update(deltaTime: number): void {
     if (this._isFinished) return;
 
-    // Avança o ângulo angular
     const deltaAngle = this.angularSpeed * deltaTime;
     this.currentAngle += deltaAngle;
     this._accumulatedRotation += deltaAngle;
 
-    // Verifica conclusão por número de voltas
     if (this._accumulatedRotation >= this._maxRotation) {
       this.finish();
       return;
     }
 
-    // Calcula coordenadas atuais da lâmina giratória
     const bladeCoords = this.currentCoordinates;
 
-    // Partículas e trilha visual desacoplada
     if (this.definition.particleEffect) {
       const particlePayload: any = {
         effect: this.definition.particleEffect,
@@ -125,7 +124,6 @@ export class ActiveOrbitalAttack {
       this.eventManager.dispatch('particle', particlePayload);
     }
 
-    // Consulta e atinge inimigos no ponto exato da lâmina
     this.checkCollisionsAtBlade(bladeCoords);
   }
 
@@ -143,17 +141,14 @@ export class ActiveOrbitalAttack {
           if (!target || target.id === this.owner.id || target.objectId === this.owner.objectId) continue;
           if (!('attributes' in target) || target.attributes.hp <= 0 || typeof target.takeDamage !== 'function') continue;
 
-          // Valida cooldown de contato individual por inimigo
+          //? Valida cooldown individual de contato por inimigo para evitar hits a cada frame.
           const nextHitTime = this._hitCooldowns.get(target.id) || 0;
           if (now < nextHitTime) continue;
 
-          // Registra novo cooldown para este inimigo
           this._hitCooldowns.set(target.id, now + this.definition.targetHitCooldownMs);
 
-          // Calcula direção de arremesso/knockback
           this.computeKnockbackDirection(bladeCoords, target.coordinates);
 
-          // Executa o golpe
           this._attackInstance.execute(target, this._dirCache);
 
           if (this.definition.onHit) {
@@ -171,17 +166,15 @@ export class ActiveOrbitalAttack {
 
   private computeKnockbackDirection(bladeCoords: { x: number; y: number }, targetCoords: { x: number; y: number }): void {
     if (this.definition.knockbackMode === 'tangential') {
-      // Vetor tangente à rotação circular: (-sin(θ), cos(θ))
+      //? Vetor tangente à rotação circular: (-sin(θ), cos(θ)).
       this._dirCache.x = -Math.sin(this.currentAngle);
       this._dirCache.y = Math.cos(this.currentAngle);
       this._dirCache.normalizeMut();
     } else if (this.definition.knockbackMode === 'radial') {
-      // Empurra para fora do centro do jogador
       this._dirCache.x = targetCoords.x - this.owner.coordinates.x;
       this._dirCache.y = targetCoords.y - this.owner.coordinates.y;
       this._dirCache.normalizeMut();
     } else if (this.definition.knockbackMode === 'pull') {
-      // Puxa em direção à lâmina
       this._dirCache.x = bladeCoords.x - targetCoords.x;
       this._dirCache.y = bladeCoords.y - targetCoords.y;
       this._dirCache.normalizeMut();
@@ -216,12 +209,12 @@ export class ActiveOrbitalAttack {
  */
 export default class OrbitalAttackTemplate {
   private _baseRadius: number = 48;
-  private _baseAngularSpeed: number = Math.PI * 3; // ~1.5 voltas por segundo
-  private _rotations: number = 2; // 2 voltas completas por padrão
-  private _dexterityScaling: number = 0.04; // +4% de velocidade angular por ponto de Destreza
-  private _strengthRadiusScaling: number = 0.02; // +2% de alcance por ponto de Força
-  private _hitboxRadius: number = 24; // raio de impacto da espada
-  private _targetHitCooldownMs: number = 300; // no máximo 1 hit a cada 300ms por alvo
+  private _baseAngularSpeed: number = Math.PI * 3;
+  private _rotations: number = 2;
+  private _dexterityScaling: number = 0.04;
+  private _strengthRadiusScaling: number = 0.02;
+  private _hitboxRadius: number = 24;
+  private _targetHitCooldownMs: number = 300;
   private _knockbackMode: OrbitalKnockbackMode = 'tangential';
   private _visualEffect?: string | undefined;
   private _particleEffect?: string | undefined;

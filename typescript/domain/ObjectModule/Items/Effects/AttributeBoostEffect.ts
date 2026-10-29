@@ -9,7 +9,7 @@ export default class AttributeBoostEffect extends Effect {
 
     public apply(target: Entity): void {
         if (this.attribute in target.attributes) {
-            // Um elixir de Força ou Destreza modifica a base do personagem para a run toda!
+    //? Modifica atributos base do personagem de forma persistente durante a run
             (target.attributes as any)[this.attribute] += this.amount;
         }
     }

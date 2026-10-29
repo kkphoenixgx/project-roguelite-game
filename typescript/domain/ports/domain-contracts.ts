@@ -117,7 +117,7 @@ interface BaseRenderableState {
 /** DTO que representa o estado de uma entidade renderizável. A camada de apresentação usa `entityTypeId` e `state` para decidir qual sprite e animação usar. */
 export interface EntityRenderableState extends BaseRenderableState {
   /** Identifica o tipo da entidade (ex: 'player') para que a apresentação possa carregar o asset visual correto. */
-  entityTypeId: objectTypeId; // Ex: 'player', 'goblin', 'chest'
+  entityTypeId: objectTypeId; //? Identificador de tipo da entidade (ex: 'player', 'goblin', 'chest')
   /** Descreve o estado comportamental da entidade (ex: 'idle') para que a apresentação possa selecionar a animação correta. */
   state? : string;
   /** Uma lista opcional de formas de hitbox para depuração visual. */
@@ -197,7 +197,7 @@ export interface EntityRenderableState extends BaseRenderableState {
 }
 
 /** Tipo união para todos os possíveis estados de objetos renderizáveis, permitindo que o sistema seja estendido com outros tipos (ex: partículas) no futuro. */
-export type RenderableState = EntityRenderableState; // Por enquanto, só temos entidades
+export type RenderableState = EntityRenderableState;
 
 export interface EngineWorldDTO {
   id: string;
@@ -228,10 +228,9 @@ export interface IGameDomain {
   /** Transiciona o jogador para um novo mapa ou intermap, preservando atributos, inventário e habilidades. */
   transitionWorld(targetMapId: string, spawnCoords?: { x: number; y: number }, collisionData?: any[]): Promise<void>;
   /** Traduz uma intenção do usuário (capturada pela apresentação) em um comando que o domínio entende. @param command O comando de movimento. */
-  handlePlayerInteractions(command: { actions: Array<action> }, mouseLastCoordinates: {x:number,y:number}): void; // eslint-disable-line
+  handlePlayerInteractions(command: { actions: Array<action> }, mouseLastCoordinates: {x:number,y:number}): void;
   
-  // [ARCH] Métodos específicos de UI (inventário, skills, atributos) foram substituídos por disparos 
-  // diretos no EventBus (gameEvents.dispatch('inventoryAction', ...)) para evitar God Classes.
+  //? Métodos de UI desacoplados em eventos semânticos tipados no barramento de eventos
 
   /** Solicita ao domínio uma "fotografia" do estado atual de todos os objetos visíveis, formatada como DTOs puros para a renderização. @returns Um objeto com o estado do mundo e uma lista de DTOs renderizáveis. */
   getRenderState(): { world: WorldState; renderables: readonly RenderableState[] };

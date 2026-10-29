@@ -15,7 +15,7 @@ import { RegisterSpawner, type SpawnPayload } from "../../SpawnRegistry";
 @RegisterSpawner('shadowMob')
 export default class ShadowMob extends Entity {
     private lastAttackTime: number = 0;
-    private attackCooldown: number = 1500; // 1.5 segundos entre cada ataque
+    private attackCooldown: number = 1500; //? Tempo de recarga do golpe em milissegundos
 
     constructor(
         id: number,
@@ -25,11 +25,11 @@ export default class ShadowMob extends Entity {
     ) {
         super(id, initialCoordinates, { width: 16, height: 16 }, 'shadowMob' as any, attributes, eventManager);
 
-        // A Mágica acontece aqui: Um ataque mágico que aplica status aleatório OnHit!
+    //? Ataque mágico que sorteia status elementais onHit
         const shadowAttack = new Attack(this, 8, 'magical', [
             (attacker, target, damageDealt) => {
                 const random = Math.random();
-                // 20% de chance para cada status negativo
+    //? Distribuição uniforme de 20% de probabilidade entre os 5 status negativos
                 if (random < 0.2) target.applyStatus(new BurnStatus(4, this));
                 else if (random < 0.4) target.applyStatus(new PoisonStatus(5, this));
                 else if (random < 0.6) target.applyStatus(new WetStatus(6));
@@ -69,7 +69,6 @@ export default class ShadowMob extends Entity {
             const dirY = player.coordinates.y - this.coordinates.y;
             this.direction = new Vector2D(dirX, dirY).normalizeMut();
             
-            // Aplica a velocidade ao vetor de direção antes de chamar o move
             this.velocity = this.direction.clone().multiplyMut(this.attributes.speed);
             this.move(deltaTime);
         }

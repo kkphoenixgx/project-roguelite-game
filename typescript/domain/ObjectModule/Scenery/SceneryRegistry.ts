@@ -83,17 +83,15 @@ export function buildAssetHitboxes(
                 return { x: lx, y: ly };
             });
 
-            // Prescrição de QA (Risco 2):
-            // Espelhar apenas 1 eixo (flipX XOR flipY) inverte a orientação (Winding Order / Normais).
-            // Para preservar a orientação física no SAT/Worker, o array de pontos deve ser invertido (.reverse()).
+      //? Espelhar apenas 1 eixo inverte o winding order dos vértices (normais do SAT).
+      //? Inverte o array de pontos (.reverse()) para preservar a orientação física do polígono.
             if (flipX !== flipY) {
                 transformedPoints.reverse();
             }
 
             hitboxes.push(new HitBoxPolygon(coordinates, 0, transformedPoints, { x: 0, y: 0 }, () => {}));
         } else if (shape.type === 'circle' && shape.center && typeof shape.radius === 'number') {
-            // Prescrição de QA (Risco 3):
-            // Evita deformação assimétrica usando escala conservadora
+      //? Evita deformação assimétrica do polígono de colisão aplicando escala uniforme.
             const radiusScale = Math.min(scaleX, scaleY);
             const scaledRadius = shape.radius * radiusScale;
 

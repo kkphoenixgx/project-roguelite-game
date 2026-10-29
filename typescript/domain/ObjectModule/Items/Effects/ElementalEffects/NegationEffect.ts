@@ -27,8 +27,7 @@ export default class NegationEffect extends Effect {
       return;
     }
 
-    // Procura por um status mágico elegível (Tier <= purgePower)
-    // Prioriza o de maior tier elegível ou o mais recente (LIFO)
+    //? Purga status mágico elegível (Tier <= purgePower) priorizando maior tier ou LIFO
     let candidateIndex = -1;
     let highestTierFound = -1;
 

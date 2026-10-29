@@ -3,7 +3,7 @@ import type { ISaveRepository, GlobalProgressData } from "../../domain/ports/ISa
 export class RepositoryAdapter implements ISaveRepository {
     private readonly SAVE_KEY = 'geppetto_dream_save';
     
-    // Palavra-chave usada para o Cipher XOR. Pode ser complexa para desencorajar "hackers" casuais.
+    //? Palavra-chave usada para o Cipher XOR para desencorajar adulteração casual de save local.
     private readonly SECRET = 'G3p3tt0_Dr34ms_V1_2026';
 
     private encrypt(data: string): string {
@@ -11,11 +11,11 @@ export class RepositoryAdapter implements ISaveRepository {
         for (let i = 0; i < data.length; i++) {
             result += String.fromCharCode(data.charCodeAt(i) ^ this.SECRET.charCodeAt(i % this.SECRET.length));
         }
-        return btoa(result); // Converte para Base64 para garantir caracteres ASCII legíveis e copiáveis
+        return btoa(result); //? Converte o buffer cifrado para Base64 garantindo caracteres ASCII legíveis e portáveis.
     }
 
     private decrypt(data: string): string {
-        const decoded = atob(data); // Reverte o Base64
+        const decoded = atob(data);
         let result = '';
         for (let i = 0; i < decoded.length; i++) {
             result += String.fromCharCode(decoded.charCodeAt(i) ^ this.SECRET.charCodeAt(i % this.SECRET.length));
@@ -54,11 +54,11 @@ export class RepositoryAdapter implements ISaveRepository {
     public importSave(encryptedData: string): boolean {
         try {
             const decrypted = this.decrypt(encryptedData);
-            JSON.parse(decrypted); // Tenta decodificar o JSON para confirmar que o Save e a Senha XOR conferem
+            JSON.parse(decrypted); //? Valida a integridade do JSON decifrado para confirmar paridade com a chave XOR.
             localStorage.setItem(this.SAVE_KEY, encryptedData);
             return true;
         } catch (e) {
-            return false; // Erro de JSON (Save quebrado) ou Erro de Atob (String mal formada)
+            return false;
         }
     }
 }

@@ -33,14 +33,14 @@
     - [X] - Status
 
 - [~] Tela seleção de mapas (#9)
-    descrição: - [ ] HUD
-    - [ ] HUD
-    - [ ] Composição dos mapas na tela
-    - [ ] Colocar um mapa (tile)
-    - [ ] Junção dos mapas (tiles)
-    - [ ] Isso deve ser expansível facilmente
+    descrição: - [X] HUD
+    - [X] HUD
+    - [X] Composição dos mapas na tela
+    - [X] Colocar um mapa (tile)
+    - [X] Junção dos mapas (tiles)
+    - [X] Isso deve ser expansível facilmente
     - [ ] Fog
-    - [ ] Seleção de mapas para jogar
+    - [X] Seleção de mapas para jogar
 
 - [ ] Compositor de personagem (#8)
     descrição: - [ ] Melhorar o `renderModule/Sprite` para poder juntar os sprites de partes do **personagem** 
@@ -386,6 +386,15 @@ sses
 	* [x] Buffer de Input: Captura de sequências para o Mago.
 	* [x] **Refatoração de Física:** Desacoplar Worker de colisão para evitar bloqueios no Game Loop (Double Buffering).
 	* [x] **Limpeza de Memória:** Implementar Object Pooling para projéteis e DTOs de renderização para evitar GC Thrashing.
+	* [x] **Trigger de Estado de Cenário (Asset para Sprite):** Suporte completo no domínio a triggers de transição visual e colisão física (ex: portão de castelo abrindo/fechando por ação de NPC via `openGate`/`closeGate` ou evento `triggerAssetState`).
+	* [x] **Particionamento Espacial e Chunks (WorldChunkManager):** Particionamento contínuo com origem central no spawn (Chunk 0,0), hash de 32 bits Zero-GC e janela ativa 3x3.
+	* [x] **Reset de Run Roguelite:** Reset de nível, XP e atributos da run mantendo intactos os broches e nós da Árvore Global permanente.
+	* [x] **Persistência ao Quitar:** Salvamento obrigatório antes de quitar com retenção das coordenadas exatas no save.
+	* [x] **Editor de Cenários & Assets Adapter:** Suporte a Marquee Selection (Desktop-style), Clipboard (Ctrl+C / Ctrl+V), Duplicação (Ctrl+D), Centralização em Chunk (C), Naturalização orgânica (N), rotação livre em graus (slider + presets), escala proporcional com aspect ratio travado, Lock de assets (L), preservação de scroll no painel e expansão de categorias na gaveta lateral.
+	* [x] **Pincel de Textura de Chunk (Chunk Texture Brush Tool - Tecla T):** Ferramenta de pintura contínua de terrenos com cursor circular, ajuste de raio ([ / ] ou Alt+Scroll), suavidade de borda (feather), opacidade e geração de camadas pintadas (`PlacedAssetModel` com `isPaintedLayer: true`) prontas para Bake nos chunks do mapa.
+	* [x] **Bake Multi-Chunk de Assets & Terreno:** Incorporação em lote de objetos e pinturas nos PNGs físicos de chunks com ordenação Z-Index (Painter's Algorithm) e sincronização no disco via `ChunkSync`.
+	* [x] **Player Idle de Referência 1:1 (Tecla P):** Projeção na UI do personagem em escala real sincronizada com o zoom da câmera para conferência de proporção no mundo sem poluição de janelas.
+	* [x] **Menu Lateral Retrátil com Persistência:** Fechamento e reabertura do menu lateral (`AssetDrawer`) com suporte a redimensionador (`PanelResizer`) e restauração de largura.
 
 ## 📋 REQUISITOS GERAIS
 

@@ -36,7 +36,7 @@ export default class Vector2D {
      * * @returns {Vector2D} O próprio vetor, agora normalizado.
      */
     public normalizeMut(): Vector2D {
-        const magnitude = this.magnitude(); // Usa o novo método
+        const magnitude = this.magnitude();
         if (magnitude === 0) {
             this.x = 0;
             this.y = 0;
@@ -171,9 +171,8 @@ export default class Vector2D {
      * @returns {number} O ângulo em radianos.
      */
     public angle(): number {
-        // Math.atan2(y, x) retorna o arco tangente de y/x, 
-        // levando em conta os sinais de ambos para determinar o quadrante correto.
-        const perpendicularVector = this.perpendicularDireita() // Perpendicular porque nosso carteziano é invertido
+        //? Retorna o arco tangente em radianos calculando a rotação angular do vetor
+        const perpendicularVector = this.perpendicularDireita(); //? Perpendicular à direita considerando eixos do canvas
         return Math.atan2(perpendicularVector.y, perpendicularVector.x);
     }
 

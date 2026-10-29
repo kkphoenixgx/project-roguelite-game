@@ -81,7 +81,6 @@ export default class PlayerEquipment {
       this.equipment.bag = bag;
       this.syncEquipedItens();
 
-      // Descarrega itens armazenados na bolsa para os slots expandidos da mochila
       if (bag.storedItems && bag.storedItems.length > 0) {
         const restored = bag.retrieveItems();
         backpack.push(...restored);
@@ -114,10 +113,10 @@ export default class PlayerEquipment {
     }
 
     if (category === 'weapon' || category === 'offhand') {
-      const equipable = item as any; // Pode ser Weapon ou Offhand
+      const equipable = item as any;
       const isOffhand = category === 'offhand' || equipable.weaponType === 'offhand';
       
-      // Se for explicitamente offhand OU se a mão principal já estiver ocupada e a secundária livre:
+    //? Equipa na mão secundária se o item for offhand ou se a mão principal já estiver ocupada
       const targetSlot = (isOffhand || (this.equipment.mainHand && !this.equipment.secondHand)) ? 'secondHand' : 'mainHand';
 
       if (targetSlot === 'secondHand') {
@@ -307,7 +306,7 @@ export default class PlayerEquipment {
     const backpack = this.player.backpack;
     const totalCapacity = PlayerEquipment.BASE_BACKPACK_SIZE + (bag.capacityBonus || 0);
 
-    // Se todos os slots (base + bolsa) estiverem ocupados, não há slot livre sequer para guardar o item da bolsa
+    //? Se todos os slots estiverem preenchidos, impede o desequipamento da bolsa
     if (backpack.length >= totalCapacity) {
       this.eventManager.dispatch('log', { 
         channel: 'error', 
@@ -317,8 +316,7 @@ export default class PlayerEquipment {
       return false;
     }
 
-    // Se houver 24 itens ou mais, o inventário base (0 a 23) está lotado.
-    // O 24º item (índice 23, último slot da base) e os subsequentes são guardados dentro da bolsa!
+    //? Transfere itens excedentes a partir do índice 23 para os slots internos da bolsa
     if (backpack.length >= PlayerEquipment.BASE_BACKPACK_SIZE) {
       const excessItems = backpack.splice(PlayerEquipment.BASE_BACKPACK_SIZE - 1);
       bag.storeItems(excessItems);
@@ -329,7 +327,6 @@ export default class PlayerEquipment {
       });
     }
 
-    // O inventário base agora tem no máximo 23 itens, restando a vaga para a própria bolsa
     backpack.push(bag as any);
     this.equipment.bag = undefined;
     this.syncEquipedItens();

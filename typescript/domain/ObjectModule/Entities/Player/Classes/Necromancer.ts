@@ -51,7 +51,6 @@ import { NecromancerSkillsBuilder } from "./NecromancerSkillsBuilder";
 export default class Necromancer extends Class {
     private skillsByLevel: Map<number, Skill> = new Map();
 
-    // Timers de Cooldown (ms)
     private lastReapTime: number = 0;
     private readonly reapCooldown: number = 2000;
 
@@ -70,13 +69,12 @@ export default class Necromancer extends Class {
     private lastSoulDanceTime: number = 0;
     private readonly soulDanceCooldown: number = 10000;
 
-    // Instâncias ativas controladas via loop de eventos/atualização (Zero-GC)
+    //! Instâncias ativas controladas no frame loop sob disciplina Zero-GC.
     private activeArcs: ActiveSweepingArc[] = [];
     private activeBeams: ActiveChanneledBeam[] = [];
     private activeNovas: ActiveNovaBurst[] = [];
     private activeOrbitals: ActiveOrbitalAttack[] = [];
 
-    // Modelos de ataque reutilizáveis (Templates imutáveis)
     private readonly reapTemplate: SweepingArcAttackTemplate;
     private readonly boneSpearTemplate: ChanneledBeamAttackTemplate;
     private readonly graspTemplate: SweepingArcAttackTemplate;
@@ -87,14 +85,8 @@ export default class Necromancer extends Class {
     constructor(xpTable: IXPTable, player: IPlayer, eventManager: IEventManager) {
         super('Necromante', xpTable, player, eventManager);
 
-        // 1. ÁRVORE DE 12 HABILIDADES CANÔNICAS (Lvl 1 ao 12) via Builder
         this.skillsByLevel = NecromancerSkillsBuilder.build();
 
-        // ========================================================================
-        // 2. CONFIGURAÇÃO DOS TEMPLATES GEOMÉTRICOS DE COMBATE
-        // ========================================================================
-
-        // 2.1. Colheita Sombria (Reap) - Corte em arco rápido com roubo de vida
         this.reapTemplate = SweepingArcAttackTemplate.create(
             'necro_reap',
             'Colheita Sombria',
@@ -111,13 +103,11 @@ export default class Necromancer extends Class {
         .withDexterityScaling(0.04)
         .withParticle('darkPulse')
         .onHit((ctx) => {
-            // Cura uma pequena porção ao ceifar almas
             if (typeof this.player.heal === 'function') {
                 this.player.heal(4);
             }
         });
 
-        // 2.2. Lança de Ossos (Bone Spear) - Feixe linear perfurante canalizado
         this.boneSpearTemplate = ChanneledBeamAttackTemplate.create(
             'necro_bone_spear',
             'Lança de Ossos',
@@ -130,7 +120,7 @@ export default class Necromancer extends Class {
         .withLength(220)
         .withWidth(32)
         .withTickInterval(0.1)
-        .withMaxChannelDuration(0.5) // Pulso rápido e perfurante de 500ms
+        .withMaxChannelDuration(0.5)
         .withTurnRateDegreesPerSec(360)
         .withParticle('darkPulse')
         .onHit((ctx) => {
@@ -139,7 +129,6 @@ export default class Necromancer extends Class {
             }
         });
 
-        // 2.3. Garras do Além (Grasp of the Dead) - Corte amplo que aplica Decaimento
         this.graspTemplate = SweepingArcAttackTemplate.create(
             'necro_grasp_of_dead',
             'Garras do Além',
@@ -159,7 +148,6 @@ export default class Necromancer extends Class {
             }
         });
 
-        // 2.4. Explosão Sombria (Corpse Explosion) - Detonação em área no alvo
         this.explosionTemplate = NovaBurstAttackTemplate.create(
             'necro_corpse_explosion',
             'Explosão Sombria',
@@ -181,7 +169,6 @@ export default class Necromancer extends Class {
             }
         });
 
-        // 2.5. Clamor da Banshee (Wail of the Banshee) - Onda de choque de terror
         this.bansheeTemplate = NovaBurstAttackTemplate.create(
             'necro_wail_of_banshee',
             'Clamor da Banshee',
@@ -203,7 +190,6 @@ export default class Necromancer extends Class {
             }
         });
 
-        // 2.6. Dança das Almas Penadas (Soul Dance) - Lâmina orbital paramétrica
         this.soulDanceTemplate = OrbitalAttackTemplate.create(
             'necro_soul_dance',
             'Dança das Almas Penadas',
@@ -215,13 +201,13 @@ export default class Necromancer extends Class {
             }
         )
         .withBaseRadius(45)
-        .withAngularSpeed(Math.PI * 4.0) // 2 voltas rápidas por segundo
-        .withRotations(3.0) // 3 voltas completas
+        .withAngularSpeed(Math.PI * 4.0)
+        .withRotations(3.0)
         .withDexterityScaling(0.1)
         .withStrengthRadiusScaling(0.4)
         .withHitboxRadius(32)
         .withTargetHitCooldown(200)
-        .withKnockbackMode('pull') // Almas puxam os inimigos para o centro das trevas!
+        .withKnockbackMode('pull')
         .withParticle('darkPulse');
     }
 
@@ -229,7 +215,6 @@ export default class Necromancer extends Class {
      * Atualização dos ataques contínuos no frame loop (Zero-GC).
      */
     public update(deltaTime: number): void {
-        // Orbitais de almas ativas
         for (let i = this.activeOrbitals.length - 1; i >= 0; i--) {
             const orbital = this.activeOrbitals[i]!;
             orbital.update(deltaTime);
@@ -238,7 +223,6 @@ export default class Necromancer extends Class {
             }
         }
 
-        // Ondas expansivas e detonações
         for (let i = this.activeNovas.length - 1; i >= 0; i--) {
             const nova = this.activeNovas[i]!;
             nova.update(deltaTime);
@@ -247,7 +231,6 @@ export default class Necromancer extends Class {
             }
         }
 
-        // Feixes e lanças ósseas
         for (let i = this.activeBeams.length - 1; i >= 0; i--) {
             const beam = this.activeBeams[i]!;
             beam.update(deltaTime);
@@ -256,7 +239,6 @@ export default class Necromancer extends Class {
             }
         }
 
-        // Cortes de foice em arco
         for (let i = this.activeArcs.length - 1; i >= 0; i--) {
             const arc = this.activeArcs[i]!;
             arc.update(deltaTime);
