@@ -9,12 +9,14 @@ export default class Canvas {
   /** @constructor Cria um novo elemento `<canvas>`, obtém seu contexto 2D, define suas dimensões iniciais e o anexa a um elemento container no DOM. @param container O elemento HTML pai onde o canvas será inserido. @param width A largura inicial do canvas em pixels. @param height A altura inicial do canvas em pixels. */
   constructor(container: HTMLElement, width: number, height: number) {
     this.element = document.createElement('canvas');
-    this.element.width = width;
-    this.element.height = height;
+    const initialWidth = width > 0 ? width : (typeof window !== 'undefined' && window.innerWidth > 0 ? window.innerWidth : 800);
+    const initialHeight = height > 0 ? height : (typeof window !== 'undefined' && window.innerHeight > 0 ? window.innerHeight : 600);
+    this.element.width = initialWidth;
+    this.element.height = initialHeight;
 
     this.setupResponsiveStyles();
 
-    const context = this.element.getContext('2d');
+    const context = this.element.getContext('2d', { alpha: false }) || this.element.getContext('2d');
     if (!context) throw new Error('Não foi possível obter o contexto 2D do canvas.');
     this.ctx = context;
 
@@ -29,8 +31,10 @@ export default class Canvas {
     this.element.style.width = '100vw';
     this.element.style.height = '100vh';
     this.element.style.display = 'block';
+    this.element.style.backgroundColor = '#000000';
     document.body.style.margin = '0';
     document.body.style.overflow = 'hidden';
+    document.body.style.backgroundColor = '#000000';
     window.addEventListener('resize', () => { 
       if (window.innerWidth === 0 || window.innerHeight === 0) return;
       this.element.width = window.innerWidth; 
@@ -38,6 +42,9 @@ export default class Canvas {
     }); 
   }
 
-  /** Fase de Desenho: Limpa toda a área do canvas, preparando-o para o desenho do próximo frame. É tipicamente a primeira operação em um ciclo de desenho. */
-  public clear(): void { this.ctx.clearRect(0, 0, this.element.width, this.element.height); }
+  /** Fase de Desenho: Limpa toda a área do canvas com preto sólido, garantindo que qualquer área fora dos chunks seja preta. */
+  public clear(): void {
+    this.ctx.fillStyle = '#000000';
+    this.ctx.fillRect(0, 0, this.element.width, this.element.height);
+  }
 }

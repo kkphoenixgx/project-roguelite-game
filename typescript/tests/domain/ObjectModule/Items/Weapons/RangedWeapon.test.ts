@@ -39,4 +39,22 @@ describe('RangedWeapon', () => {
       type: 'simpleBullet',
     }));
   });
+
+  it('deve usar fallback de projectileType quando não definido na arma', () => {
+    class FallbackRanged extends RangedWeapon {
+      constructor() {
+        super(20, 1.0, 'Ranged No Type', 'Desc', 2, 'common', 2, 100, 50, []);
+      }
+    }
+    const fallbackWeapon = new FallbackRanged();
+    const dispatchSpy = vi.spyOn(eventManager, 'dispatch');
+    
+    fallbackWeapon.attack(attacker, new Vector2D(0, 1), eventManager);
+
+    expect(dispatchSpy).toHaveBeenCalledWith('spawn', expect.objectContaining({
+      type: 'simpleBullet',
+      coordinates: { x: 5, y: 5 },
+      attack: expect.objectContaining({ baseDamage: 25 }) // 20 + floor(10/2) = 25
+    }));
+  });
 });

@@ -42,11 +42,29 @@ describe('HitBoxPolygon', () => {
       expect(transformed[0]?.x).toBeCloseTo(120);
       expect(transformed[0]?.y).toBeCloseTo(120);
     });
+
+    it('deve utilizar cache/memoization em chamadas consecutivas de getRotatedPoints sem alteração de coordenadas/rotação', () => {
+      const points = [{ x: 5, y: 5 }];
+      const pivot = { x: 0, y: 0 };
+      const hitbox = new HitBoxPolygon({ x: 10, y: 10 }, 0, points, pivot, mockCallback);
+      
+      const firstResult = hitbox.getRotatedPoints();
+      const secondResult = hitbox.getRotatedPoints();
+      expect(secondResult).toBe(firstResult); // Mesma referência em memória (Zero-GC cache hit)
+    });
   });
 
   it('intersects deve retornar false estritamente para delegar o cálculo SAT ao Worker', () => {
     const hitbox = new HitBoxPolygon({ x: 0, y: 0 }, 0, [], { x: 0, y: 0 }, mockCallback);
     const dummyTarget = new HitBoxCircle({ x: 0, y: 0 }, 0, 10, mockCallback);
     expect(hitbox.intersects(dummyTarget)).toBe(false);
+  });
+
+  it('deve atualizar posição e rotação via update() da classe base HitBox', () => {
+    const hitbox = new HitBoxPolygon({ x: 0, y: 0 }, 0, [{ x: 5, y: 5 }], { x: 0, y: 0 }, mockCallback);
+    hitbox.update({ x: 40, y: 80 }, 1.57);
+    expect(hitbox.coordinates.x).toBe(40);
+    expect(hitbox.coordinates.y).toBe(80);
+    expect(hitbox.rotation).toBe(1.57);
   });
 });

@@ -19,6 +19,5 @@ export function BindAction(actionName: action) {
             throw new Error(`Conflito de Bind: A classe ${className} já registrou a ação '${actionName}' em outro método.`);
         }
         bindings.set(actionName, propertyKey);
-        console.log(`[ActionBindings] Decorator ativado! Ação '${actionName}' vinculada à classe '${className}'`);
     };
 }

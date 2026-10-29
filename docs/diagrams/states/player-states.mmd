@@ -1,0 +1,21 @@
+stateDiagram-v2
+    [*] --> Spawning
+    Spawning --> Idle: SPAWN_COMPLETE
+    Idle --> Moving: MOVE
+    Idle --> Attacking: ATTACK
+    Idle --> Dodging: ROLL_DODGE
+    Idle --> Teleporting: INTERACT_PORTAL
+    Idle --> Hurt: TAKE_DAMAGE
+    Moving --> Idle: STOP
+    Moving --> Attacking: ATTACK
+    Moving --> Dodging: ROLL_DODGE
+    Moving --> Teleporting: INTERACT_PORTAL
+    Moving --> Hurt: TAKE_DAMAGE
+    Attacking --> Idle: ANIMATION_FINISH
+    Attacking --> Attacking: COMBO_CHAIN
+    Attacking --> Hurt: TAKE_DAMAGE
+    Dodging --> Idle: DODGE_COMPLETE
+    Hurt --> Dead: HP_ZERO
+    Hurt --> Idle: RECOVER
+    Teleporting --> Idle: TRANSITION_COMPLETE
+    Dead --> [*]

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+  <defs>
+    <linearGradient id="mask_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff9ff3"/>
+      <stop offset="60%" stop-color="#f368e0"/>
+      <stop offset="100%" stop-color="#9b59b6"/>
+    </linearGradient>
+    <filter id="cha_glow">
+      <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#f368e0" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+  <!-- Máscara Nobre de Baile / Fascínio e Presença Magnética -->
+  <g filter="url(#cha_glow)">
+    <!-- Base da Máscara -->
+    <path d="M10 16 C12 24 16 32 24 34 C32 32 36 24 38 16 C34 14 28 18 24 18 C20 18 14 14 10 16 Z" fill="url(#mask_grad)" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- Olhos Amendoados Misteriosos -->
+    <path d="M15 20 Q18 18 21 21 Q18 24 15 20 Z" fill="#2d3436" stroke="#ffffff" stroke-width="1"/>
+    <path d="M27 21 Q30 18 33 20 Q30 24 27 21 Z" fill="#2d3436" stroke="#ffffff" stroke-width="1"/>
+    <!-- Tiara de Pluma / Joia Central -->
+    <polygon points="24,10 26,14 24,18 22,14" fill="#fed330" stroke="#ffffff" stroke-width="0.8"/>
+    <path d="M24 10 Q28 6 32 8 Q28 12 24 10 Z" fill="#ffffff" opacity="0.8"/>
+    <!-- Faíscas de Charme e Atração Magnética -->
+    <path d="M6 18 Q10 12 12 16 M42 18 Q38 12 36 16" stroke="#ff9ff3" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="24" cy="38" r="1.5" fill="#feca57"/>
+    <circle cx="10" cy="12" r="1.2" fill="#ff9ff3"/>
+    <circle cx="38" cy="12" r="1.2" fill="#ff9ff3"/>
+  </g>
+</svg>

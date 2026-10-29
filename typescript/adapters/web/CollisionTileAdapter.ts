@@ -23,8 +23,8 @@ export default class CollisionTileAdapter implements ICollisionTileService {
         }
 
         const mapConfig = config as MapVisualConfig;
-        const collisionLayerUrl = mapConfig.collisionLayerUrl;
-        const tileSize = mapConfig.collisionTileSize ?? 32;
+        const collisionLayerUrl = (mapConfig as any).collisionLayerUrl;
+        const tileSize = (mapConfig as any).collisionTileSize ?? 32;
         
         let worldWidth: number | undefined;
         let worldHeight: number | undefined;

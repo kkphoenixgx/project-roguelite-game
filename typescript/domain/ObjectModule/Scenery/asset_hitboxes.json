@@ -1,0 +1,3568 @@
+{
+  "church": {
+    "baseWidth": 128,
+    "baseHeight": 160,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 32,
+            "y": 0
+          },
+          {
+            "x": 32,
+            "y": 160
+          },
+          {
+            "x": 0,
+            "y": 160
+          }
+        ]
+      },
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 96,
+            "y": 0
+          },
+          {
+            "x": 128,
+            "y": 0
+          },
+          {
+            "x": 128,
+            "y": 160
+          },
+          {
+            "x": 96,
+            "y": 160
+          }
+        ]
+      },
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 32,
+            "y": 0
+          },
+          {
+            "x": 96,
+            "y": 0
+          },
+          {
+            "x": 96,
+            "y": 32
+          },
+          {
+            "x": 32,
+            "y": 32
+          }
+        ]
+      }
+    ]
+  },
+  "house": {
+    "baseWidth": 96,
+    "baseHeight": 96,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 96,
+            "y": 0
+          },
+          {
+            "x": 96,
+            "y": 96
+          },
+          {
+            "x": 0,
+            "y": 96
+          }
+        ]
+      }
+    ]
+  },
+  "fountain": {
+    "baseWidth": 64,
+    "baseHeight": 64,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 32,
+          "y": 32
+        },
+        "radius": 30
+      }
+    ]
+  },
+  "fountain_awakening": {
+    "baseWidth": 170,
+    "baseHeight": 165,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 1,
+            "y": 72
+          },
+          {
+            "x": 1,
+            "y": 123
+          },
+          {
+            "x": 47,
+            "y": 163
+          },
+          {
+            "x": 121,
+            "y": 165
+          },
+          {
+            "x": 167,
+            "y": 126
+          },
+          {
+            "x": 169,
+            "y": 71
+          },
+          {
+            "x": 115,
+            "y": 27
+          },
+          {
+            "x": 59,
+            "y": 27
+          },
+          {
+            "x": 1,
+            "y": 70
+          }
+        ]
+      }
+    ]
+  },
+  "house_red_boro": {
+    "baseWidth": 305,
+    "baseHeight": 354,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 32,
+            "y": 336
+          },
+          {
+            "x": 192,
+            "y": 336
+          },
+          {
+            "x": 192,
+            "y": 208
+          },
+          {
+            "x": 32,
+            "y": 208
+          }
+        ]
+      },
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 188,
+            "y": 332
+          },
+          {
+            "x": 284,
+            "y": 332
+          },
+          {
+            "x": 284,
+            "y": 224
+          },
+          {
+            "x": 188,
+            "y": 224
+          }
+        ]
+      }
+    ]
+  },
+  "house_blue_leda": {
+    "baseWidth": 260,
+    "baseHeight": 327,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 21,
+            "y": 207
+          },
+          {
+            "x": 20,
+            "y": 275
+          },
+          {
+            "x": 130,
+            "y": 322
+          },
+          {
+            "x": 244,
+            "y": 266
+          },
+          {
+            "x": 246,
+            "y": 205
+          },
+          {
+            "x": 21,
+            "y": 207
+          }
+        ]
+      }
+    ]
+  },
+  "house_forge_garret": {
+    "baseWidth": 280,
+    "baseHeight": 298,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 103,
+            "y": 280
+          },
+          {
+            "x": 267,
+            "y": 280
+          },
+          {
+            "x": 267,
+            "y": 157
+          },
+          {
+            "x": 103,
+            "y": 157
+          }
+        ]
+      },
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 14,
+            "y": 287
+          },
+          {
+            "x": 103,
+            "y": 287
+          },
+          {
+            "x": 103,
+            "y": 192
+          },
+          {
+            "x": 14,
+            "y": 192
+          }
+        ]
+      }
+    ]
+  },
+  "house_inn_mara": {
+    "baseWidth": 290,
+    "baseHeight": 284,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 15,
+            "y": 269
+          },
+          {
+            "x": 171,
+            "y": 269
+          },
+          {
+            "x": 171,
+            "y": 157
+          },
+          {
+            "x": 15,
+            "y": 157
+          }
+        ]
+      },
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 167,
+            "y": 272
+          },
+          {
+            "x": 272,
+            "y": 272
+          },
+          {
+            "x": 272,
+            "y": 177
+          },
+          {
+            "x": 167,
+            "y": 177
+          }
+        ]
+      }
+    ]
+  },
+  "market_stall_red": {
+    "baseWidth": 86,
+    "baseHeight": 93,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 8,
+            "y": 88
+          },
+          {
+            "x": 78,
+            "y": 88
+          },
+          {
+            "x": 78,
+            "y": 48
+          },
+          {
+            "x": 8,
+            "y": 48
+          }
+        ]
+      }
+    ]
+  },
+  "market_stall_green": {
+    "baseWidth": 90,
+    "baseHeight": 90,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 8,
+            "y": 86
+          },
+          {
+            "x": 82,
+            "y": 86
+          },
+          {
+            "x": 82,
+            "y": 48
+          },
+          {
+            "x": 8,
+            "y": 48
+          }
+        ]
+      }
+    ]
+  },
+  "market_stall_blue": {
+    "baseWidth": 86,
+    "baseHeight": 93,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 8,
+            "y": 88
+          },
+          {
+            "x": 78,
+            "y": 88
+          },
+          {
+            "x": 78,
+            "y": 48
+          },
+          {
+            "x": 8,
+            "y": 48
+          }
+        ]
+      }
+    ]
+  },
+  "market_stall_purple": {
+    "baseWidth": 86,
+    "baseHeight": 93,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 8,
+            "y": 88
+          },
+          {
+            "x": 78,
+            "y": 88
+          },
+          {
+            "x": 78,
+            "y": 48
+          },
+          {
+            "x": 8,
+            "y": 48
+          }
+        ]
+      }
+    ]
+  },
+  "street_lantern": {
+    "baseWidth": 35,
+    "baseHeight": 78,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 17,
+          "y": 70
+        },
+        "radius": 8
+      }
+    ]
+  },
+  "wooden_bench": {
+    "baseWidth": 54,
+    "baseHeight": 50,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 5,
+            "y": 45
+          },
+          {
+            "x": 50,
+            "y": 45
+          },
+          {
+            "x": 50,
+            "y": 25
+          },
+          {
+            "x": 5,
+            "y": 25
+          }
+        ]
+      }
+    ]
+  },
+  "barrel_stack": {
+    "baseWidth": 66,
+    "baseHeight": 52,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 33,
+          "y": 33
+        },
+        "radius": 18
+      }
+    ]
+  },
+  "barrel_single": {
+    "baseWidth": 28,
+    "baseHeight": 36,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 14,
+          "y": 24
+        },
+        "radius": 10
+      }
+    ]
+  },
+  "barrel_lying": {
+    "baseWidth": 34,
+    "baseHeight": 26,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 5,
+            "y": 14
+          },
+          {
+            "x": 29,
+            "y": 14
+          },
+          {
+            "x": 29,
+            "y": 24
+          },
+          {
+            "x": 5,
+            "y": 24
+          }
+        ]
+      }
+    ]
+  },
+  "wooden_crate": {
+    "baseWidth": 38,
+    "baseHeight": 34,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 4,
+            "y": 16
+          },
+          {
+            "x": 34,
+            "y": 16
+          },
+          {
+            "x": 34,
+            "y": 30
+          },
+          {
+            "x": 4,
+            "y": 30
+          }
+        ]
+      }
+    ]
+  },
+  "hay_bale": {
+    "baseWidth": 44,
+    "baseHeight": 32,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 4,
+            "y": 14
+          },
+          {
+            "x": 40,
+            "y": 14
+          },
+          {
+            "x": 40,
+            "y": 28
+          },
+          {
+            "x": 4,
+            "y": 28
+          }
+        ]
+      }
+    ]
+  },
+  "firewood_stack": {
+    "baseWidth": 44,
+    "baseHeight": 28,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 4,
+            "y": 12
+          },
+          {
+            "x": 40,
+            "y": 12
+          },
+          {
+            "x": 40,
+            "y": 24
+          },
+          {
+            "x": 4,
+            "y": 24
+          }
+        ]
+      }
+    ]
+  },
+  "signpost_wooden": {
+    "baseWidth": 42,
+    "baseHeight": 54,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 21,
+          "y": 48
+        },
+        "radius": 5
+      }
+    ]
+  },
+  "notice_board": {
+    "baseWidth": 48,
+    "baseHeight": 54,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 6,
+            "y": 44
+          },
+          {
+            "x": 42,
+            "y": 44
+          },
+          {
+            "x": 42,
+            "y": 50
+          },
+          {
+            "x": 6,
+            "y": 50
+          }
+        ]
+      }
+    ]
+  },
+  "archery_target": {
+    "baseWidth": 38,
+    "baseHeight": 48,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 19,
+          "y": 42
+        },
+        "radius": 6
+      }
+    ]
+  },
+  "props_spear_rack": {
+    "baseWidth": 48,
+    "baseHeight": 68,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 6,
+            "y": 54
+          },
+          {
+            "x": 42,
+            "y": 54
+          },
+          {
+            "x": 42,
+            "y": 64
+          },
+          {
+            "x": 6,
+            "y": 64
+          }
+        ]
+      }
+    ]
+  },
+  "bakery_brick_oven": {
+    "baseWidth": 84,
+    "baseHeight": 92,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 8,
+            "y": 56
+          },
+          {
+            "x": 76,
+            "y": 56
+          },
+          {
+            "x": 76,
+            "y": 88
+          },
+          {
+            "x": 8,
+            "y": 88
+          }
+        ]
+      }
+    ]
+  },
+  "bakery_prep_table_flour": {
+    "baseWidth": 68,
+    "baseHeight": 46,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 6,
+            "y": 16
+          },
+          {
+            "x": 62,
+            "y": 16
+          },
+          {
+            "x": 62,
+            "y": 42
+          },
+          {
+            "x": 6,
+            "y": 42
+          }
+        ]
+      }
+    ]
+  },
+  "bakery_bread_shelf": {
+    "baseWidth": 54,
+    "baseHeight": 68,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 6,
+            "y": 44
+          },
+          {
+            "x": 48,
+            "y": 44
+          },
+          {
+            "x": 48,
+            "y": 64
+          },
+          {
+            "x": 6,
+            "y": 64
+          }
+        ]
+      }
+    ]
+  },
+  "bakery_bread_basket": {
+    "baseWidth": 36,
+    "baseHeight": 32,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 18,
+          "y": 22
+        },
+        "radius": 10
+      }
+    ]
+  },
+  "bakery_flour_sack": {
+    "baseWidth": 30,
+    "baseHeight": 36,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 15,
+          "y": 26
+        },
+        "radius": 9
+      }
+    ]
+  },
+  "bakery_flour_sack_stack": {
+    "baseWidth": 48,
+    "baseHeight": 40,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 4,
+            "y": 18
+          },
+          {
+            "x": 44,
+            "y": 18
+          },
+          {
+            "x": 44,
+            "y": 36
+          },
+          {
+            "x": 4,
+            "y": 36
+          }
+        ]
+      }
+    ]
+  },
+  "bakery_peel_rack": {
+    "baseWidth": 26,
+    "baseHeight": 64,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 13,
+          "y": 56
+        },
+        "radius": 6
+      }
+    ]
+  },
+  "bakery_counter": {
+    "baseWidth": 64,
+    "baseHeight": 44,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 4,
+            "y": 16
+          },
+          {
+            "x": 60,
+            "y": 16
+          },
+          {
+            "x": 60,
+            "y": 40
+          },
+          {
+            "x": 4,
+            "y": 40
+          }
+        ]
+      }
+    ]
+  },
+  "stone_well": {
+    "baseWidth": 60,
+    "baseHeight": 66,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 30,
+          "y": 40
+        },
+        "radius": 24
+      }
+    ]
+  },
+  "tree_oak": {
+    "baseWidth": 110,
+    "baseHeight": 122,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 55,
+          "y": 108
+        },
+        "radius": 14
+      }
+    ]
+  },
+  "tree_pine": {
+    "baseWidth": 80,
+    "baseHeight": 128,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 40,
+          "y": 116
+        },
+        "radius": 11
+      }
+    ]
+  },
+  "bush_flowering": {
+    "baseWidth": 55,
+    "baseHeight": 50,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 27,
+          "y": 30
+        },
+        "radius": 18
+      }
+    ]
+  },
+  "rock_mossy": {
+    "baseWidth": 85,
+    "baseHeight": 57,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 8,
+            "y": 52
+          },
+          {
+            "x": 77,
+            "y": 52
+          },
+          {
+            "x": 77,
+            "y": 20
+          },
+          {
+            "x": 8,
+            "y": 20
+          }
+        ]
+      }
+    ]
+  },
+  "house_arcane_tower": {
+    "baseWidth": 220,
+    "baseHeight": 326,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 110,
+          "y": 274
+        },
+        "radius": 68
+      }
+    ]
+  },
+  "house_town_hall": {
+    "baseWidth": 320,
+    "baseHeight": 355,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 37,
+            "y": 330
+          },
+          {
+            "x": 308,
+            "y": 330
+          },
+          {
+            "x": 308,
+            "y": 235
+          },
+          {
+            "x": 37,
+            "y": 235
+          }
+        ]
+      },
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 88,
+            "y": 348
+          },
+          {
+            "x": 187,
+            "y": 348
+          },
+          {
+            "x": 187,
+            "y": 323
+          },
+          {
+            "x": 88,
+            "y": 323
+          }
+        ]
+      }
+    ]
+  },
+  "house_bakery_rustic": {
+    "baseWidth": 280,
+    "baseHeight": 273,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 36,
+            "y": 229
+          },
+          {
+            "x": 92,
+            "y": 229
+          },
+          {
+            "x": 92,
+            "y": 179
+          },
+          {
+            "x": 36,
+            "y": 179
+          }
+        ]
+      },
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 83,
+            "y": 262
+          },
+          {
+            "x": 256,
+            "y": 262
+          },
+          {
+            "x": 256,
+            "y": 164
+          },
+          {
+            "x": 83,
+            "y": 164
+          }
+        ]
+      }
+    ]
+  },
+  "house_windmill_grain": {
+    "baseWidth": 250,
+    "baseHeight": 304,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 146,
+          "y": 242
+        },
+        "radius": 60
+      },
+      {
+        "type": "circle",
+        "center": {
+          "x": 126,
+          "y": 282
+        },
+        "radius": 30
+      }
+    ]
+  },
+  "house_small_cottage": {
+    "baseWidth": 240,
+    "baseHeight": 238,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 36,
+            "y": 203
+          },
+          {
+            "x": 76,
+            "y": 203
+          },
+          {
+            "x": 76,
+            "y": 142
+          },
+          {
+            "x": 36,
+            "y": 142
+          }
+        ]
+      },
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 71,
+            "y": 221
+          },
+          {
+            "x": 221,
+            "y": 221
+          },
+          {
+            "x": 221,
+            "y": 142
+          },
+          {
+            "x": 71,
+            "y": 142
+          }
+        ]
+      }
+    ]
+  },
+  "house_chapel_bell": {
+    "baseWidth": 260,
+    "baseHeight": 320,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 44,
+            "y": 311
+          },
+          {
+            "x": 222,
+            "y": 311
+          },
+          {
+            "x": 222,
+            "y": 185
+          },
+          {
+            "x": 44,
+            "y": 185
+          }
+        ]
+      },
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 212,
+            "y": 260
+          },
+          {
+            "x": 253,
+            "y": 260
+          },
+          {
+            "x": 253,
+            "y": 198
+          },
+          {
+            "x": 212,
+            "y": 198
+          }
+        ]
+      }
+    ]
+  },
+  "portal_link_circle": {
+    "baseWidth": 64,
+    "baseHeight": 64,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 32,
+          "y": 32
+        },
+        "radius": 30
+      }
+    ]
+  },
+  "house_log_cabin": {
+    "baseWidth": 235,
+    "baseHeight": 245,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 20,
+            "y": 235
+          },
+          {
+            "x": 215,
+            "y": 235
+          },
+          {
+            "x": 215,
+            "y": 140
+          },
+          {
+            "x": 20,
+            "y": 140
+          }
+        ]
+      }
+    ]
+  },
+  "wooden_fence_horizontal": {
+    "baseWidth": 150,
+    "baseHeight": 74,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 5,
+            "y": 65
+          },
+          {
+            "x": 145,
+            "y": 65
+          },
+          {
+            "x": 145,
+            "y": 30
+          },
+          {
+            "x": 5,
+            "y": 30
+          }
+        ]
+      }
+    ]
+  },
+  "nature_pebble_cluster": {
+    "baseWidth": 90,
+    "baseHeight": 47,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 10,
+            "y": 42
+          },
+          {
+            "x": 80,
+            "y": 42
+          },
+          {
+            "x": 80,
+            "y": 15
+          },
+          {
+            "x": 10,
+            "y": 15
+          }
+        ]
+      }
+    ]
+  },
+  "market_tent_canopy": {
+    "baseWidth": 178,
+    "baseHeight": 152,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 9,
+            "y": 91
+          },
+          {
+            "x": 169,
+            "y": 91
+          },
+          {
+            "x": 169,
+            "y": 152
+          },
+          {
+            "x": 9,
+            "y": 152
+          }
+        ]
+      }
+    ]
+  },
+  "market_crate_apples": {
+    "baseWidth": 93,
+    "baseHeight": 90,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 5,
+            "y": 54
+          },
+          {
+            "x": 88,
+            "y": 54
+          },
+          {
+            "x": 88,
+            "y": 90
+          },
+          {
+            "x": 5,
+            "y": 90
+          }
+        ]
+      }
+    ]
+  },
+  "market_crate_fish": {
+    "baseWidth": 90,
+    "baseHeight": 69,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 5,
+            "y": 41
+          },
+          {
+            "x": 86,
+            "y": 41
+          },
+          {
+            "x": 86,
+            "y": 69
+          },
+          {
+            "x": 5,
+            "y": 69
+          }
+        ]
+      }
+    ]
+  },
+  "wooden_fence_corner": {
+    "baseWidth": 143,
+    "baseHeight": 106,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 7,
+            "y": 64
+          },
+          {
+            "x": 136,
+            "y": 64
+          },
+          {
+            "x": 136,
+            "y": 106
+          },
+          {
+            "x": 7,
+            "y": 106
+          }
+        ]
+      }
+    ]
+  },
+  "wooden_fence_diagonal": {
+    "baseWidth": 101,
+    "baseHeight": 110,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 5,
+            "y": 66
+          },
+          {
+            "x": 96,
+            "y": 66
+          },
+          {
+            "x": 96,
+            "y": 110
+          },
+          {
+            "x": 5,
+            "y": 110
+          }
+        ]
+      }
+    ]
+  },
+  "wooden_fence_double_gate": {
+    "baseWidth": 142,
+    "baseHeight": 105,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 7,
+            "y": 63
+          },
+          {
+            "x": 135,
+            "y": 63
+          },
+          {
+            "x": 135,
+            "y": 105
+          },
+          {
+            "x": 7,
+            "y": 105
+          }
+        ]
+      }
+    ]
+  },
+  "wooden_fence_broken": {
+    "baseWidth": 147,
+    "baseHeight": 103,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 7,
+            "y": 62
+          },
+          {
+            "x": 140,
+            "y": 62
+          },
+          {
+            "x": 140,
+            "y": 103
+          },
+          {
+            "x": 7,
+            "y": 103
+          }
+        ]
+      }
+    ]
+  },
+  "stone_murette_low": {
+    "baseWidth": 140,
+    "baseHeight": 99,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 7,
+            "y": 59
+          },
+          {
+            "x": 133,
+            "y": 59
+          },
+          {
+            "x": 133,
+            "y": 99
+          },
+          {
+            "x": 7,
+            "y": 99
+          }
+        ]
+      }
+    ]
+  },
+  "wooden_fence_post": {
+    "baseWidth": 25,
+    "baseHeight": 143,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 1,
+            "y": 86
+          },
+          {
+            "x": 24,
+            "y": 86
+          },
+          {
+            "x": 24,
+            "y": 143
+          },
+          {
+            "x": 1,
+            "y": 143
+          }
+        ]
+      }
+    ]
+  },
+  "camp_stone_campfire": {
+    "baseWidth": 96,
+    "baseHeight": 89,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 5,
+            "y": 53
+          },
+          {
+            "x": 91,
+            "y": 53
+          },
+          {
+            "x": 91,
+            "y": 89
+          },
+          {
+            "x": 5,
+            "y": 89
+          }
+        ]
+      }
+    ]
+  },
+  "camp_cooking_pot": {
+    "baseWidth": 73,
+    "baseHeight": 88,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 4,
+            "y": 53
+          },
+          {
+            "x": 69,
+            "y": 53
+          },
+          {
+            "x": 69,
+            "y": 88
+          },
+          {
+            "x": 4,
+            "y": 88
+          }
+        ]
+      }
+    ]
+  },
+  "props_weapon_rack": {
+    "baseWidth": 123,
+    "baseHeight": 105,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 6,
+            "y": 63
+          },
+          {
+            "x": 117,
+            "y": 63
+          },
+          {
+            "x": 117,
+            "y": 105
+          },
+          {
+            "x": 6,
+            "y": 105
+          }
+        ]
+      }
+    ]
+  },
+  "props_training_dummy": {
+    "baseWidth": 84,
+    "baseHeight": 109,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 4,
+            "y": 65
+          },
+          {
+            "x": 80,
+            "y": 65
+          },
+          {
+            "x": 80,
+            "y": 109
+          },
+          {
+            "x": 4,
+            "y": 109
+          }
+        ]
+      }
+    ]
+  },
+  "props_transport_cart": {
+    "baseWidth": 130,
+    "baseHeight": 101,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 7,
+            "y": 61
+          },
+          {
+            "x": 124,
+            "y": 61
+          },
+          {
+            "x": 124,
+            "y": 101
+          },
+          {
+            "x": 7,
+            "y": 101
+          }
+        ]
+      }
+    ]
+  },
+  "props_spike_barricade": {
+    "baseWidth": 90,
+    "baseHeight": 93,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 5,
+            "y": 56
+          },
+          {
+            "x": 86,
+            "y": 56
+          },
+          {
+            "x": 86,
+            "y": 93
+          },
+          {
+            "x": 5,
+            "y": 93
+          }
+        ]
+      }
+    ]
+  },
+  "props_alarm_bell_tower": {
+    "baseWidth": 96,
+    "baseHeight": 275,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 5,
+            "y": 165
+          },
+          {
+            "x": 91,
+            "y": 165
+          },
+          {
+            "x": 91,
+            "y": 275
+          },
+          {
+            "x": 5,
+            "y": 275
+          }
+        ]
+      }
+    ]
+  },
+  "props_arcane_obelisk": {
+    "baseWidth": 75,
+    "baseHeight": 185,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 4,
+            "y": 111
+          },
+          {
+            "x": 71,
+            "y": 111
+          },
+          {
+            "x": 71,
+            "y": 185
+          },
+          {
+            "x": 4,
+            "y": 185
+          }
+        ]
+      }
+    ]
+  },
+  "props_graveyard_cluster": {
+    "baseWidth": 95,
+    "baseHeight": 146,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 5,
+            "y": 88
+          },
+          {
+            "x": 90,
+            "y": 88
+          },
+          {
+            "x": 90,
+            "y": 146
+          },
+          {
+            "x": 5,
+            "y": 146
+          }
+        ]
+      }
+    ]
+  },
+  "props_crypt_entrance": {
+    "baseWidth": 120,
+    "baseHeight": 243,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 6,
+            "y": 146
+          },
+          {
+            "x": 114,
+            "y": 146
+          },
+          {
+            "x": 114,
+            "y": 243
+          },
+          {
+            "x": 6,
+            "y": 243
+          }
+        ]
+      }
+    ]
+  },
+  "bridge_wood_planks": {
+    "baseWidth": 168,
+    "baseHeight": 234,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 8,
+            "y": 140
+          },
+          {
+            "x": 160,
+            "y": 140
+          },
+          {
+            "x": 160,
+            "y": 234
+          },
+          {
+            "x": 8,
+            "y": 234
+          }
+        ]
+      }
+    ]
+  },
+  "bridge_stone_arch": {
+    "baseWidth": 176,
+    "baseHeight": 142,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 9,
+            "y": 85
+          },
+          {
+            "x": 167,
+            "y": 85
+          },
+          {
+            "x": 167,
+            "y": 142
+          },
+          {
+            "x": 9,
+            "y": 142
+          }
+        ]
+      }
+    ]
+  },
+  "bridge_stepping_stones": {
+    "baseWidth": 164,
+    "baseHeight": 132,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 8,
+            "y": 79
+          },
+          {
+            "x": 156,
+            "y": 79
+          },
+          {
+            "x": 156,
+            "y": 132
+          },
+          {
+            "x": 8,
+            "y": 132
+          }
+        ]
+      }
+    ]
+  },
+  "pier_wooden_dock": {
+    "baseWidth": 182,
+    "baseHeight": 131,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 9,
+            "y": 79
+          },
+          {
+            "x": 173,
+            "y": 79
+          },
+          {
+            "x": 173,
+            "y": 131
+          },
+          {
+            "x": 9,
+            "y": 131
+          }
+        ]
+      }
+    ]
+  },
+  "road_straight_horizontal": {
+    "baseWidth": 460,
+    "baseHeight": 116,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 23,
+            "y": 70
+          },
+          {
+            "x": 437,
+            "y": 70
+          },
+          {
+            "x": 437,
+            "y": 116
+          },
+          {
+            "x": 23,
+            "y": 116
+          }
+        ]
+      }
+    ]
+  },
+  "road_straight_vertical": {
+    "baseWidth": 145,
+    "baseHeight": 460,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 7,
+            "y": 276
+          },
+          {
+            "x": 138,
+            "y": 276
+          },
+          {
+            "x": 138,
+            "y": 460
+          },
+          {
+            "x": 7,
+            "y": 460
+          }
+        ]
+      }
+    ]
+  },
+  "road_crossroad_4way": {
+    "baseWidth": 260,
+    "baseHeight": 260,
+    "shapes": []
+  },
+  "road_junction_t": {
+    "baseWidth": 260,
+    "baseHeight": 188,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 13,
+            "y": 112
+          },
+          {
+            "x": 247,
+            "y": 112
+          },
+          {
+            "x": 247,
+            "y": 188
+          },
+          {
+            "x": 13,
+            "y": 188
+          }
+        ]
+      }
+    ]
+  },
+  "road_corner_90": {
+    "baseWidth": 202,
+    "baseHeight": 188,
+    "shapes": []
+  },
+  "road_plaza_octagon": {
+    "baseWidth": 340,
+    "baseHeight": 340,
+    "shapes": []
+  },
+  "road_plaza_octagon_marble": {
+    "baseWidth": 340,
+    "baseHeight": 340,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 17,
+            "y": 204
+          },
+          {
+            "x": 323,
+            "y": 204
+          },
+          {
+            "x": 323,
+            "y": 340
+          },
+          {
+            "x": 17,
+            "y": 340
+          }
+        ]
+      }
+    ]
+  },
+  "road_plaza_marble_curb_ring": {
+    "baseWidth": 340,
+    "baseHeight": 340,
+    "shapes": []
+  },
+  "road_curb_marble_horizontal": {
+    "baseWidth": 145,
+    "baseHeight": 16,
+    "shapes": []
+  },
+  "road_curb_marble_vertical": {
+    "baseWidth": 16,
+    "baseHeight": 145,
+    "shapes": []
+  },
+  "marble_bench": {
+    "baseWidth": 54,
+    "baseHeight": 50,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 3,
+            "y": 20
+          },
+          {
+            "x": 51,
+            "y": 20
+          },
+          {
+            "x": 51,
+            "y": 50
+          },
+          {
+            "x": 3,
+            "y": 50
+          }
+        ]
+      }
+    ]
+  },
+  "marble_planter_urn": {
+    "baseWidth": 50,
+    "baseHeight": 52,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 5,
+            "y": 28
+          },
+          {
+            "x": 45,
+            "y": 28
+          },
+          {
+            "x": 45,
+            "y": 52
+          },
+          {
+            "x": 5,
+            "y": 52
+          }
+        ]
+      }
+    ]
+  },
+  "marble_street_lantern": {
+    "baseWidth": 35,
+    "baseHeight": 78,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 10,
+            "y": 50
+          },
+          {
+            "x": 25,
+            "y": 50
+          },
+          {
+            "x": 25,
+            "y": 78
+          },
+          {
+            "x": 10,
+            "y": 78
+          }
+        ]
+      }
+    ]
+  },
+  "marble_murette_low": {
+    "baseWidth": 140,
+    "baseHeight": 99,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 7,
+            "y": 45
+          },
+          {
+            "x": 133,
+            "y": 45
+          },
+          {
+            "x": 133,
+            "y": 99
+          },
+          {
+            "x": 7,
+            "y": 99
+          }
+        ]
+      }
+    ]
+  },
+  "road_dead_end": {
+    "baseWidth": 145,
+    "baseHeight": 220,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 7,
+            "y": 80
+          },
+          {
+            "x": 138,
+            "y": 80
+          },
+          {
+            "x": 138,
+            "y": 134
+          },
+          {
+            "x": 7,
+            "y": 134
+          }
+        ]
+      }
+    ]
+  },
+  "road_diagonal_nw_se": {
+    "baseWidth": 340,
+    "baseHeight": 310,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 17,
+            "y": 186
+          },
+          {
+            "x": 323,
+            "y": 186
+          },
+          {
+            "x": 323,
+            "y": 310
+          },
+          {
+            "x": 17,
+            "y": 310
+          }
+        ]
+      }
+    ]
+  },
+  "road_diagonal_ne_sw": {
+    "baseWidth": 340,
+    "baseHeight": 310,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 17,
+            "y": 186
+          },
+          {
+            "x": 323,
+            "y": 186
+          },
+          {
+            "x": 323,
+            "y": 310
+          },
+          {
+            "x": 17,
+            "y": 310
+          }
+        ]
+      }
+    ]
+  },
+  "road_junction_y": {
+    "baseWidth": 330,
+    "baseHeight": 295,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 17,
+            "y": 177
+          },
+          {
+            "x": 314,
+            "y": 177
+          },
+          {
+            "x": 314,
+            "y": 295
+          },
+          {
+            "x": 17,
+            "y": 295
+          }
+        ]
+      }
+    ]
+  },
+  "road_plaza_circle": {
+    "baseWidth": 380,
+    "baseHeight": 260,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 19,
+            "y": 156
+          },
+          {
+            "x": 361,
+            "y": 156
+          },
+          {
+            "x": 361,
+            "y": 260
+          },
+          {
+            "x": 19,
+            "y": 260
+          }
+        ]
+      }
+    ]
+  },
+  "road_dirt_straight_horizontal": {
+    "baseWidth": 450,
+    "baseHeight": 230,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 23,
+            "y": 138
+          },
+          {
+            "x": 428,
+            "y": 138
+          },
+          {
+            "x": 428,
+            "y": 230
+          },
+          {
+            "x": 23,
+            "y": 230
+          }
+        ]
+      }
+    ]
+  },
+  "road_dirt_straight_vertical": {
+    "baseWidth": 230,
+    "baseHeight": 450,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 12,
+            "y": 270
+          },
+          {
+            "x": 219,
+            "y": 270
+          },
+          {
+            "x": 219,
+            "y": 450
+          },
+          {
+            "x": 12,
+            "y": 450
+          }
+        ]
+      }
+    ]
+  },
+  "road_dirt_corner_90": {
+    "baseWidth": 300,
+    "baseHeight": 260,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 15,
+            "y": 156
+          },
+          {
+            "x": 285,
+            "y": 156
+          },
+          {
+            "x": 285,
+            "y": 260
+          },
+          {
+            "x": 15,
+            "y": 260
+          }
+        ]
+      }
+    ]
+  },
+  "road_dirt_crossroad_4way": {
+    "baseWidth": 350,
+    "baseHeight": 245,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 18,
+            "y": 147
+          },
+          {
+            "x": 333,
+            "y": 147
+          },
+          {
+            "x": 333,
+            "y": 245
+          },
+          {
+            "x": 18,
+            "y": 245
+          }
+        ]
+      }
+    ]
+  },
+  "road_dirt_patch": {
+    "baseWidth": 180,
+    "baseHeight": 110,
+    "shapes": []
+  },
+  "road_dirt_ruts": {
+    "baseWidth": 190,
+    "baseHeight": 70,
+    "shapes": []
+  },
+  "road_dirt_clods": {
+    "baseWidth": 96,
+    "baseHeight": 56,
+    "shapes": []
+  },
+  "river_straight_horizontal": {
+    "baseWidth": 468,
+    "baseHeight": 220,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 23,
+            "y": 132
+          },
+          {
+            "x": 445,
+            "y": 132
+          },
+          {
+            "x": 445,
+            "y": 220
+          },
+          {
+            "x": 23,
+            "y": 220
+          }
+        ]
+      }
+    ]
+  },
+  "river_straight_vertical": {
+    "baseWidth": 220,
+    "baseHeight": 468,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 11,
+            "y": 281
+          },
+          {
+            "x": 209,
+            "y": 281
+          },
+          {
+            "x": 209,
+            "y": 468
+          },
+          {
+            "x": 11,
+            "y": 468
+          }
+        ]
+      }
+    ]
+  },
+  "river_curve_ne": {
+    "baseWidth": 230,
+    "baseHeight": 230,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 12,
+            "y": 138
+          },
+          {
+            "x": 219,
+            "y": 138
+          },
+          {
+            "x": 219,
+            "y": 230
+          },
+          {
+            "x": 12,
+            "y": 230
+          }
+        ]
+      }
+    ]
+  },
+  "river_curve_nw": {
+    "baseWidth": 230,
+    "baseHeight": 230,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 12,
+            "y": 138
+          },
+          {
+            "x": 219,
+            "y": 138
+          },
+          {
+            "x": 219,
+            "y": 230
+          },
+          {
+            "x": 12,
+            "y": 230
+          }
+        ]
+      }
+    ]
+  },
+  "river_curve_se": {
+    "baseWidth": 230,
+    "baseHeight": 230,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 12,
+            "y": 138
+          },
+          {
+            "x": 219,
+            "y": 138
+          },
+          {
+            "x": 219,
+            "y": 230
+          },
+          {
+            "x": 12,
+            "y": 230
+          }
+        ]
+      }
+    ]
+  },
+  "river_curve_sw": {
+    "baseWidth": 230,
+    "baseHeight": 230,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 12,
+            "y": 138
+          },
+          {
+            "x": 219,
+            "y": 138
+          },
+          {
+            "x": 219,
+            "y": 230
+          },
+          {
+            "x": 12,
+            "y": 230
+          }
+        ]
+      }
+    ]
+  },
+  "pond_nature_clearing": {
+    "baseWidth": 220,
+    "baseHeight": 195,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 11,
+            "y": 117
+          },
+          {
+            "x": 209,
+            "y": 117
+          },
+          {
+            "x": 209,
+            "y": 195
+          },
+          {
+            "x": 11,
+            "y": 195
+          }
+        ]
+      }
+    ]
+  },
+  "nature_granite_boulder": {
+    "baseWidth": 106,
+    "baseHeight": 87,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 5,
+            "y": 52
+          },
+          {
+            "x": 101,
+            "y": 52
+          },
+          {
+            "x": 101,
+            "y": 87
+          },
+          {
+            "x": 5,
+            "y": 87
+          }
+        ]
+      }
+    ]
+  },
+  "nature_berry_bush": {
+    "baseWidth": 103,
+    "baseHeight": 77,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 5,
+            "y": 46
+          },
+          {
+            "x": 98,
+            "y": 46
+          },
+          {
+            "x": 98,
+            "y": 77
+          },
+          {
+            "x": 5,
+            "y": 77
+          }
+        ]
+      }
+    ]
+  },
+  "nature_tree_stump": {
+    "baseWidth": 100,
+    "baseHeight": 93,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 5,
+            "y": 56
+          },
+          {
+            "x": 95,
+            "y": 56
+          },
+          {
+            "x": 95,
+            "y": 93
+          },
+          {
+            "x": 5,
+            "y": 93
+          }
+        ]
+      }
+    ]
+  },
+  "nature_fallen_log": {
+    "baseWidth": 109,
+    "baseHeight": 89,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 5,
+            "y": 53
+          },
+          {
+            "x": 104,
+            "y": 53
+          },
+          {
+            "x": 104,
+            "y": 89
+          },
+          {
+            "x": 5,
+            "y": 89
+          }
+        ]
+      }
+    ]
+  },
+  "nature_cattails_reeds": {
+    "baseWidth": 51,
+    "baseHeight": 94,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 3,
+            "y": 56
+          },
+          {
+            "x": 48,
+            "y": 56
+          },
+          {
+            "x": 48,
+            "y": 94
+          },
+          {
+            "x": 3,
+            "y": 94
+          }
+        ]
+      }
+    ]
+  },
+  "nature_lavender_bush": {
+    "baseWidth": 79,
+    "baseHeight": 101,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 4,
+            "y": 61
+          },
+          {
+            "x": 75,
+            "y": 61
+          },
+          {
+            "x": 75,
+            "y": 101
+          },
+          {
+            "x": 4,
+            "y": 101
+          }
+        ]
+      }
+    ]
+  },
+  "house_tavern_brewery": {
+    "baseWidth": 320,
+    "baseHeight": 330,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 16,
+            "y": 198
+          },
+          {
+            "x": 304,
+            "y": 198
+          },
+          {
+            "x": 304,
+            "y": 330
+          },
+          {
+            "x": 16,
+            "y": 330
+          }
+        ]
+      }
+    ]
+  },
+  "house_apothecary_greenhouse": {
+    "baseWidth": 320,
+    "baseHeight": 330,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 16,
+            "y": 198
+          },
+          {
+            "x": 304,
+            "y": 198
+          },
+          {
+            "x": 304,
+            "y": 330
+          },
+          {
+            "x": 16,
+            "y": 330
+          }
+        ]
+      }
+    ]
+  },
+  "house_guard_barracks": {
+    "baseWidth": 320,
+    "baseHeight": 328,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 16,
+            "y": 197
+          },
+          {
+            "x": 304,
+            "y": 197
+          },
+          {
+            "x": 304,
+            "y": 328
+          },
+          {
+            "x": 16,
+            "y": 328
+          }
+        ]
+      }
+    ]
+  },
+  "house_sawmill_carpentry": {
+    "baseWidth": 320,
+    "baseHeight": 329,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 16,
+            "y": 197
+          },
+          {
+            "x": 304,
+            "y": 197
+          },
+          {
+            "x": 304,
+            "y": 329
+          },
+          {
+            "x": 16,
+            "y": 329
+          }
+        ]
+      }
+    ]
+  },
+  "house_woodcutter_shack": {
+    "baseWidth": 230,
+    "baseHeight": 240,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 12,
+            "y": 144
+          },
+          {
+            "x": 219,
+            "y": 144
+          },
+          {
+            "x": 219,
+            "y": 240
+          },
+          {
+            "x": 12,
+            "y": 240
+          }
+        ]
+      }
+    ]
+  },
+  "house_peasant_thatched": {
+    "baseWidth": 230,
+    "baseHeight": 265,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 12,
+            "y": 159
+          },
+          {
+            "x": 219,
+            "y": 159
+          },
+          {
+            "x": 219,
+            "y": 265
+          },
+          {
+            "x": 12,
+            "y": 265
+          }
+        ]
+      }
+    ]
+  },
+  "house_stone_hovel": {
+    "baseWidth": 240,
+    "baseHeight": 270,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 12,
+            "y": 162
+          },
+          {
+            "x": 228,
+            "y": 162
+          },
+          {
+            "x": 228,
+            "y": 270
+          },
+          {
+            "x": 12,
+            "y": 270
+          }
+        ]
+      }
+    ]
+  },
+  "house_merchant_timber": {
+    "baseWidth": 280,
+    "baseHeight": 330,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 14,
+            "y": 198
+          },
+          {
+            "x": 266,
+            "y": 198
+          },
+          {
+            "x": 266,
+            "y": 330
+          },
+          {
+            "x": 14,
+            "y": 330
+          }
+        ]
+      }
+    ]
+  },
+  "house_noble_manor": {
+    "baseWidth": 310,
+    "baseHeight": 350,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 16,
+            "y": 210
+          },
+          {
+            "x": 295,
+            "y": 210
+          },
+          {
+            "x": 295,
+            "y": 350
+          },
+          {
+            "x": 16,
+            "y": 350
+          }
+        ]
+      }
+    ]
+  },
+  "house_witch_turret": {
+    "baseWidth": 290,
+    "baseHeight": 330,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 15,
+            "y": 198
+          },
+          {
+            "x": 276,
+            "y": 198
+          },
+          {
+            "x": 276,
+            "y": 330
+          },
+          {
+            "x": 15,
+            "y": 330
+          }
+        ]
+      }
+    ]
+  },
+  "house_fisherman_shack": {
+    "baseWidth": 250,
+    "baseHeight": 245,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 13,
+            "y": 147
+          },
+          {
+            "x": 238,
+            "y": 147
+          },
+          {
+            "x": 238,
+            "y": 245
+          },
+          {
+            "x": 13,
+            "y": 245
+          }
+        ]
+      }
+    ]
+  },
+  "house_watermill_river": {
+    "baseWidth": 290,
+    "baseHeight": 320,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 15,
+            "y": 192
+          },
+          {
+            "x": 276,
+            "y": 192
+          },
+          {
+            "x": 276,
+            "y": 320
+          },
+          {
+            "x": 15,
+            "y": 320
+          }
+        ]
+      }
+    ]
+  },
+  "house_alchemist_curio": {
+    "baseWidth": 250,
+    "baseHeight": 330,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 13,
+            "y": 198
+          },
+          {
+            "x": 238,
+            "y": 198
+          },
+          {
+            "x": 238,
+            "y": 330
+          },
+          {
+            "x": 13,
+            "y": 330
+          }
+        ]
+      }
+    ]
+  },
+  "fortified_gatehouse": {
+    "baseWidth": 320,
+    "baseHeight": 351,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 16,
+            "y": 211
+          },
+          {
+            "x": 304,
+            "y": 211
+          },
+          {
+            "x": 304,
+            "y": 351
+          },
+          {
+            "x": 16,
+            "y": 351
+          }
+        ]
+      }
+    ]
+  },
+  "stone_watchtower": {
+    "baseWidth": 212,
+    "baseHeight": 340,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 11,
+            "y": 204
+          },
+          {
+            "x": 201,
+            "y": 204
+          },
+          {
+            "x": 201,
+            "y": 340
+          },
+          {
+            "x": 11,
+            "y": 340
+          }
+        ]
+      }
+    ]
+  },
+  "stone_wall_straight_long": {
+    "baseWidth": 396,
+    "baseHeight": 208,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 8,
+            "y": 106
+          },
+          {
+            "x": 393,
+            "y": 106
+          },
+          {
+            "x": 393,
+            "y": 204
+          },
+          {
+            "x": 8,
+            "y": 204
+          }
+        ]
+      }
+    ]
+  },
+  "stone_wall_straight_short": {
+    "baseWidth": 198,
+    "baseHeight": 208,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 6,
+            "y": 125
+          },
+          {
+            "x": 192,
+            "y": 125
+          },
+          {
+            "x": 192,
+            "y": 208
+          },
+          {
+            "x": 6,
+            "y": 208
+          }
+        ]
+      }
+    ]
+  },
+  "stone_wall_corner": {
+    "baseWidth": 316,
+    "baseHeight": 250,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 48,
+            "y": 69
+          },
+          {
+            "x": 313,
+            "y": 69
+          },
+          {
+            "x": 313,
+            "y": 244
+          },
+          {
+            "x": 48,
+            "y": 244
+          }
+        ]
+      },
+      {
+        "type": "circle",
+        "center": {
+          "x": 27,
+          "y": 154
+        },
+        "radius": 20
+      }
+    ]
+  },
+  "stone_wall_corner_ne": {
+    "baseWidth": 316,
+    "baseHeight": 250,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 0,
+            "y": 93
+          },
+          {
+            "x": 273,
+            "y": 93
+          },
+          {
+            "x": 273,
+            "y": 250
+          },
+          {
+            "x": 0,
+            "y": 250
+          }
+        ]
+      },
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 273,
+            "y": 178
+          },
+          {
+            "x": 291,
+            "y": 176
+          },
+          {
+            "x": 307,
+            "y": 161
+          },
+          {
+            "x": 307,
+            "y": 93
+          },
+          {
+            "x": 273,
+            "y": 93
+          },
+          {
+            "x": 273,
+            "y": 178
+          }
+        ]
+      }
+    ]
+  },
+  "stone_wall_corner_se": {
+    "baseWidth": 316,
+    "baseHeight": 250,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 0,
+            "y": 147
+          },
+          {
+            "x": 193,
+            "y": 147
+          },
+          {
+            "x": 193,
+            "y": 248
+          },
+          {
+            "x": 0,
+            "y": 248
+          }
+        ]
+      },
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 189,
+            "y": 0
+          },
+          {
+            "x": 274,
+            "y": 0
+          },
+          {
+            "x": 274,
+            "y": 147
+          },
+          {
+            "x": 189,
+            "y": 147
+          }
+        ]
+      },
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 193,
+            "y": 147
+          },
+          {
+            "x": 299,
+            "y": 147
+          },
+          {
+            "x": 299,
+            "y": 250
+          },
+          {
+            "x": 193,
+            "y": 250
+          }
+        ]
+      }
+    ]
+  },
+  "stone_wall_corner_sw": {
+    "baseWidth": 316,
+    "baseHeight": 250,
+    "shapes": [
+      {
+        "type": "circle",
+        "center": {
+          "x": 68,
+          "y": 204
+        },
+        "radius": 44
+      },
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 113,
+            "y": 151
+          },
+          {
+            "x": 316,
+            "y": 151
+          },
+          {
+            "x": 316,
+            "y": 247
+          },
+          {
+            "x": 113,
+            "y": 247
+          }
+        ]
+      },
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 42,
+            "y": 1
+          },
+          {
+            "x": 122,
+            "y": 1
+          },
+          {
+            "x": 122,
+            "y": 151
+          },
+          {
+            "x": 42,
+            "y": 151
+          }
+        ]
+      }
+    ]
+  },
+  "stone_wall_gate": {
+    "baseWidth": 396,
+    "baseHeight": 250,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": -1,
+            "y": 109
+          },
+          {
+            "x": 145,
+            "y": 109
+          },
+          {
+            "x": 145,
+            "y": 250
+          },
+          {
+            "x": -1,
+            "y": 250
+          }
+        ]
+      },
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 258,
+            "y": 107
+          },
+          {
+            "x": 396,
+            "y": 107
+          },
+          {
+            "x": 396,
+            "y": 252
+          },
+          {
+            "x": 258,
+            "y": 252
+          }
+        ]
+      }
+    ]
+  },
+  "stone_wall_straight_vertical": {
+    "baseWidth": 128,
+    "baseHeight": 208,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 42,
+            "y": 1
+          },
+          {
+            "x": 125,
+            "y": 1
+          },
+          {
+            "x": 125,
+            "y": 207
+          },
+          {
+            "x": 42,
+            "y": 207
+          }
+        ]
+      }
+    ]
+  },
+  "stone_wall_straight_vertical_east": {
+    "baseWidth": 128,
+    "baseHeight": 208,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 89,
+            "y": 0
+          },
+          {
+            "x": 89,
+            "y": 208
+          },
+          {
+            "x": 0,
+            "y": 208
+          }
+        ]
+      }
+    ]
+  },
+  "wooden_fence_gate": {
+    "baseWidth": 85,
+    "baseHeight": 69,
+    "shapes": [
+      {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 4,
+            "y": 35
+          },
+          {
+            "x": 81,
+            "y": 35
+          },
+          {
+            "x": 81,
+            "y": 69
+          },
+          {
+            "x": 4,
+            "y": 69
+          }
+        ]
+      }
+    ]
+  }
+}

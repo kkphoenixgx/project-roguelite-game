@@ -50,6 +50,12 @@ describe('HitBoxCircle', () => {
       expect(c1.intersects(c2)).toBe(false);
     });
 
+    it('deve retornar false quando testado contra outro tipo de HitBox (ex: polígono)', () => {
+      const c1 = new HitBoxCircle({ x: 0, y: 0 }, 0, 10, mockCallback);
+      const fakePolygon = { coordinates: { x: 0, y: 0 }, rotation: 0 } as any;
+      expect(c1.intersects(fakePolygon)).toBe(false);
+    });
+
     it('deve acionar o callback em caso de evento forçado', () => {
       const c1 = new HitBoxCircle({ x: 0, y: 0 }, 0, 10, mockCallback);
       c1.onColision({} as ObjectElement);

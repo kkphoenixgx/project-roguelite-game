@@ -1,0 +1,34 @@
+<div id="ai-settings-layout" style="padding: 40px; text-align: left; height: 100%; box-sizing: border-box; display: flex; flex-direction: column;">
+    <h1 class="stats-title" style="text-align: center;">Ollama AI Config</h1>
+    <p style="color: #aaa; text-align: center; margin-bottom: 20px;">Gerencie o panteão de inteligências artificiais na sua máquina local.</p>
+    
+    <!-- Download Section -->
+    <div style="background: rgba(0,0,0,0.4); border: 1px solid #333; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <h2 style="color: #55aaff; font-family: 'Minecraft', monospace; font-size: 18px; margin-top: 0;">Invocar Novo Modelo</h2>
+        <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+            <input type="text" id="ollama-model-input" placeholder="Ex: llama3.1" style="flex: 1; padding: 10px; font-size: 16px; background: #111; color: #fff; border: 1px solid #555; outline: none; border-radius: 4px;">
+            <button id="btn-pull-model" class="btn-dream" style="padding: 10px 20px; font-size: 16px;">Download</button>
+        </div>
+        <!-- Progress Bar -->
+        <div id="pull-progress-container" style="display: none; margin-top: 15px;">
+            <div style="display: flex; justify-content: space-between; font-family: monospace; color: #aaa; margin-bottom: 5px;">
+                <span id="ollama-pull-status">Conectando...</span>
+                <span id="ollama-pull-percent">0%</span>
+            </div>
+            <div style="width: 100%; background: #222; height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid #444;">
+                <div id="ollama-pull-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #55aaff, #00ffff); transition: width 0.2s;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- List Section -->
+    <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h2 style="color: #ffcc00; font-family: 'Minecraft', monospace; font-size: 18px; margin: 0;">Modelos Disponíveis</h2>
+            <button id="btn-refresh-models" class="pill-btn" style="cursor: pointer; padding: 5px 15px;">Atualizar Lista</button>
+        </div>
+        <div id="models-list-container" style="flex: 1; overflow-y: auto; background: rgba(0,0,0,0.5); border: 1px solid #333; border-radius: 8px; padding: 10px; display: flex; flex-direction: column;">
+            <!-- Model Items go here dynamically -->
+        </div>
+    </div>
+</div>

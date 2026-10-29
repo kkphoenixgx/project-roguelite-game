@@ -1,0 +1,58 @@
+{
+  "hitboxes": [
+    {
+      "id": "house_small_cottage_poly_1",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 36,
+          "y": 203
+        },
+        {
+          "x": 76,
+          "y": 203
+        },
+        {
+          "x": 76,
+          "y": 142
+        },
+        {
+          "x": 36,
+          "y": 142
+        }
+      ]
+    },
+    {
+      "id": "house_small_cottage_poly_2",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 71,
+          "y": 221
+        },
+        {
+          "x": 221,
+          "y": 221
+        },
+        {
+          "x": 221,
+          "y": 142
+        },
+        {
+          "x": 71,
+          "y": 142
+        }
+      ]
+    }
+  ]
+}

@@ -133,4 +133,67 @@ describe('Player', () => {
       expect(player.activeLoadout[0]).toBe('test_skill');
     });
   });
+
+  describe('Dash e Rolagem nos 8 Lados', () => {
+    it('deve mudar o estado para "roll" e calcular a rotação correta para cada uma das 8 direções', () => {
+      const directions = [
+        { name: 'Leste (Direita)', setup: (p: Player) => p.onRightAction(), expectedAngle: 0 },
+        { name: 'Sudeste (Baixo-Direita)', setup: (p: Player) => { p.onDownAction(); p.onRightAction(); }, expectedAngle: Math.PI / 4 },
+        { name: 'Sul (Baixo)', setup: (p: Player) => p.onDownAction(), expectedAngle: Math.PI / 2 },
+        { name: 'Sudoeste (Baixo-Esquerda)', setup: (p: Player) => { p.onDownAction(); p.onLeftAction(); }, expectedAngle: (3 * Math.PI) / 4 },
+        { name: 'Oeste (Esquerda)', setup: (p: Player) => p.onLeftAction(), expectedAngle: Math.PI },
+        { name: 'Noroeste (Cima-Esquerda)', setup: (p: Player) => { p.onUpAction(); p.onLeftAction(); }, expectedAngle: (-3 * Math.PI) / 4 },
+        { name: 'Norte (Cima)', setup: (p: Player) => p.onUpAction(), expectedAngle: -Math.PI / 2 },
+        { name: 'Nordeste (Cima-Direita)', setup: (p: Player) => { p.onUpAction(); p.onRightAction(); }, expectedAngle: -Math.PI / 4 },
+      ];
+
+      for (const d of directions) {
+        // Cria nova instância limpa para cada direção
+        const p = new Player(1, { x: 100, y: 100 }, attributes, mockEventManager);
+        d.setup(p);
+        p.onShiftAction();
+
+        expect(p.getState(), `Falha no estado para ${d.name}`).toBe('roll');
+        expect(p.rotation, `Falha no ângulo para ${d.name}`).toBeCloseTo(d.expectedAngle, 4);
+      }
+    });
+
+    it('deve usar facingDirection se o player usar dash parado sem direção', () => {
+      player.facingDirection.x = 0;
+      player.facingDirection.y = -1; // Olhando para cima
+      player.onShiftAction();
+
+      expect(player.getState()).toBe('roll');
+      expect(player.rotation).toBeCloseTo(-Math.PI / 2, 4);
+    });
+
+    it('deve manter o estado "roll" durante o dash na chamada de move() e update()', () => {
+      player.onRightAction();
+      player.onShiftAction();
+
+      expect(player.getState()).toBe('roll');
+      player.update(0.016);
+      expect(player.getState()).toBe('roll');
+    });
+
+    it('deve finalizar o estado "roll" exatamente apos os 300ms do dash', () => {
+      player.onRightAction();
+      player.onShiftAction();
+
+      expect(player.getState()).toBe('roll');
+      // Passa 200ms: ainda no meio do dash
+      player.update(0.20);
+      expect(player.getState()).toBe('roll');
+
+      // Passa mais 120ms (total 320ms > 300ms): dash e rolagem devem ter terminado e voltado a idle
+      player.update(0.12);
+      expect(player.getState()).toBe('idle');
+      expect(player.rotation).toBe(0);
+
+      // Se houver input de movimento ativo apos o dash, volta a walking
+      player.onRightAction();
+      player.update(0.016);
+      expect(player.getState()).toBe('walking');
+    });
+  });
 });

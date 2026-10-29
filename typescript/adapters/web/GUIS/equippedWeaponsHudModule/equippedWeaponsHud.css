@@ -1,0 +1,293 @@
+/* equippedWeaponsHud.css - HUD de Armas Equipadas (Estilo Dark Souls com Slots Fixos e Seleção Dinâmica) */
+
+#equipped-weapons-hud-container {
+    position: fixed;
+    bottom: 22px;
+    left: 22px;
+    z-index: 100;
+    pointer-events: auto;
+    user-select: none;
+    contain: layout style;
+    transform: translateZ(0);
+    will-change: transform, opacity;
+    font-family: 'Cinzel', 'Trajan Pro', 'Georgia', serif;
+}
+
+.ew-frame {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+    padding: 0;
+    background: transparent;
+    border: none;
+}
+
+/* Coluna individual de cada slot (posição física fixa) */
+.ew-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.ew-slot.ew-slot-secondary {
+    cursor: pointer;
+}
+
+/* Card Reto Preto Fosco (Fiel ao Dark Souls) */
+.ew-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #141615;
+    border: 1px solid rgba(38, 40, 39, 0.95);
+    border-radius: 1px;
+    box-shadow:
+        0 6px 16px rgba(0, 0, 0, 0.85),
+        inset 0 0 14px rgba(0, 0, 0, 0.92);
+    overflow: hidden;
+    transition:
+        width 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+        height 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+        padding 0.22s ease,
+        opacity 0.22s ease,
+        border-color 0.22s ease,
+        box-shadow 0.22s ease;
+}
+
+/* Estilo do Slot Selecionado / Ativo (Aplicado dinamicamente ao slot ativo) */
+.ew-slot.ew-slot-primary .ew-card,
+.ew-slot.is-selected .ew-card {
+    width: 72px;
+    height: 118px;
+    padding: 9px 0;
+    opacity: 1;
+    border-color: rgba(62, 65, 63, 0.95);
+}
+
+/* Estilo do Slot Não-Selecionado / Reserva */
+.ew-slot.ew-slot-secondary .ew-card {
+    width: 66px;
+    height: 92px;
+    padding: 7px 0;
+    opacity: 0.92;
+}
+
+.ew-slot.ew-slot-secondary:hover .ew-card {
+    opacity: 1;
+    border-color: rgba(120, 115, 105, 0.65);
+    box-shadow:
+        0 6px 18px rgba(0, 0, 0, 0.9),
+        inset 0 0 10px rgba(0, 0, 0, 0.85);
+}
+
+/* Filetes Horizontais (Ativados/Iluminados conforme o slot selecionado) */
+.ew-fillet {
+    width: 72%;
+    height: 2px;
+    pointer-events: none;
+    flex-shrink: 0;
+    z-index: 3;
+    transition: opacity 0.22s ease, box-shadow 0.22s ease;
+}
+
+.ew-fillet-top,
+.ew-fillet-bottom {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(195, 202, 210, 0.45) 22%,
+        rgba(235, 240, 245, 0.95) 50%,
+        rgba(195, 202, 210, 0.45) 78%,
+        rgba(255, 255, 255, 0) 100%
+    );
+}
+
+/* No slot selecionado, ambos os filetes brilham intensamente */
+.ew-slot.ew-slot-primary .ew-fillet-top,
+.ew-slot.ew-slot-primary .ew-fillet-bottom,
+.ew-slot.is-selected .ew-fillet-top,
+.ew-slot.is-selected .ew-fillet-bottom {
+    opacity: 1;
+    box-shadow: 0 0 4px rgba(220, 230, 240, 0.35);
+}
+
+/* No slot secundário (não selecionado), apenas o filete superior fica sutil e o inferior oculto */
+.ew-slot.ew-slot-secondary .ew-fillet-top {
+    opacity: 0.22;
+    box-shadow: none;
+}
+
+.ew-slot.ew-slot-secondary .ew-fillet-bottom {
+    opacity: 0;
+    box-shadow: none;
+}
+
+/* Palco Interno do Ícone + Pedestal Oval Marrom */
+.ew-icon-wrapper {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Pedestal Oval Marrom na Base do Card */
+.ew-pedestal {
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 78%;
+    height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(
+        ellipse at 50% 48%,
+        #583b1e 0%,
+        #4c3219 62%,
+        #3a2511 90%,
+        rgba(35, 22, 10, 0.2) 100%
+    );
+    box-shadow:
+        0 2px 5px rgba(0, 0, 0, 0.85),
+        inset 0 1px 2px rgba(130, 88, 45, 0.22);
+    z-index: 1;
+    pointer-events: none;
+    transition: height 0.22s ease, bottom 0.22s ease;
+}
+
+.ew-slot.ew-slot-secondary .ew-pedestal {
+    bottom: 5px;
+    width: 78%;
+    height: 20px;
+}
+
+/* Ícone da Arma Fixo no Slot (Apenas escala acompanha a seleção) */
+.ew-icon {
+    position: relative;
+    z-index: 2;
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    margin-bottom: 6px;
+    filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.92));
+    transition:
+        width 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+        height 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+        margin-bottom 0.22s ease,
+        transform 0.18s ease;
+}
+
+.ew-slot.ew-slot-primary .ew-icon,
+.ew-slot.is-selected .ew-icon {
+    width: 52px;
+    height: 52px;
+    margin-bottom: 8px;
+}
+
+.ew-slot.ew-slot-secondary:hover .ew-icon {
+    transform: translateY(-2px) scale(1.04);
+}
+
+/* Placeholder Vazio (Mantém apenas o pedestal limpo como na referência) */
+.ew-empty-placeholder {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* Nome da Arma Sutil Abaixo do Card */
+.ew-slot-label {
+    font-size: 9px;
+    color: rgba(185, 178, 166, 0.68);
+    letter-spacing: 0.4px;
+    max-width: 70px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+    line-height: 1.1;
+    transition: color 0.22s ease;
+}
+
+.ew-slot.ew-slot-primary .ew-slot-label,
+.ew-slot.is-selected .ew-slot-label {
+    color: rgba(226, 220, 208, 0.95);
+    max-width: 76px;
+}
+
+/* Indicador Discreto de Troca Rápida (TAB) */
+.ew-swap-divider {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 2px;
+    transition: transform 0.15s ease;
+}
+
+.ew-swap-divider:hover {
+    transform: translateX(-50%) scale(1.08);
+}
+
+.ew-swap-divider:active {
+    transform: translateX(-50%) scale(0.95);
+}
+
+.ew-key-badge {
+    font-size: 8px;
+    font-weight: 800;
+    color: rgba(225, 222, 215, 0.88);
+    background: #141615;
+    border: 1px solid rgba(120, 115, 105, 0.55);
+    border-radius: 1px;
+    padding: 2px 4px;
+    line-height: 1;
+    font-family: monospace, system-ui, sans-serif;
+    letter-spacing: 0.6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+}
+
+.ew-swap-divider:hover .ew-key-badge {
+    color: #ffffff;
+    border-color: rgba(220, 225, 230, 0.85);
+}
+
+/* Animação de pulso na troca de armas */
+@keyframes ewSwapPulse {
+    0% {
+        transform: scale(1);
+    }
+    45% {
+        transform: scale(1.03);
+        filter: brightness(1.18);
+    }
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+}
+
+.ew-swap-anim {
+    animation: ewSwapPulse 0.22s ease-out;
+}

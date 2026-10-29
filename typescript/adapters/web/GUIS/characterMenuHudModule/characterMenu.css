@@ -3,53 +3,71 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 600px;
-    height: 400px;
-    background-color: rgba(0, 0, 0, 0.95);
-    border: 2px solid #555;
+    width: 720px;
+    height: 500px;
+    background: rgba(10, 10, 14, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 8px;
-    color: white;
-    font-family: 'Minecraft', 'Courier New', Courier, monospace;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    image-rendering: auto;
     z-index: 200;
     display: none;
     flex-direction: column;
-    box-shadow: 0px 4px 20px rgba(0,0,0,1);
+    box-shadow: 0px 15px 50px rgba(0,0,0,0.9), inset 0 0 30px rgba(0,0,0,0.6);
 }
 
 .menu-tabs {
     display: flex;
-    border-bottom: 2px solid #555;
-    background-color: #222;
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
+    background: linear-gradient(135deg, rgba(25, 25, 30, 0.9), rgba(15, 15, 18, 0.95));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
 }
 
 .tab-btn {
     flex: 1;
-    padding: 10px;
+    padding: 12px;
     background: none;
     border: none;
-    border-right: 2px solid #555;
-    color: #AAA;
-    font-size: 16px;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 18px;
     font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 2px;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    transition: all 0.3s ease;
 }
 
 .tab-btn:last-child { border-right: none; }
 
 .tab-btn:hover {
-    background-color: #333;
-    color: #FFF;
+    background-color: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .tab-btn.active {
-    background-color: rgba(0, 0, 0, 0.95);
+    background-color: transparent;
     color: #FFD700;
     font-weight: bold;
-    border-bottom: 2px solid rgba(0, 0, 0, 0.95);
-    margin-bottom: -2px;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    position: relative;
+}
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #FFD700;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
 }
 
 .menu-content {
@@ -57,6 +75,8 @@
     padding: 20px;
     overflow-y: auto;
 }
+.menu-content::-webkit-scrollbar { width: 6px; }
+.menu-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
 
 .tab-content {
     display: flex;
@@ -65,87 +85,25 @@
     height: 100%;
 }
 
-.attributes-header {
-    text-align: center;
-    border-bottom: 2px solid #555;
-    padding-bottom: 10px;
-}
-
-.attributes-header h2 {
-    margin: 0; font-size: 24px; color: #FFD700; text-shadow: 1px 1px 0px #000;
-}
-
-.attributes-body { 
-    display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: 0 auto; width: 100%;
-}
-
-.attr-row { display: flex; justify-content: space-between; align-items: center; font-size: 18px; border-bottom: 1px dashed #333; padding-bottom: 4px; }
-.attr-label { color: #AAA; } .attr-value { color: #FFF; font-weight: bold; }
-
-.attr-add-btn { background-color: #444; color: #fff; border: 1px solid #666; border-radius: 4px; width: 20px; height: 20px; cursor: pointer; margin-left: 10px; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
-.attr-add-btn:hover { background-color: #666; }
-.attr-add-btn:disabled { background-color: #222; color: #555; cursor: not-allowed; border-color: #333; }
-
-/* --- Aba de Inventário --- */
-.inventory-layout { display: flex; gap: 15px; height: 100%; width: 100%; }
-.paper-doll-panel { flex: 1; background: #1a1a1a; border: 1px solid #444; border-radius: 4px; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-.paper-doll-panel h3, .backpack-panel h3 { margin: 0 0 10px 0; color: #FFD700; text-align: center; font-size: 18px; border-bottom: 1px solid #444; padding-bottom: 5px; width: 100%; }
-.backpack-panel { flex: 2; background: #1a1a1a; border: 1px solid #444; border-radius: 4px; padding: 10px; display: flex; flex-direction: column; }
-
-/* PAPER DOLL (Boneco de Equipamentos) */
-.paperdoll { display: flex; justify-content: space-between; align-items: center; height: 100%; width: 100%; box-sizing: border-box; }
-.pd-col { display: flex; flex-direction: column; gap: 15px; align-items: center; }
-.pd-center { margin: 0 10px; }
-.equip-slot { width: 50px; height: 50px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; display: flex; justify-content: center; align-items: center; cursor: pointer; position: relative; transition: all 0.2s ease; font-size: 24px; }
-.equip-slot:hover { background: rgba(255, 255, 255, 0.1); border-color: #FFD700; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
-
-.ring-container:hover .ring-popover, .ring-container:focus-within .ring-popover { display: flex; flex-wrap: wrap; justify-content: center; } 
-.ring-popover { display: none; position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 30, 0.98); border: 1px solid #777; border-radius: 8px; padding: 8px; width: 132px; box-sizing: content-box; gap: 6px; z-index: 200; box-shadow: 0 4px 15px rgba(0,0,0,0.8); }
-.ring-sub-slot { width: 40px; height: 40px; background: rgba(0,0,0,0.8); border: 1px dashed #555; border-radius: 4px; transition: 0.2s; position: relative; cursor: pointer;}
-.ring-sub-slot:hover { border-color: #FFD700; transform: scale(1.1); }
-
-/* Faz as caixas de anéis abrirem "para dentro" do menu para não cortarem nas bordas laterais */
-#eq-leftRings .ring-popover {
-    left: 0;
-    transform: none;
-}
-#eq-rightRings .ring-popover {
-    left: auto;
-    right: 0;
-    transform: none;
-}
-
-.backpack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); grid-auto-rows: 40px; gap: 8px; overflow-y: auto; overflow-x: hidden; padding: 5px; align-content: start; }
-.bp-slot { background: #222; border: 1px solid #444; border-radius: 4px; cursor: pointer; transition: border-color 0.2s, background-color 0.2s; position: relative; }
-.bp-slot:hover { border-color: #FFD700; background: #333; }
-
 /* Tooltip Global (Controlado pelo JS) */
 .global-tooltip {
     display: none;
     position: fixed;
     z-index: 99999 !important;
     pointer-events: none;
-    background: rgba(10, 10, 15, 0.95);
-    border: 1px solid #777;
-    color: #fff;
-    padding: 8px 12px;
+    background: rgba(10, 12, 18, 0.97);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    color: #e0e0e0;
+    padding: 12px 16px;
     border-radius: 6px;
-    font-size: 12px;
+    font-size: 13px;
+    line-height: 1.45;
     white-space: pre-wrap;
-    min-width: 160px;
+    min-width: 220px;
+    max-width: 340px;
     text-align: left;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.95), inset 0 0 15px rgba(0,0,0,0.7);
 }
 
-/* --- Aba de Skills --- */
-.skill-equip-panel { display: flex; flex-direction: column; align-items: center; gap: 15px; }
-.skill-equip-panel h3 { margin: 0 0 10px 0; color: #FFD700; text-align: center; font-size: 20px; border-bottom: 1px solid #444; padding-bottom: 5px; width: 100%; max-width: 300px;}
-.equip-section h4 { margin: 0 0 10px 0; color: #AAA; text-align: center;}
-.equip-slots { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-.skill-slot { width: 45px; height: 45px; border: 2px dashed #555; background: #222; display: flex; justify-content: center; align-items: center; position: relative; cursor: pointer; }
-.skill-slot.active-slot { border-radius: 50%; }
-.skill-slot.passive-slot { border-radius: 4px; transform: rotate(45deg); margin: 10px; }
-.skill-slot.passive-slot > * { transform: rotate(-45deg); }
-.skill-slot.filled { border-style: solid; border-color: #FFD700; background: #B8860B; }
-.skill-slot.locked { background: #111; color: #555; font-size: 20px; border-style: solid; border-color: #333; cursor: not-allowed;}
-.skill-lvl { position: absolute; bottom: -8px; right: -8px; background: #000; color: #FFF; font-size: 10px; padding: 2px 4px; border: 1px solid #555; border-radius: 4px; }

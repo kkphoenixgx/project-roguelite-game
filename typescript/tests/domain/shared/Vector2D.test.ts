@@ -136,5 +136,37 @@ describe('Vector2D', () => {
       // 2*4 + 3*5 = 8 + 15 = 23
       expect(v1.dot(v2)).toBe(23);
     });
+
+    it('perpendicularDireita() deve retornar o vetor rotacionado 90 graus à direita (-y, x)', () => {
+      const v = new Vector2D(3, 4);
+      const perp = v.perpendicularDireita();
+      expect(perp).toBeInstanceOf(Vector2D);
+      expect(perp.x).toBe(-4);
+      expect(perp.y).toBe(3);
+      // Produto escalar de vetores perpendiculares é 0
+      expect(v.dot(perp)).toBe(0);
+    });
+
+    it('perpendicularEsquerda() deve retornar o vetor rotacionado -90 graus à esquerda (y, -x)', () => {
+      const v = new Vector2D(3, 4);
+      const perp = v.perpendicularEsquerda();
+      expect(perp).toBeInstanceOf(Vector2D);
+      expect(perp.x).toBe(4);
+      expect(perp.y).toBe(-3);
+      expect(v.dot(perp)).toBe(0);
+    });
+
+    it('angle() deve calcular o ângulo do vetor em relação ao eixo X considerando o referencial perpendicular', () => {
+      const v = new Vector2D(1, 0);
+      // perpendicularDireita de (1, 0) é (0, 1), Math.atan2(1, 0) = PI / 2
+      expect(v.angle()).toBeCloseTo(Math.PI / 2);
+    });
+
+    it('divideMut() não deve alterar o vetor se o divisor for zero', () => {
+      const v = new Vector2D(10, 20);
+      v.divideMut(0);
+      expect(v.x).toBe(10);
+      expect(v.y).toBe(20);
+    });
   });
 });

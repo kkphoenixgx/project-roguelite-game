@@ -1,3 +1,4 @@
+import type { IObjectElement } from "../ports/domain-contracts";
 import type { IEventManager } from "../eventDispacher/IGameEvents";
 import type { HitBox } from "../hitBox/HitBox";
 import type { objectTypeId } from "./objectType.type";
@@ -5,18 +6,21 @@ import type { objectTypeId } from "./objectType.type";
 export default class ObjectElement {
 
   public rotation:number = 0
+  public isDestroyed: boolean = false;
 
   constructor(
     private readonly _size: { width: number; height: number; },
     private _coordinates: { x: number; y: number; },
     public id: number ,
     private _objectId: objectTypeId,
-    protected eventManager: IEventManager,
+    public eventManager: IEventManager,
     public state :string = "",
     public hitboxes :HitBox[] | null = null,
   ){}
   
   protected destroy():void {
+    if (this.isDestroyed) return;
+    this.isDestroyed = true;
     this.eventManager.dispatch('despawn', {objectId:this.id})
   }
   

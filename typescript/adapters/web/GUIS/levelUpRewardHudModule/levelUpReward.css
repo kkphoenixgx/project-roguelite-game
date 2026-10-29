@@ -1,0 +1,276 @@
+#levelup-reward-container {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(10, 8, 18, 0.93);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    font-family: 'PixelArtFont', 'Minecraft', 'Courier New', monospace;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Aura ambiente suave acelerada por GPU */
+.light-rays {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 600px; height: 600px;
+    max-width: 90vw; max-height: 90vh;
+    background: radial-gradient(circle, rgba(133, 92, 199, 0.12) 0%, rgba(255, 215, 0, 0.05) 40%, transparent 70%);
+    transform: translate3d(-50%, -50%, 0);
+    pointer-events: none;
+    z-index: 1;
+}
+
+#levelup-reward-modal {
+    background: linear-gradient(180deg, rgba(26, 15, 46, 0.98) 0%, rgba(14, 9, 24, 0.99) 100%);
+    border: 2px solid var(--ui-border-primary, #855cc7);
+    border-radius: 16px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 32px rgba(133, 92, 199, 0.25);
+    padding: 36px 40px;
+    text-align: center;
+    animation: levelUpPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: 1020px;
+    width: 92%;
+    position: relative;
+    z-index: 10;
+    transform: translate3d(0, 0, 0);
+}
+
+@keyframes levelUpPop {
+    0% { transform: scale(0.95) translateY(12px) translate3d(0, 0, 0); opacity: 0; }
+    100% { transform: scale(1) translateY(0) translate3d(0, 0, 0); opacity: 1; }
+}
+
+.levelup-title {
+    color: var(--accent-gold, #FFD700);
+    font-size: 38px;
+    margin: 0 0 8px 0;
+    text-shadow: 2px 2px 0px #000, 0 0 16px rgba(255, 215, 0, 0.4);
+    letter-spacing: 4px;
+    font-weight: bold;
+}
+
+.levelup-subtitle {
+    color: var(--ui-text-primary, #f1c6aa);
+    font-size: 16px;
+    margin-bottom: 32px;
+    text-shadow: 1px 1px 2px #000;
+}
+
+#levelup-cards-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 32px;
+    flex-wrap: wrap;
+}
+
+/* Card 3D Flip Wrapper */
+.reward-card-wrapper {
+    width: 270px;
+    height: 420px;
+    perspective: 1000px;
+    -webkit-perspective: 1000px;
+    cursor: pointer;
+    transform: translate3d(0, 0, 0);
+}
+
+.reward-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d;
+    transform: rotateY(180deg) translate3d(0, 0, 0);
+    -webkit-transform: rotateY(180deg) translate3d(0, 0, 0);
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+}
+
+/* Estado virado (onInit animação de flipagem disparada via JS) */
+.reward-card-wrapper.flipped .reward-card-inner {
+    transform: rotateY(0deg) translate3d(0, 0, 0);
+    -webkit-transform: rotateY(0deg) translate3d(0, 0, 0);
+}
+
+/* Hover suave e performático apenas após o flip se estabilizar (.ready) */
+.reward-card-wrapper.ready:hover .reward-card-inner {
+    transform: rotateY(0deg) translateY(-8px) scale(1.02) translate3d(0, 0, 0);
+    -webkit-transform: rotateY(0deg) translateY(-8px) scale(1.02) translate3d(0, 0, 0);
+}
+
+.reward-card-wrapper.ready:hover .reward-card-front {
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6), 0 12px 28px rgba(0, 0, 0, 0.85), 0 0 20px rgba(255, 215, 0, 0.35);
+}
+
+/* Faces da Carta */
+.reward-card-face {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 14px;
+    box-sizing: border-box;
+    overflow: hidden;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+}
+
+/* Verso da Carta (Costas Rúnicas Arcana) */
+.reward-card-back {
+    transform: rotateY(180deg) translate3d(0, 0, 0);
+    -webkit-transform: rotateY(180deg) translate3d(0, 0, 0);
+    background: linear-gradient(150deg, #1b0f2e 0%, #2b133d 50%, #150924 100%);
+    border: 3px solid #855cc7;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.85);
+    padding: 20px;
+}
+
+.card-back-frame {
+    width: 100%;
+    height: 100%;
+    border: 2px dashed rgba(255, 215, 0, 0.45);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    box-sizing: border-box;
+}
+
+.card-back-sigil {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.card-back-rune-text {
+    color: var(--accent-gold, #FFD700);
+    font-size: 13px;
+    letter-spacing: 3px;
+    font-weight: bold;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+/* Frente da Carta (Tarô Medieval) */
+.reward-card-front {
+    transform: rotateY(0deg) translate3d(0, 0, 0);
+    -webkit-transform: rotateY(0deg) translate3d(0, 0, 0);
+    background: linear-gradient(160deg, #1f1433 0%, #170d26 60%, #0d0717 100%);
+    border: 3px solid rgba(212, 175, 55, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.7);
+    transition: box-shadow 0.25s ease-out;
+}
+
+.card-ornate-border {
+    width: 100%;
+    height: 100%;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 8px;
+    padding: 12px 14px 14px 14px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.reward-rarity-badge {
+    color: #111;
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+    margin-bottom: 8px;
+}
+
+.reward-name {
+    font-size: 19px;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px #000;
+    text-align: center;
+    margin-bottom: 12px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Moldura da Ilustração da Carta */
+.reward-art-frame {
+    width: 170px;
+    height: 140px;
+    background: radial-gradient(circle, rgba(42, 23, 71, 0.95) 0%, rgba(16, 9, 29, 0.98) 100%);
+    border: 2px solid rgba(255, 215, 0, 0.4);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 14px;
+    position: relative;
+    box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.8), 0 4px 12px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+.reward-icon {
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease-out;
+}
+
+.reward-card-wrapper.ready:hover .reward-icon {
+    transform: scale(1.08) translate3d(0, 0, 0);
+}
+
+.reward-desc-box {
+    flex: 1;
+    width: 100%;
+    background: rgba(10, 6, 18, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.reward-desc {
+    color: #eeeeee;
+    font-size: 13.5px;
+    line-height: 1.45;
+    text-shadow: 1px 1px 2px #000;
+    text-align: center;
+}
+
+.reward-value-pill {
+    margin-top: 6px;
+    color: var(--accent-gold, #FFD700);
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+

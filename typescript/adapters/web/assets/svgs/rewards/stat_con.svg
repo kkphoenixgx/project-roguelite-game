@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+  <defs>
+    <linearGradient id="con_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2ed573"/>
+      <stop offset="60%" stop-color="#10ac84"/>
+      <stop offset="100%" stop-color="#0652dd"/>
+    </linearGradient>
+    <linearGradient id="con_shield" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f1f2f6"/>
+      <stop offset="50%" stop-color="#a4b0be"/>
+      <stop offset="100%" stop-color="#2f3542"/>
+    </linearGradient>
+    
+  </defs>
+  <!-- Escudo Nobre com Coração e Runa de Rocha Inabalável -->
+  <g>
+    <!-- Base do Escudo Nobre -->
+    <path d="M24 4 L39 9 V22 C39 33 24 44 24 44 C24 44 9 33 9 22 V9 Z" fill="url(#con_shield)" stroke="#2ed573" stroke-width="2" stroke-linejoin="round"/>
+    <!-- Placa interna reforçada -->
+    <path d="M24 8 L35 12 V22 C35 30 24 39 24 39 C24 39 13 30 13 22 V12 Z" fill="#1e272e" opacity="0.6"/>
+    <!-- Coração Rúnico de Vigor no centro -->
+    <path d="M24 16 C22 13 17 13 17 18 C17 24 24 29 24 29 C24 29 31 24 31 18 C31 13 26 13 24 16 Z" fill="url(#con_grad)" stroke="#ffffff" stroke-width="1.2"/>
+    <!-- Runa de Vigor ascendente -->
+    <path d="M24 19 V25 M21 22 H27" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+</svg>

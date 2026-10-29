@@ -1,0 +1,58 @@
+{
+  "hitboxes": [
+    {
+      "id": "house_red_boro_poly_1",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 32,
+          "y": 336
+        },
+        {
+          "x": 192,
+          "y": 336
+        },
+        {
+          "x": 192,
+          "y": 208
+        },
+        {
+          "x": 32,
+          "y": 208
+        }
+      ]
+    },
+    {
+      "id": "house_red_boro_poly_2",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 188,
+          "y": 332
+        },
+        {
+          "x": 284,
+          "y": 332
+        },
+        {
+          "x": 284,
+          "y": 224
+        },
+        {
+          "x": 188,
+          "y": 224
+        }
+      ]
+    }
+  ]
+}

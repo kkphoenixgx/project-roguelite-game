@@ -1,4 +1,4 @@
-import type { HitboxDebugShape } from "../../../../../domain/hitBox/HitBox";
+import type { HitboxDebugShape } from "../../../../../domain/ports/domain-contracts";
 import type IRenderable from "../visuals/IRenderable";
 
 /**
@@ -12,23 +12,26 @@ export default class DebugCircle implements IRenderable {
     rotation: number = 0;
 
     private radius: number;
+    private center: { x: number; y: number };
 
     constructor(id: number, state: HitboxDebugShape) {
-        this.id = id; // Usa o ID do objeto pai + um sufixo para unicidade
-        this.coordinates = state.coordinates;
-        this.radius = state.radius!;
+        this.id = id;
+        this.radius = state.radius || 0;
+        this.center = state.coordinates;
+        this.coordinates = { x: this.center.x - this.radius, y: this.center.y - this.radius };
         this.size = { width: this.radius * 2, height: this.radius * 2 };
     }
 
     updateState(newState: HitboxDebugShape): void {
-        this.coordinates = newState.coordinates;
-        this.radius = newState.radius!;
+        this.radius = newState.radius || 0;
+        this.center = newState.coordinates;
+        this.coordinates = { x: this.center.x - this.radius, y: this.center.y - this.radius };
         this.size = { width: this.radius * 2, height: this.radius * 2 };
     }
 
     draw(ctx: CanvasRenderingContext2D): void {
         ctx.beginPath();
-        ctx.arc(this.coordinates.x, this.coordinates.y, this.radius, 0, Math.PI * 2);
+        ctx.arc(this.center.x, this.center.y, this.radius, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)'; // Vermelho semitransparente
         ctx.lineWidth = 1;
         ctx.stroke();

@@ -2,7 +2,7 @@ import type Effect from "./Effects/Effect";
 import {type baseAttributes} from "../Entities/Attributes"
 
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
-export type ItemCategory = 'weapon' | "food" | "potion" | "storage" | 'armor' | 'material' | 'quest' | 'currency';
+export type ItemCategory = 'weapon' | "food" | "potion" | "storage" | 'armor' | 'material' | 'quest' | 'currency' | 'tool' | 'belt';
 
 export default abstract class Item {
 

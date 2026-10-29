@@ -1,0 +1,551 @@
+/* --- Aba de Skills & Legado Global --- */
+.skill-tab-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.skill-card-box {
+    background: linear-gradient(135deg, rgba(35, 20, 38, 0.8), rgba(20, 14, 25, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.85);
+}
+
+/* --- Aba de Habilidades & Broches (4 Sets Semânticos) --- */
+.skills-manager-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.skills-manager-layout::-webkit-scrollbar { width: 5px; }
+.skills-manager-layout::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 3px; }
+
+.skill-category-card {
+    background: linear-gradient(135deg, rgba(28, 20, 32, 0.85), rgba(15, 12, 20, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.85);
+}
+
+.skill-category-card.cumulative-card {
+    flex: 1;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+    background: linear-gradient(135deg, rgba(16, 26, 20, 0.85), rgba(10, 18, 14, 0.9));
+    border-color: rgba(76, 175, 80, 0.25);
+    overflow: hidden;
+}
+
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 3px;
+}
+
+.header-titles {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.cat-title {
+    font-size: 18px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #fff;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+}
+
+.cat-subtitle {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    font-style: italic;
+}
+
+.category-slots-row {
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.slots-subgroup {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.slots-subgroup.primordial-subgroup {
+    align-items: center;
+}
+
+.subgroup-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.subgroup-badge {
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.class-active-badge {
+    background: rgba(0, 229, 255, 0.15);
+    color: #00e5ff;
+    border: 1px solid rgba(0, 229, 255, 0.4);
+    text-shadow: 0 0 6px rgba(0, 229, 255, 0.4);
+}
+
+.primordial-badge {
+    background: rgba(255, 80, 220, 0.15);
+    color: #ff50dc;
+    border: 1px solid rgba(255, 80, 220, 0.4);
+    text-shadow: 0 0 6px rgba(255, 80, 220, 0.4);
+}
+
+.active-brooch-badge {
+    background: rgba(255, 215, 0, 0.15);
+    color: #FFD700;
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+}
+
+.passive-brooch-badge {
+    background: rgba(255, 170, 0, 0.15);
+    color: #ffaa00;
+    border: 1px solid rgba(255, 170, 0, 0.4);
+    text-shadow: 0 0 6px rgba(255, 170, 0, 0.4);
+}
+
+.subgroup-hint {
+    font-size: 13px;
+    color: #aaa;
+    font-family: monospace;
+}
+
+.equip-slots {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Base de todos os Slots */
+.skill-slot, .skill-slot-frame {
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+    min-height: 50px !important;
+    max-width: 50px !important;
+    max-height: 50px !important;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, filter 0.2s ease;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.skill-slot:hover, .skill-slot-frame:hover {
+    transform: translateY(-2px);
+}
+
+.slot-svg-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50px !important;
+    height: 50px !important;
+    max-width: 50px !important;
+    max-height: 50px !important;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.slot-svg-bg .shape-path {
+    fill: rgba(0, 0, 0, 0.65);
+    stroke: rgba(255, 255, 255, 0.2);
+    stroke-width: 1.5;
+    transition: all 0.2s ease;
+}
+
+.slot-content-text {
+    position: relative;
+    z-index: 2;
+    font-size: 15px;
+    font-weight: bold;
+    text-align: center;
+    pointer-events: none;
+    line-height: 1;
+}
+
+.slot-content-icon {
+    position: relative;
+    z-index: 3;
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+
+.skill-slot-number {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    width: 20px;
+    height: 20px;
+    background: rgba(15, 15, 20, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 50%;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: bold;
+    pointer-events: none;
+    z-index: 3;
+}
+
+/* 1. ATIVAS DA CLASSE (QUADRADOS) */
+.square-slot {
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px dashed rgba(0, 229, 255, 0.3);
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.8);
+}
+
+.square-slot:hover {
+    border-color: #00e5ff;
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.4), inset 0 0 8px rgba(0, 0, 0, 0.8);
+}
+
+.square-slot.filled {
+    border-style: solid;
+    border-color: #00e5ff;
+    background: radial-gradient(circle, rgba(0, 229, 255, 0.2) 0%, rgba(0, 0, 0, 0.7) 80%);
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.35), inset 0 0 8px rgba(0, 0, 0, 0.8);
+}
+
+.square-slot .slot-content-text {
+    color: #00e5ff;
+}
+
+/* 2. ATIVAS PRIMORDIAIS (ESTRELAS) */
+.primordial-slot .slot-svg-bg .shape-path {
+    stroke: rgba(255, 80, 220, 0.4);
+    fill: rgba(0, 0, 0, 0.7);
+}
+
+.primordial-slot:hover .slot-svg-bg .shape-path {
+    stroke: #ff50dc;
+    filter: drop-shadow(0 0 6px rgba(255, 80, 220, 0.6));
+}
+
+.primordial-slot.filled .slot-svg-bg .shape-path {
+    stroke: #ff50dc;
+    fill: rgba(255, 80, 220, 0.25);
+    filter: drop-shadow(0 0 10px rgba(255, 80, 220, 0.5));
+}
+
+.primordial-slot .slot-content-text {
+    color: #ff50dc;
+}
+
+.primordial-slot .skill-slot-number {
+    border-color: rgba(255, 80, 220, 0.5);
+    color: #ff50dc;
+}
+
+/* 3. BROCHES ATIVOS (SOL COM ESPINHOS) */
+.sun-brooch-slot .slot-svg-bg .shape-path.sun-path {
+    stroke: rgba(255, 215, 0, 0.35);
+    fill: rgba(0, 0, 0, 0.7);
+}
+
+.sun-brooch-slot .slot-svg-bg .sun-inner-circle {
+    fill: rgba(20, 15, 10, 0.8);
+    stroke: rgba(255, 215, 0, 0.25);
+    stroke-width: 1;
+}
+
+.sun-brooch-slot.filled .slot-svg-bg .sun-inner-circle {
+    fill: rgba(0, 0, 0, 0.35);
+    stroke: rgba(255, 215, 0, 0.5);
+}
+
+.sun-brooch-slot:hover .slot-svg-bg .shape-path.sun-path {
+    stroke: #FFD700;
+    filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6));
+}
+
+.sun-brooch-slot.filled .slot-svg-bg .shape-path.sun-path {
+    stroke: #FFD700;
+    fill: rgba(255, 215, 0, 0.22);
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.5));
+}
+
+.sun-brooch-slot .slot-content-text {
+    color: #FFD700;
+}
+
+.sun-brooch-slot .skill-slot-number {
+    border-color: rgba(255, 215, 0, 0.5);
+    color: #FFD700;
+}
+
+/* 4. BROCHES PASSIVOS (TRIÂNGULO TRUNCADO) */
+.triangle-passive-slot .slot-svg-bg .shape-path.triangle-path {
+    stroke: rgba(255, 170, 0, 0.35);
+    fill: rgba(0, 0, 0, 0.7);
+}
+
+.triangle-passive-slot:hover .slot-svg-bg .shape-path.triangle-path {
+    stroke: #ffaa00;
+    filter: drop-shadow(0 0 6px rgba(255, 170, 0, 0.6));
+}
+
+.triangle-passive-slot.filled .slot-svg-bg .shape-path.triangle-path {
+    stroke: #ffaa00;
+    fill: rgba(255, 170, 0, 0.2);
+    filter: drop-shadow(0 0 8px rgba(255, 170, 0, 0.5));
+}
+
+.triangle-passive-slot .slot-content-text {
+    color: #ffaa00;
+    margin-top: 4px;
+}
+
+.triangle-passive-slot .skill-slot-number {
+    border-color: rgba(255, 170, 0, 0.5);
+    color: #ffaa00;
+}
+
+/* 5. ATRIBUTOS ACUMULATIVOS (CÍRCULOS COM ESCALA INFINITA) */
+.cumulative-attributes-scroll {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    overflow-y: auto;
+    padding: 6px 4px;
+    box-sizing: border-box;
+    align-content: flex-start;
+}
+
+.cumulative-attributes-scroll::-webkit-scrollbar { width: 5px; }
+.cumulative-attributes-scroll::-webkit-scrollbar-thumb { background: rgba(76, 175, 80, 0.35); border-radius: 3px; }
+
+.cumulative-attr-orb {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(76, 175, 80, 0.35);
+    border-radius: 20px;
+    padding: 6px 14px 6px 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.cumulative-attr-orb:hover {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.4);
+}
+
+.orb-circle {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(76, 175, 80, 0.35) 0%, rgba(10, 20, 15, 0.95) 80%);
+    border: 1.5px solid #4CAF50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 6px rgba(76, 175, 80, 0.3);
+    color: #4CAF50;
+    font-size: 15px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.orb-label-group {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.orb-name {
+    font-size: 14px;
+    color: #e2e2e2;
+    white-space: nowrap;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 600;
+}
+
+.orb-val {
+    font-size: 15px;
+    font-weight: bold;
+    color: #4CAF50;
+    font-family: 'Consolas', 'Courier New', Courier, monospace;
+    text-shadow: 0 0 6px rgba(76, 175, 80, 0.4);
+}
+
+.cumulative-empty-hint {
+    color: rgba(255, 255, 255, 0.55);
+    font-style: italic;
+    font-size: 14px;
+    text-align: center;
+    margin: auto 0;
+    padding: 20px 0;
+    width: 100%;
+}
+
+/* --- Broches Desbloqueados na Árvore Global --- */
+.brooches-available-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(255, 215, 0, 0.2);
+}
+
+.available-brooches-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    min-height: 52px;
+}
+
+.available-brooch-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(15, 12, 22, 0.85);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 6px;
+    padding: 5px 10px 5px 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    position: relative;
+}
+
+.available-brooch-item:hover {
+    border-color: #FFD700;
+    background: rgba(255, 215, 0, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.available-brooch-item.is-equipped {
+    filter: grayscale(100%);
+    opacity: 0.45;
+    cursor: not-allowed;
+    border-color: rgba(140, 140, 140, 0.35);
+    background: rgba(35, 35, 40, 0.6);
+    box-shadow: none;
+}
+
+.available-brooch-item.is-equipped:hover {
+    transform: none;
+    border-color: rgba(140, 140, 140, 0.35);
+    background: rgba(35, 35, 40, 0.6);
+    box-shadow: none;
+}
+
+.available-brooch-item.is-equipped::after {
+    content: "EQUIPADO";
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #555;
+    color: #eee;
+    font-size: 8px;
+    font-weight: bold;
+    padding: 1px 4px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+}
+
+.available-brooch-icon-box {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.available-brooch-label-group {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.available-brooch-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #eee;
+    white-space: nowrap;
+}
+
+.available-brooch-type {
+    font-size: 11px;
+    color: #FFD700;
+    font-style: italic;
+}
+
+.available-brooches-empty-hint {
+    color: rgba(255, 255, 255, 0.45);
+    font-style: italic;
+    font-size: 13px;
+    padding: 8px 0;
+}

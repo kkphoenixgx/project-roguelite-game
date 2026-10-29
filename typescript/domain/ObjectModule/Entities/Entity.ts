@@ -4,10 +4,8 @@ import Vector2D from "../../shared/Vector2D";
 import type { objectTypeId } from "../objectType.type";
 import type Attributes from "./Attributes";
 import type { HitBox } from "../../hitBox/HitBox";
-import type { DamageType } from "../Items/IAtack";;
+import type { DamageType } from "../../ports/domain-contracts";
 import type { IEventManager } from "../../eventDispacher/IGameEvents";
-import type StatusEffect from "./Status/StatusEffect";
-import RewardGenerator from "../Items/RewardGenerator";
 
 export interface DamageInfo {
   totalDamage: number;
@@ -21,9 +19,11 @@ export default abstract class Entity extends ObjectElement {
   public velocity: Vector2D = new Vector2D(0, 0);
   public direction: Vector2D = new Vector2D(0, 0);
   public hitBox :HitBox[] | null = null
-  public activeStatuses: Map<string, StatusEffect> = new Map();
-  public activeStatusesList: StatusEffect[] = [];
+  public activeStatuses: Map<string, any> = new Map();
+  public activeStatusesList: any[] = [];
   public currentSpeedModifier: number = 1;
+  public visualTint?: string | undefined;
+  public visualScale?: number | undefined;
   protected _centerCache: {x: number, y: number} = {x: 0, y: 0};
 
   constructor(
@@ -46,7 +46,7 @@ export default abstract class Entity extends ObjectElement {
   /** Avança o estado interno da entidade. Pode ser sobrescrito por subclasses. * @param deltaTime O tempo em segundos decorrido desde o último frame. * @param player Instância do jogador, se necessária para cálculo de IA. */
   public abstract override update(deltaTime: number, player?: any): void;
   
-  public applyStatus(status: StatusEffect): void {
+  public applyStatus(status: any): void {
     const existing = this.activeStatuses.get(status.id);
     if (existing) {
         existing.duration = Math.max(existing.duration, status.duration); // Renova a duração
@@ -57,6 +57,26 @@ export default abstract class Entity extends ObjectElement {
         status.apply(this);
         (this as any).eventManager?.dispatch('log', { channel: 'domain', message: `Status ${status.id} aplicado em ${this.objectId}`, params: [] });
     }
+  }
+
+  public removeStatus(statusId: string): boolean {
+    const status = this.activeStatuses.get(statusId);
+    if (!status) return false;
+
+    this.activeStatuses.delete(statusId);
+    const idx = this.activeStatusesList.indexOf(status);
+    if (idx !== -1) {
+      this.activeStatusesList.splice(idx, 1);
+    }
+
+    if (typeof status.onRemove === 'function') {
+      status.onRemove(this);
+    } else if (typeof status.remove === 'function') {
+      status.remove(this);
+    }
+
+    (this as any).eventManager?.dispatch('log', { channel: 'domain', message: `Status ${statusId} purgado/removido de ${this.objectId}`, params: [] });
+    return true;
   }
 
   public updateStatuses(deltaTime: number): void {
@@ -140,14 +160,10 @@ export default abstract class Entity extends ObjectElement {
     if (this.attributes.hp <= 0) {
       this.state = 'dead';
       
-      // GERAÇÃO DE SAQUE (LOOT): Drasticamente reduzido (apenas 15% de chance de rolar um drop!)
-      if (this.objectId !== 'player' && this.objectId !== 'bdiAgent' && Math.random() < 0.15) {
-         RewardGenerator.generateDrop({ x: centerX, y: centerY }, this.eventManager);
-      }
-
       // Despacha evento puro de negócio ao invés de acoplar as partículas visualmente
       this.eventManager.dispatch('entityDied', { 
          entityId: this.id, 
+         objectId: this.objectId,
          isOverkill: damageInfo.totalDamage >= this.attributes.maxHp * 1.5,
          coordinates: { x: centerX, y: centerY } 
       });
@@ -189,25 +205,113 @@ export default abstract class Entity extends ObjectElement {
     const px = this.coordinates.x + this.size.width / 2;
     const py = this.coordinates.y + this.size.height / 2;
 
+    if (env.hitboxes && env.hitboxes.length > 0) {
+        for (let i = 0; i < env.hitboxes.length; i++) {
+            const hb = env.hitboxes[i];
+            if (!hb) continue;
+            const shape = hb.getDebugShape();
+            if (shape.type === 'circle') {
+                const cx = shape.coordinates?.x ?? env.coordinates.x;
+                const cy = shape.coordinates?.y ?? env.coordinates.y;
+                const cr = shape.radius || 16;
+                const curPx = this.coordinates.x + this.size.width / 2;
+                const curPy = this.coordinates.y + this.size.height / 2;
+                const dx = curPx - cx;
+                const dy = curPy - cy;
+                const distance = Math.hypot(dx, dy);
+                const minDist = radius + cr;
+                if (distance < minDist && distance > 0.0001) {
+                    const overlap = minDist - distance;
+                    this.coordinates.x += (dx / distance) * overlap;
+                    this.coordinates.y += (dy / distance) * overlap;
+                } else if (distance <= 0.0001) {
+                    this.coordinates.y += minDist;
+                }
+            } else if (shape.type === 'polygon' && shape.points && shape.points.length > 0) {
+                const pts = shape.points;
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                for (let k = 0; k < pts.length; k++) {
+                    const p = pts[k]!;
+                    if (p.x < minX) minX = p.x;
+                    if (p.x > maxX) maxX = p.x;
+                    if (p.y < minY) minY = p.y;
+                    if (p.y > maxY) maxY = p.y;
+                }
+
+                const curPx = this.coordinates.x + this.size.width / 2;
+                const curPy = this.coordinates.y + this.size.height / 2;
+
+                // Broadphase rápida via AABB expandida pelo raio
+                if (curPx + radius < minX || curPx - radius > maxX || curPy + radius < minY || curPy - radius > maxY) {
+                    continue;
+                }
+
+                // 1. Ray-casting para detectar se o centro do círculo está contido dentro do polígono
+                let inside = false;
+                for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+                    const xi = pts[i]!.x, yi = pts[i]!.y;
+                    const xj = pts[j]!.x, yj = pts[j]!.y;
+                    const intersect = ((yi > curPy) !== (yj > curPy)) &&
+                        (curPx < (xj - xi) * (curPy - yi) / (yj - yi || 0.00001) + xi);
+                    if (intersect) inside = !inside;
+                }
+
+                // 2. Busca pelo ponto mais próximo no perímetro do polígono
+                let closestDistSq = Infinity;
+                let closestX = curPx;
+                let closestY = curPy;
+
+                for (let i = 0; i < pts.length; i++) {
+                    const nextIdx = (i + 1) % pts.length;
+                    const pA = pts[i]!;
+                    const pB = pts[nextIdx]!;
+                    const segDx = pB.x - pA.x;
+                    const segDy = pB.y - pA.y;
+                    const segLenSq = segDx * segDx + segDy * segDy;
+                    if (segLenSq === 0) continue;
+
+                    const t = Math.max(0, Math.min(1, ((curPx - pA.x) * segDx + (curPy - pA.y) * segDy) / segLenSq));
+                    const projX = pA.x + t * segDx;
+                    const projY = pA.y + t * segDy;
+                    const distSq = (curPx - projX) * (curPx - projX) + (curPy - projY) * (curPy - projY);
+
+                    if (distSq < closestDistSq) {
+                        closestDistSq = distSq;
+                        closestX = projX;
+                        closestY = projY;
+                    }
+                }
+
+                const dist = Math.sqrt(closestDistSq);
+
+                if (inside) {
+                    // Centro está dentro do obstáculo sólido: empurra na direção de saída mais curta
+                    const dx = curPx - closestX;
+                    const dy = curPy - closestY;
+                    if (dist > 0.0001) {
+                        const overlap = dist + radius;
+                        this.coordinates.x -= (dx / dist) * overlap;
+                        this.coordinates.y -= (dy / dist) * overlap;
+                    } else {
+                        this.coordinates.y += radius;
+                    }
+                } else if (dist < radius && dist > 0.0001) {
+                    // Centro está fora, mas o raio intercepta o segmento do polígono
+                    const dx = curPx - closestX;
+                    const dy = curPy - closestY;
+                    const overlap = radius - dist;
+                    this.coordinates.x += (dx / dist) * overlap;
+                    this.coordinates.y += (dy / dist) * overlap;
+                }
+            }
+        }
+        return;
+    }
+
     let boxX = env.coordinates.x;
     let boxY = env.coordinates.y;
     let boxW = env.size?.width || 32;
     let boxH = env.size?.height || 32;
-
-    if (env.hitboxes && env.hitboxes[0]) {
-        const shape = env.hitboxes[0].getDebugShape();
-        if (shape.type === 'polygon' && shape.points && shape.points.length > 0) {
-            const pts = shape.points;
-            const minX = Math.min(...pts.map((p: any) => p.x));
-            const maxX = Math.max(...pts.map((p: any) => p.x));
-            const minY = Math.min(...pts.map((p: any) => p.y));
-            const maxY = Math.max(...pts.map((p: any) => p.y));
-            boxX = minX;
-            boxY = minY;
-            boxW = maxX - minX;
-            boxH = maxY - minY;
-        }
-    }
 
     const closestX = Math.max(boxX, Math.min(px, boxX + boxW));
     const closestY = Math.max(boxY, Math.min(py, boxY + boxH));

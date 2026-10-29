@@ -1,0 +1,19 @@
+{
+  "show_ipc_sends": true,
+  "show_ipc_receives": true,
+  "ipc_ignored_agents": ["broadcast"],
+  "ipc_ignored_contents": ["game_paused", "hp_percentage", "current_llm_model"],
+  "show_ollama_requests": true,
+  "show_ollama_responses": true,
+  "ollama_compact_logs": true,
+  "show_ollama_process_logs": false,
+  "show_ollama_stdout": false,
+  "show_ollama_stderr": false,
+  "show_panteao_stdout": true,
+  "show_panteao_stderr": true,
+  "browser_ignored_channels": ["Input", "Render", "Physics"],
+  "show_performance_logs": true,
+  "enable_native_system_debug": false,
+  "monitor_process_memory": false,
+  "disable_webkit_dmabuf_renderer": false
+}

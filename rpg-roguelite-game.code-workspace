@@ -23,7 +23,8 @@
 			"xabikos.JavaScriptSnippets",
 			"ritwickdey.LiveServer",
 			"moppitz.vscode-extension-auto-import",
-			"DSKWRK.vscode-generate-getter-setter"
+			"DSKWRK.vscode-generate-getter-setter",
+			"brainfkt.mermaid-preview-offline"
 		]
 	},
 	"settings": {

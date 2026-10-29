@@ -1,0 +1,106 @@
+# Contexto do Projeto: RPG BulletHell Roguelite
+
+Documento de contextualização e arquitetura viva do projeto para orientar agentes e desenvolvedores sobre a estrutura, decisões de design, contratos e regras de implementação.
+
+---
+
+## 1. Visão Geral
+
+- **Gênero:** RPG Roguelite 2D estilo Bullet Hell.
+- **Stack:** TypeScript 5, Vite, Vitest, Storybook 8, Tauri 2 (Rust), WebGPU / Canvas 2D, WebGL puro (Lobby 3D), Three.js.
+- **Backend / Sidecars Nativos (Tauri/Rust):**
+  - Motor BDI **Panteão** (agentes lógicos com planos `.asl`).
+  - Integração local com **Ollama** (LLM local, e.g. `qwen2.5:0.5b`).
+  - Persistência com criptografia (XOR + Base64) e telemetria nativa.
+
+---
+
+## 2. Pilares Arquiteturais
+
+### 2.1. Arquitetura Hexagonal (Portas e Adaptadores)
+- **Domínio (`typescript/domain/`) — "O Cérebro no Pote":**
+  - Puro, determinístico, focado em matemática vetorial e regras de RPG.
+  - **Agnóstico:** Não tem conhecimento de tela, DOM, CSS, Canvas, WebGL, WebGPU, Tauri ou sockets.
+  - **Porta Primária:** [`DomainFacade`](typescript/domain/DomainFacade.ts) expõe a interface `IGameDomain` (`update`, `setWorld`, `handlePlayerInteractions`, `getRenderState`).
+  - **Sub-Fachadas (`typescript/domain/facadeComponents/`):**
+    - `DomainRenderState`: Constrói a fotografia do frame (DTO transitório).
+    - `InventoryGateway`: Roteia operações de inventário sem acoplar o `Player` à UI.
+    - `SkillTreeGateway`: Desbloqueio e equipagem de habilidades.
+    - `ToolActionGateway`: Gateway para ações do sistema de ferramentas/cinto.
+    - `MetaProgressionManager`: Meta-progressão e broches entre runs.
+  - **Portas Secundárias (`typescript/domain/ports/`):**
+    - `ICollisionService`, `ICollisionTileService`, `ITelemetryPort`, `ISaveRepository`, `IBdiGateway`, `ILLMService`, `ILogger`.
+
+### 2.2. Filosofia Zero-GC & Data-Oriented Design (DOD)
+Para sustentar 60 FPS com milhares de entidades e projéteis simultâneos:
+1. **Double Buffering / Delayed Resolution:** A detecção de colisão via Web Worker (`Collision.worker.ts`) e `QuadTree` é assíncrona ("fogo e esquece"). As respostas são resolvidas no início do frame $N+1$, sem travar o Game Loop.
+2. **Sem alocações no Hot Path:**
+   - Vetores mutáveis com métodos `*Mut` (`Vector2D.addMut`).
+   - Memoização no pipeline de renderização (`composedLayersCache` no `WebGPURenderer`).
+   - Esvaziamento de coleções com `.length = 0` e `.clear()` em vez de recriação de arrays/sets.
+   - *Swap-Based Object Pooling* para partículas e efeitos transitórios (`ParticleOrchestrator`).
+   - IDs de depuração com operações Bitwise em vez de concatenação de strings em loops.
+
+---
+
+## 3. Módulos e Estrutura de Código
+
+```
+typescript/
+├── domain/                         # Core puro (Regras, Matemática, Entidades)
+│   ├── DomainFacade.ts             # Fachada principal do domínio
+│   ├── facadeComponents/           # Sub-fachadas funcionais (Inventory, SkillTree, etc.)
+│   ├── ObjectModule/               # Gerenciador de ciclo de vida de objetos
+│   │   ├── ObjectElementManager.ts # Atualização, spatial queries e despacho de colisão
+│   │   ├── CollisionManager.ts     # Orquestrador do buffer de colisões pendentes
+│   │   ├── SpawnRegistry.ts        # Registro dinâmico (@RegisterSpawner)
+│   │   ├── Entities/               # Entity, Player, Enemies, NPCs, Casted
+│   │   ├── Items/                  # Armas, Armaduras, Consumíveis, Storage, Bag
+│   │   ├── Maps/                   # VilgemWorld, CemiiWorld, AlunWorld
+│   │   └── projectiles/            # Projéteis físicos, mágicos e anzol
+│   ├── Skills/                     # Habilidades desbloqueáveis
+│   ├── hitBox/                     # HitBoxCircle, HitBoxPolygon (SAT) e HitboxParser
+│   ├── eventDispacher/             # Barramento de eventos tipado e ActionManager
+│   ├── shared/                     # Vector2D, QuadTree, Dice, Vertex2D
+│   └── ports/                      # Contratos de portas primárias e secundárias
+│
+├── adapters/                       # Camada de Apresentação e Infraestrutura
+│   ├── AdapterManager.ts           # Orquestrador de transição de adaptadores
+│   ├── web/                        # Adaptador Web principal
+│   │   ├── GameAdapter.ts          # Bootstrapper e orquestrador principal
+│   │   ├── components/             # SceneManager, Camera, InputGateway, UIManager
+│   │   ├── renderModule/           # Renderer 2D, WebGPURenderer, Shaders, Partículas
+│   │   ├── GUIS/                   # Interfaces DOM (MainMenu, HUD, SkillTree, etc.)
+│   │   └── shared/                 # VisualConfigMap, RenderRegistry, Logger
+│   ├── lobby3d/                    # Lobby interativo WebGL procedural puro
+│   ├── polygonWebEditor/           # Ferramenta visual autônoma de desenho de hitboxes
+│   ├── RepositoryAdapter/          # Persistência com criptografia XOR + Base64
+│   ├── TelemetryAdapter/           # Telemetria Zero-GC com circular buffers
+│   └── SocketAdapter/              # Stub para conexão com engines 3D externas
+│
+└── tests/                          # Suíte Vitest (Domínio, Integração, Performance, Estabilidade)
+```
+
+---
+
+## 4. Subsistemas Mecânicos Notáveis
+
+- **O Axiomante / Mago (`Classes/Mage.ts`):**
+  - Entrada via Buffer Temporal FIFO.
+  - O jogador digita teclas e o Spell Parser compõe magias e fusões elementais de ordem superior (*Deep 2, 3 e 4*), como Magma, Gelo, Potência, Ordem, Caos, etc.
+- **Pescador (`Classes/Pescador.ts`):**
+  - Dispara o `FishingHook`, um projétil cinético persistente que ancora no alvo e sincroniza posições.
+- **NPCs Cognitivos & PraxisValidator:**
+  - 4 camadas: `InteractiveEntity` ➔ `BdiAgentEntity` ➔ `CognitiveNPC` ➔ `PraxisValidator`.
+  - O `PraxisValidator` inspeciona a AST das ações sugeridas pelo LLM e rejeita tokens perigosos (`window`, `eval`, loops infinitos), blindando o motor.
+- **Design System Visual (Dois Mundos):**
+  - **Fora do Jogo (Menu / Lobby):** *Grimdark Fantasy / Arcane Codex* (púrpura `#38146a`, marrom `#3a192a`, dourado `#FFD700`, botões retrô pesados).
+  - **Dentro do Jogo (HUD / Diálogos):** *Floating Glassmorphism* translúcido (`backdrop-filter: blur`), sem obstruir combate.
+
+---
+
+## 5. Diretrizes para Modificações e Desenvolvimento
+
+1. **Integridade da Arquitetura Hexagonal:** Nunca importe bibliotecas de DOM, Web APIs, Canvas, WebGL, WebGPU ou Tauri dentro do `typescript/domain/`. Se for necessária uma nova capacidade externa, crie uma Porta Secundária em `typescript/domain/ports/` e implemente-a em `typescript/adapters/`.
+2. **Garantia Zero-GC em Loops de Jogo:** Jamais use `.map()`, `.filter()`, `.sort()` com recriação de objetos, ou concatenação massiva de strings dentro de métodos chamados por frame (`update`, `draw`, `checkCollisions`).
+3. **Criação de Arquivos:** Nunca crie novos arquivos sem extrema necessidade; prefira enriquecer os contratos e componentes existentes de forma coesa.

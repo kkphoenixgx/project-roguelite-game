@@ -94,19 +94,20 @@ describe('Attributes', () => {
     it('deve gastar um ponto de atributo e aumentar o atributo base', () => {
       const attrs = new Attributes(8, 1, 10, 10, 10, 10, 10, 10);
       attrs.grantAvailablePoint();
-      expect(attrs.availablePoints).toBe(1);
+      expect(attrs.availablePoints).toBe(2);
       
       const success = attrs.spendPoint('strength');
       expect(success).toBe(true);
       expect(attrs.strength).toBe(11);
-      expect(attrs.availablePoints).toBe(0);
+      expect(attrs.availablePoints).toBe(1);
     });
 
     it('não deve gastar um ponto se não houver disponíveis', () => {
       const attrs = new Attributes(8, 1, 10, 10, 10, 10, 10, 10);
+      attrs.spendPoint('strength'); // Gasta o 1º ponto inicial
       const success = attrs.spendPoint('strength');
       expect(success).toBe(false);
-      expect(attrs.strength).toBe(10);
+      expect(attrs.strength).toBe(11);
     });
 
     it('deve aumentar o HP retroativamente ao gastar ponto em constituição', () => {

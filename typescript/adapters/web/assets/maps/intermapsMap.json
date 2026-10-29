@@ -1,0 +1,84 @@
+{
+  "interior_black_default": {
+    "id": "interior_black_default",
+    "name": "Interior Escuro",
+    "parentWorldId": "vilgem",
+    "width": 2048,
+    "height": 1024,
+    "backgroundColor": "#000000",
+    "defaultSpawn": {
+      "x": 512,
+      "y": 700
+    },
+    "portals": [
+      {
+        "x": 1936,
+        "y": 3,
+        "width": 106,
+        "height": 1011,
+        "targetMapId": "vilgem",
+        "targetSpawnCoords": {
+          "x": 700,
+          "y": 450
+        },
+        "type": "request",
+        "promptText": "Entrar",
+        "actionKey": "E",
+        "cooldownMs": 1000
+      }
+    ],
+    "scenery": [
+      {
+        "x": 1642,
+        "y": 289,
+        "presetId": "camp_cooking_pot"
+      }
+    ],
+    "chunks": [
+      [
+        "/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+        "/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png"
+      ]
+    ],
+    "items": [
+      {
+        "x": 529,
+        "y": 475,
+        "itemClass": "LeatherBag"
+      },
+      {
+        "x": 473,
+        "y": 365,
+        "itemClass": "AdrenalineFlask"
+      },
+      {
+        "x": 410,
+        "y": 603,
+        "itemClass": "SimpleSword",
+        "name": "Espada de Madeira",
+        "baseDamage": 12
+      },
+      {
+        "x": 473,
+        "y": 604,
+        "itemClass": "SimpleStaff",
+        "name": "Cajado Simples",
+        "baseDamage": 10
+      },
+      {
+        "x": 565,
+        "y": 604,
+        "itemClass": "FishingRod",
+        "name": "Poderosa Vara de Pesca",
+        "baseDamage": 6
+      },
+      {
+        "x": 631,
+        "y": 597,
+        "itemClass": "Gun",
+        "name": "Chocante Poderosa Pistola Inicial",
+        "baseDamage": 18
+      }
+    ]
+  }
+}

@@ -1,0 +1,85 @@
+.floating-chat-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 50; /* Abaixo da UI principal, mas acima do canvas */
+    overflow: hidden;
+}
+
+.floating-bubble {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    background: rgba(15, 15, 20, 0.95);
+    border: 2px solid #55aaff;
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: #fff;
+    font-family: 'Minecraft', 'Courier New', Courier, monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    text-shadow: 1px 1px 0 #000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+    
+    /* Expansível, com min e max */
+    min-width: 50px;
+    max-width: 250px;
+    max-height: 150px;
+    
+    /* Truncar texto se ultrapassar o height máximo */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    
+    /* Animação suave para exibir (sem transition em left/top para evitar layout thrashing a 60 FPS) */
+    transition: opacity 0.3s ease-in-out, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    will-change: left, top, transform, opacity;
+    opacity: 0;
+    pointer-events: auto; /* Permite scroll se necessário no futuro */
+}
+
+.floating-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    margin-left: -10px;
+    border-width: 10px 10px 0;
+    border-style: solid;
+    border-color: #55aaff transparent transparent transparent;
+    display: block;
+    width: 0;
+}
+
+.floating-bubble::before {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    margin-left: -7px;
+    border-width: 7px 7px 0;
+    border-style: solid;
+    border-color: rgba(15, 15, 20, 0.85) transparent transparent transparent;
+    display: block;
+    width: 0;
+    z-index: 1;
+}
+
+.floating-bubble.active {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 15px)); /* Float up effect */
+}
+
+.floating-bubble.portal-prompt {
+    border-color: #f1c40f;
+    box-shadow: 0 0 12px rgba(241, 196, 15, 0.45), 0 4px 6px rgba(0, 0, 0, 0.6);
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+    letter-spacing: 0.5px;
+}
+
+.floating-bubble.portal-prompt::after {
+    border-color: #f1c40f transparent transparent transparent;
+}

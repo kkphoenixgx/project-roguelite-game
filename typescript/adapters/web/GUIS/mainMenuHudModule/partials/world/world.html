@@ -1,0 +1,24 @@
+    <!-- ABA 3: MAPA (DEFAULT INICIAL) -->
+    <div class="mm-tab-content active" id="mm-tab-3">
+        <div id="dream-container">
+            <!-- Área de Câmera (Pan e Zoom) -->
+            <div id="map-viewport">
+                <!-- Camada do Mapa Base -->
+                <div id="map-layer"></div>
+            </div>
+                        
+            <!-- Rosa dos Ventos do Wireframe (Pixel Art) -->
+            <svg class="compass" viewBox="0 0 100 100" style="shape-rendering: crispEdges;">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="var(--ui-text-tertiary)" stroke-width="4" stroke-linecap="square"/>
+                <polygon points="50,0 60,40 100,50 60,60 50,100 40,60 0,50 40,40" fill="var(--ui-bg-darkest)" stroke="var(--ui-text-tertiary)" stroke-width="4" stroke-linejoin="miter"/>
+                <text x="43" y="-5" fill="var(--ui-text-primary)" font-family="Minecraft" font-size="20">N</text><text x="45" y="115" fill="var(--ui-text-primary)" font-family="Minecraft" font-size="20">S</text>
+                <text x="105" y="55" fill="var(--ui-text-primary)" font-family="Minecraft" font-size="20">L</text><text x="-15" y="55" fill="var(--ui-text-primary)" font-family="Minecraft" font-size="20">O</text>
+            </svg>
+
+            <div class="world-actions-container">
+                <button class="btn-teletrans" id="btn-sonhar">Sonhar</button>
+            </div>
+            
+            <div class="cloud-transition" id="cloud-transition"></div>
+        </div>
+    </div>

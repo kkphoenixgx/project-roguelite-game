@@ -1,0 +1,115 @@
+flowchart LR
+
+subgraph 0["typescript"]
+subgraph 1["adapters"]
+subgraph 2["assets-adapter"]
+subgraph 3["Components"]
+4["AssetScanner.ts"]
+end
+subgraph 1A["Models"]
+1B["AssetDefinition.ts"]
+end
+end
+subgraph O["web"]
+subgraph P["shared"]
+Q["VisualConfigMap.ts"]
+V["Logger.ts"]
+18["CrashHandler.ts"]
+end
+subgraph R["components"]
+subgraph S["renderModule"]
+subgraph T["visuals"]
+U["GameObjectElement.ts"]
+19["IRenderable.ts"]
+end
+end
+17["Game.ts"]
+end
+end
+subgraph Z["TelemetryAdapter"]
+10["TelemetryAdapterSingleton.ts"]
+12["ITelemetryAdapter.ts"]
+13["TelemetrySnapshot.d.ts"]
+subgraph 14["TelemetryUI"]
+15["TelemetryUI.ts"]
+16["telemetryUI.css"]
+end
+end
+end
+subgraph 5["domain"]
+subgraph 6["ObjectModule"]
+subgraph 7["Scenery"]
+8["SceneryRegistry.ts"]
+9["asset_hitboxes.json"]
+end
+G["objectType.type.ts"]
+J["ObjectElement.ts"]
+end
+subgraph A["hitBox"]
+B["HitBox.ts"]
+I["HitBoxCircle.ts"]
+N["HitBoxPolygon.ts"]
+end
+subgraph C["ports"]
+D["domain-contracts.ts"]
+H["ILLMConfigPort.ts"]
+W["ILogger.ts"]
+11["ITelemetryPort.ts"]
+end
+subgraph E["eventDispacher"]
+F["actions.type.ts"]
+K["IGameEvents.ts"]
+end
+subgraph L["shared"]
+M["Vector2D.ts"]
+end
+end
+subgraph X["tests"]
+Y["Telemetry.ts"]
+end
+end
+4-->8
+4-->Q
+4-->1B
+8-->B
+8-->I
+8-->N
+8-->9
+B-->D
+D-->F
+D-->G
+D-->H
+D-->H
+I-->J
+I-->D
+I-->M
+I-->B
+J-->K
+J-->B
+J-->D
+J-->G
+K-->G
+K-->D
+K-->D
+K-->M
+N-->J
+N-->D
+N-->B
+Q-->U
+U-->D
+U-->V
+U-->17
+U-->19
+V-->W
+V-->Y
+V-->10
+10-->11
+10-->12
+10-->13
+10-->15
+12-->11
+12-->13
+15-->13
+15-->16
+17-->18
+17-->V

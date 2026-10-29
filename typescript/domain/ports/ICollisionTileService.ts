@@ -3,7 +3,7 @@
  * Define o contrato entre o Domínio e o Adaptador para obtenção de dados de colisão
  */
 
-import type { CollisionTileData } from './CollisionTileType';
+export type CollisionTileData = any;
 
 export interface ICollisionTileService {
     /**

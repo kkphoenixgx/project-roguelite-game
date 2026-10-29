@@ -1,0 +1,103 @@
+#toast-notifications-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    z-index: 10000;
+    pointer-events: none;
+    max-width: 90vw;
+    width: auto;
+}
+
+.toast-item {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(18, 12, 28, 0.94);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+    color: #f1f5f9;
+    font-family: 'Cinzel', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+    max-width: 480px;
+}
+
+.toast-item.toast-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.toast-item.toast-hiding {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+}
+
+.toast-item.variant-error {
+    border: 1px solid rgba(239, 68, 68, 0.65);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(239, 68, 68, 0.25);
+}
+
+.toast-item.variant-warning {
+    border: 1px solid rgba(245, 158, 11, 0.65);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(245, 158, 11, 0.25);
+}
+
+.toast-item.variant-info {
+    border: 1px solid rgba(56, 189, 248, 0.65);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(56, 189, 248, 0.25);
+}
+
+.toast-item.variant-success {
+    border: 1px solid rgba(34, 197, 94, 0.65);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(34, 197, 94, 0.25);
+}
+
+.toast-icon {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toast-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.toast-message {
+    flex: 1;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.toast-close-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    padding: 0 0 0 6px;
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease;
+}
+
+.toast-close-btn:hover {
+    color: #ffffff;
+}

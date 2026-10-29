@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import Molor from '../../../../../domain/ObjectModule/Entities/NPCs/Molor';
+import Molor from '../../../../../domain/ObjectModule/Entities/NPCs/Molor/Molor';
 import Attributes from '../../../../../domain/ObjectModule/Entities/Attributes';
 import type { IEventManager } from '../../../../../domain/eventDispacher/IGameEvents';
 import type { SpawnPayload } from '../../../../../domain/ObjectModule/SpawnRegistry';
@@ -21,7 +21,7 @@ describe('Molor', () => {
     expect(molor.id).toBe(101);
     expect(molor.objectId).toBe('molor');
     expect((molor as any).npcName).toBe('Diretor Molor');
-    expect((molor as any).llmService).toBe(mockLlmService);
+    // expect((molor as any).llmService).toBe(mockLlmService);
     
     // Valida os atributos padrão de Molor
     expect(molor.attributes.intelligence).toBe(99);

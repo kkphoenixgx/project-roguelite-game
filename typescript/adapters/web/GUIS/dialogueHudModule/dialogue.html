@@ -1,6 +1,13 @@
 <div id="dialogue-container">
     <button id="dialogue-close-btn">&times;</button>
-    <div id="dialogue-name">Mestre Ignis</div>
+    <div id="dialogue-header">
+        <div id="dialogue-portrait">
+            <canvas id="portrait-canvas" width="64" height="64"></canvas>
+        </div>
+        <div id="dialogue-name">Mestre Ignis</div>
+    </div>
     <div id="dialogue-text">...</div>
-    <input type="text" id="dialogue-input" placeholder="Responda aqui e pressione Enter..." autocomplete="off">
+    <div class="input-wrapper">
+        <input type="text" id="dialogue-input" placeholder="Responda aqui e pressione Enter..." autocomplete="off">
+    </div>
 </div>

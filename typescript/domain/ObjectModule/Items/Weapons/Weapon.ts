@@ -1,3 +1,4 @@
+import type { IWeapon } from "../../../ports/IWeapon";
 import type { baseAttributes } from "../../Entities/Attributes";
 import type Effect from "../Effects/Effect";
 import type Bullet from "../../Entities/projectiles/Bullet";
@@ -12,7 +13,7 @@ import BurnStatus from "../../Entities/Status/BurnStatus";
 import PoisonStatus from "../../Entities/Status/PoisonStatus";
 import ParalyzeStatus from "../../Entities/Status/ParalyzeStatus";
 
-export default abstract class Weapon extends Item {
+export default abstract class Weapon extends Item implements IWeapon {
   public unlocksClass?: string | undefined;
   public onHitActions: OnHitAction[] = []; // Permite injetar efeitos de impacto (ex: roubo de vida) na arma
   public projectileType?: objectTypeId;

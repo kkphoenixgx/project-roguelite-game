@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assets Adapter — Editor de Cenários e Mapas</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <header id="top-navbar">
+        <div class="nav-left">
+            <span class="app-logo">🗺️</span>
+            <h1>Assets Adapter</h1>
+            <span class="app-badge">Scenery & World Placer</span>
+        </div>
+        <div class="nav-right">
+            <div id="sync-status-badge" class="sync-status-badge saved" title="Status de sincronização direta com o arquivo do mundo">
+                <span class="sync-dot"></span>
+                <span id="sync-status-text">✓ Sincronizado com VilgemWorld.ts</span>
+            </div>
+            <button id="btn-quick-change-map" class="nav-btn">
+                <span>🗺️</span> Selecionar Mapa
+            </button>
+            <button id="btn-manage-chunks" class="nav-btn" title="Gerenciar Chunks, Adicionar/Remover Chunks e Fundos do Terreno">
+                <span>🧱</span> Chunks & Terreno
+            </button>
+            <button id="btn-quick-toggle-snap" class="nav-btn" title="Alternar Encaixe na Grade (Snap to Grid) para posicionamento alinhado ou livre">
+                <span id="snap-status-icon">📐</span> <span id="snap-status-text">Grid Snap: Desligado</span>
+            </button>
+            <button id="btn-quick-toggle-hitboxes" class="nav-btn" title="Alternar visualização das hitboxes de colisão dos assets no mapa (Atalho: Tecla F2)">
+                <span id="hitbox-status-icon">🎯</span> <span id="hitbox-status-text">Hitboxes (F2): Off</span>
+            </button>
+            <button id="btn-quick-toggle-player-ref" class="nav-btn active" title="Alternar visualização da referência do Player Idle no canto inferior (Atalho: Tecla P)">
+                <span id="player-ref-icon">👤</span> <span id="player-ref-text">Player Ref (P): On</span>
+            </button>
+            <button id="btn-quick-stamp-mode" class="nav-btn" title="Alternar Modo Carimbo / Pincel Contínuo (Atalho: Tecla B)">
+                <span id="stamp-status-icon">🖌️</span> <span id="stamp-status-text">Carimbo (B): Off</span>
+            </button>
+            <button id="btn-quick-chunk-brush" class="nav-btn" title="Alternar Pincel de Textura de Chunk para pintar terrenos e gerar objetos prontos para Bake (Atalho: Tecla T)">
+                <span id="chunk-brush-status-icon">🎨</span> <span id="chunk-brush-status-text">Pincel Chunk (T): Off</span>
+            </button>
+            <button id="btn-quick-export-image" class="nav-btn btn-export-highlight" title="Exportar o canvas atual como imagem PNG limpa de fundo (sem hitboxes ou objetos adicionais)">
+                <span>📸</span> Exportar Fundo (PNG)
+            </button>
+            <button id="btn-open-sprite-modal" class="nav-btn">
+                <span>✨</span> Definir Novo Sprite
+            </button>
+        </div>
+    </header>
+
+    <main id="app-workspace">
+        <!-- Botão lateral para reabrir a gaveta quando estiver fechada -->
+        <button id="btn-reopen-drawer" class="btn-sidebar-open-tab" title="Expandir Biblioteca de Assets" style="display: none;">
+            <span class="open-tab-icon">📁</span>
+            <span class="open-tab-label">Assets</span>
+            <span class="open-tab-arrow">❯</span>
+        </button>
+
+        <!-- 1. Coluna Esquerda: Gaveta de Assets Dinâmica (Drag & Drop + Scroll + Fechar) -->
+        <aside id="asset-drawer" class="asset-drawer"></aside>
+
+        <!-- Divisor Redimensionável Esquerdo (Splitter/Resizer) -->
+        <div id="drawer-resizer" class="panel-resizer resizer-left" title="Arrastar para redimensionar (Duplo clique para redefinir)">
+            <div class="resizer-handle-grip"></div>
+        </div>
+
+        <!-- 2. Área Central: Mapa Gerado pelo Adaptador Web -->
+        <section id="canvas-container" class="canvas-container"></section>
+
+        <!-- Divisor Redimensionável Direito (Splitter/Resizer) -->
+        <div id="props-resizer" class="panel-resizer resizer-right" title="Arrastar para redimensionar (Duplo clique para redefinir)">
+            <div class="resizer-handle-grip"></div>
+        </div>
+
+        <!-- 3. Coluna Direita: Painel de Propriedades (sprites, configurações...) -->
+        <aside id="properties-panel" class="properties-panel"></aside>
+    </main>
+
+    <script type="module" src="./EditorApp.ts"></script>
+</body>
+</html>

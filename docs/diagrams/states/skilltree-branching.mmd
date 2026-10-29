@@ -1,0 +1,9 @@
+stateDiagram-v2
+    [*] --> StemAvailable
+    StemAvailable --> BaseUnlocked: UNLOCK_ROOT_SKILL
+    BaseUnlocked --> BranchAChosen: SELECT_BRANCH_A
+    BaseUnlocked --> BranchBChosen: SELECT_BRANCH_B
+    BranchAChosen --> BranchAChosen: UNLOCK_TIER2_A
+    BranchAChosen --> BranchAChosen: UNLOCK_CAPSTONE_A
+    BranchBChosen --> BranchBChosen: UNLOCK_TIER2_B
+    BranchBChosen --> BranchBChosen: UNLOCK_CAPSTONE_B

@@ -1,0 +1,58 @@
+{
+  "hitboxes": [
+    {
+      "id": "house_town_hall_poly_1",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 37,
+          "y": 330
+        },
+        {
+          "x": 308,
+          "y": 330
+        },
+        {
+          "x": 308,
+          "y": 235
+        },
+        {
+          "x": 37,
+          "y": 235
+        }
+      ]
+    },
+    {
+      "id": "house_town_hall_poly_2",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 88,
+          "y": 348
+        },
+        {
+          "x": 187,
+          "y": 348
+        },
+        {
+          "x": 187,
+          "y": 323
+        },
+        {
+          "x": 88,
+          "y": 323
+        }
+      ]
+    }
+  ]
+}

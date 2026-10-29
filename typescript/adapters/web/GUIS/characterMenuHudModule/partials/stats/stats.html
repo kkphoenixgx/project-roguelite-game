@@ -1,0 +1,146 @@
+            <div class="status-dual-layout">
+                <!-- Coluna Esquerda: Atributos Primários (Base) -->
+                <div class="status-panel primary-panel">
+                    <div class="status-panel-header">
+                        <div class="panel-title-group">
+                            <span class="panel-title">Atributos Base</span>
+                            <span class="panel-subtitle">Investimento</span>
+                        </div>
+                        <div class="header-actions">
+                            <div class="points-badge">
+                                <span>Pontos:</span>
+                                <span id="attr-points" class="points-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="primary-attributes-list">
+                        <div class="attr-row" id="row-str">
+                            <span class="attr-label">Força</span>
+                            <div class="attr-controls">
+                                <span id="attr-str" class="attr-value">0</span>
+                                <button class="attr-add-btn" data-attr="strength">+</button>
+                            </div>
+                        </div>
+                        <div class="attr-row" id="row-dex">
+                            <span class="attr-label">Destreza</span>
+                            <div class="attr-controls">
+                                <span id="attr-dex" class="attr-value">0</span>
+                                <button class="attr-add-btn" data-attr="dexterity">+</button>
+                            </div>
+                        </div>
+                        <div class="attr-row" id="row-int">
+                            <span class="attr-label">Inteligência</span>
+                            <div class="attr-controls">
+                                <span id="attr-int" class="attr-value">0</span>
+                                <button class="attr-add-btn" data-attr="intelligence">+</button>
+                            </div>
+                        </div>
+                        <div class="attr-row" id="row-con">
+                            <span class="attr-label">Constituição</span>
+                            <div class="attr-controls">
+                                <span id="attr-con" class="attr-value">0</span>
+                                <button class="attr-add-btn" data-attr="constitution">+</button>
+                            </div>
+                        </div>
+                        <div class="attr-row" id="row-wis">
+                            <span class="attr-label">Sabedoria</span>
+                            <div class="attr-controls">
+                                <span id="attr-wis" class="attr-value">0</span>
+                                <button class="attr-add-btn" data-attr="wisdom">+</button>
+                            </div>
+                        </div>
+                        <div class="attr-row" id="row-cha">
+                            <span class="attr-label">Carisma</span>
+                            <div class="attr-controls">
+                                <span id="attr-cha" class="attr-value">0</span>
+                                <button class="attr-add-btn" data-attr="charisma">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Explicação do Melhor Atributo no canto inferior direito da coluna -->
+                    <div class="rule-chip" id="best-attr-rule-chip" data-tooltip="">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <span>Melhor Atributo</span>
+                    </div>
+                </div>
+
+                <!-- Coluna Direita: Atributos Derivados -->
+                <div class="status-panel derived-panel">
+                    <div class="status-panel-header">
+                        <div class="panel-title-group">
+                            <span class="panel-title" style="color: #00e5ff;">Status Derivados</span>
+                            <span class="panel-subtitle">Cálculos de Combate & Sobrevivência</span>
+                        </div>
+                    </div>
+                    <div class="derived-grid" id="derived-attributes-grid">
+                        <div class="derived-item" id="derived-hp">
+                            <span class="derived-label">Vida Máx</span>
+                            <span class="derived-value" id="val-maxHp">0</span>
+                        </div>
+                        <div class="derived-item" id="derived-mana">
+                            <span class="derived-label">Mana Máx</span>
+                            <span class="derived-value" id="val-maxMana">0</span>
+                        </div>
+                        <div class="derived-item" id="derived-hpregen">
+                            <span class="derived-label">Regen Vida</span>
+                            <span class="derived-value" id="val-hpRegen">0/s</span>
+                        </div>
+                        <div class="derived-item" id="derived-manaregen">
+                            <span class="derived-label">Regen Mana</span>
+                            <span class="derived-value" id="val-manaRegen">0/s</span>
+                        </div>
+                        <div class="derived-item" id="derived-defence">
+                            <span class="derived-label">Defesa</span>
+                            <span class="derived-value" id="val-defence">0</span>
+                        </div>
+                        <div class="derived-item" id="derived-speed">
+                            <span class="derived-label">Velocidade</span>
+                            <span class="derived-value" id="val-speed">0</span>
+                        </div>
+                        <div class="derived-item" id="derived-critchance">
+                            <span class="derived-label">Chance Crítica</span>
+                            <span class="derived-value" id="val-critChance">0%</span>
+                        </div>
+                        <div class="derived-item" id="derived-critdamage">
+                            <span class="derived-label">Dano Crítico</span>
+                            <span class="derived-value" id="val-critDamage">0%</span>
+                        </div>
+                        <div class="derived-item" id="derived-dodge">
+                            <span class="derived-label">Esquiva</span>
+                            <span class="derived-value" id="val-dodge">0%</span>
+                        </div>
+                        <div class="derived-item" id="derived-accuracy">
+                            <span class="derived-label">Precisão</span>
+                            <span class="derived-value" id="val-accuracy">0%</span>
+                        </div>
+                        <div class="derived-item" id="derived-recharge">
+                            <span class="derived-label">Recarga (CDR)</span>
+                            <span class="derived-value" id="val-recharge">0%</span>
+                        </div>
+                        <div class="derived-item" id="derived-piercing">
+                            <span class="derived-label">Perfuração</span>
+                            <span class="derived-value" id="val-piercing">0</span>
+                        </div>
+                        <div class="derived-item" id="derived-splash">
+                            <span class="derived-label">Dano em Área</span>
+                            <span class="derived-value" id="val-splashDamage">0%</span>
+                        </div>
+                        <div class="derived-item" id="derived-tenacity">
+                            <span class="derived-label">Tenacidade</span>
+                            <span class="derived-value" id="val-tenacity">0%</span>
+                        </div>
+                        <div class="derived-item" id="derived-vigor">
+                            <span class="derived-label">Vigor (Cura)</span>
+                            <span class="derived-value" id="val-vigor">0%</span>
+                        </div>
+                        <div class="derived-item" id="derived-lucky">
+                            <span class="derived-label">Sorte</span>
+                            <span class="derived-value" id="val-lucky">0</span>
+                        </div>
+                        <div class="derived-item" id="derived-insight">
+                            <span class="derived-label">Percepção XP</span>
+                            <span class="derived-value" id="val-insight">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>

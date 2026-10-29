@@ -1,0 +1,14 @@
+{
+  "hitboxes": [
+    {
+      "id": "bush_flowering_circle_1",
+      "type": "circle",
+      "coordinates": {
+        "x": 27,
+        "y": 30
+      },
+      "rotation": 0,
+      "radius": 18
+    }
+  ]
+}

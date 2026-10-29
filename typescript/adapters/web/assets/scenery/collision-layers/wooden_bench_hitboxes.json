@@ -1,0 +1,31 @@
+{
+  "hitboxes": [
+    {
+      "id": "wooden_bench_poly_1",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 5,
+          "y": 45
+        },
+        {
+          "x": 50,
+          "y": 45
+        },
+        {
+          "x": 50,
+          "y": 25
+        },
+        {
+          "x": 5,
+          "y": 25
+        }
+      ]
+    }
+  ]
+}

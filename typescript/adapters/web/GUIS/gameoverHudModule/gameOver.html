@@ -1,5 +1,31 @@
 <div id="game-over-container">
-    <h1 class="game-over-title">VOCÊ MORREU</h1>
-    <p class="game-over-text">Sua jornada chegou ao fim...</p>
-    <button id="restart-btn" class="game-over-btn">Tentar Novamente</button>
+    <div id="go-overlay"></div>
+    <div id="go-content">
+        <h1 class="game-over-title">VOCÊ MORREU</h1>
+        
+        <div id="go-stats-panel">
+            <h2 style="color: var(--accent-gold); font-family: 'PixelArtFont', monospace; text-align: center; margin-bottom: 20px;">RESUMO DA RUN</h2>
+            
+            <div id="go-level-reward" class="go-row">
+                <span>Nível Alcançado: <span id="go-final-level" style="color: #fff;">1</span></span>
+                <span id="go-level-essence" style="color: #1eff00;">+0 XP</span>
+            </div>
+            
+            <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+            
+            <h3 style="color: #aaa; font-family: 'PixelArtFont', monospace; font-size: 14px; margin-bottom: 10px;">FEITOS REALIZADOS:</h3>
+            <div id="go-feats-list" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                <!-- Feats injected here -->
+            </div>
+            
+            <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+            
+            <div class="go-row" style="font-size: 20px;">
+                <span style="color: #ff8000; font-weight: bold;">TOTAL GANHO:</span>
+                <span id="go-total-reward" style="color: #ffea00; font-weight: bold; text-shadow: 0 0 10px rgba(255, 234, 0, 0.5);">+0 XP</span>
+            </div>
+        </div>
+
+        <button id="restart-btn" class="game-over-btn">Continuar</button>
+    </div>
 </div>

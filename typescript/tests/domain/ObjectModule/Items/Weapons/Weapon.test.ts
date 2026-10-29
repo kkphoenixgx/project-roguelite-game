@@ -71,6 +71,55 @@ describe('Weapon (Abstract Base) & Roguelite Modifiers', () => {
     expect(weapon.name).toBe('Flamejante Poderosa Espada Base');
     expect(weapon.baseDamage).toBe(12);
     expect(weapon.onHitActions.length).toBe(1);
+
+    // Test onHitAction for fire
+    const mockAttacker = {} as any;
+    const mockTarget = { applyStatus: vi.fn() } as any;
+    randomSpy.mockReturnValue(0.1); // < 0.3 triggers status
+    weapon.onHitActions[0]!(mockAttacker, mockTarget, 10);
+    expect(mockTarget.applyStatus).toHaveBeenCalled();
+  });
+
+  it('deve adicionar Efeito Elemental (Veneno) se buffado e cair poison', () => {
+    randomSpy
+      .mockReturnValueOnce(0.1)  // < 0.25 (Ativa Modificador)
+      .mockReturnValueOnce(0.5)  // > 0.3  (É um Buff)
+      .mockReturnValueOnce(0.5)  // Dano boost
+      .mockReturnValueOnce(0.1)  // < 0.4  (Ativa Efeito Elemental)
+      .mockReturnValueOnce(0.4); // index 1 = 'poison' (array: fire, poison, thunder)
+
+    const weapon = new DummyWeapon();
+    
+    expect(weapon.name).toBe('Tóxica Poderosa Espada Base');
+    expect(weapon.onHitActions.length).toBe(1);
+
+    // Test onHitAction for poison
+    const mockAttacker = {} as any;
+    const mockTarget = { applyStatus: vi.fn() } as any;
+    randomSpy.mockReturnValue(0.1); // < 0.3 triggers status
+    weapon.onHitActions[0]!(mockAttacker, mockTarget, 10);
+    expect(mockTarget.applyStatus).toHaveBeenCalled();
+  });
+
+  it('deve adicionar Efeito Elemental (Trovão) se buffado e cair thunder', () => {
+    randomSpy
+      .mockReturnValueOnce(0.1)  // < 0.25 (Ativa Modificador)
+      .mockReturnValueOnce(0.5)  // > 0.3  (É um Buff)
+      .mockReturnValueOnce(0.5)  // Dano boost
+      .mockReturnValueOnce(0.1)  // < 0.4  (Ativa Efeito Elemental)
+      .mockReturnValueOnce(0.8); // index 2 = 'thunder' (array: fire, poison, thunder)
+
+    const weapon = new DummyWeapon();
+    
+    expect(weapon.name).toBe('Chocante Poderosa Espada Base');
+    expect(weapon.onHitActions.length).toBe(1);
+
+    // Test onHitAction for thunder
+    const mockAttacker = {} as any;
+    const mockTarget = { applyStatus: vi.fn() } as any;
+    randomSpy.mockReturnValue(0.1); // < 0.2 triggers status
+    weapon.onHitActions[0]!(mockAttacker, mockTarget, 10);
+    expect(mockTarget.applyStatus).toHaveBeenCalled();
   });
 
   it('deve inicializar propriedades padrões herdadas', () => {

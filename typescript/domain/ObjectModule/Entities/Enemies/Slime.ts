@@ -49,7 +49,7 @@ export default class Slime extends Enemy {
     this.eventManager.dispatch('requestNeighbors', {
       requester: this,
       radius: this.size.width,
-      callback: (neighbors) => this.moveSlime(deltaTime, neighbors)
+      callback: (neighbors) => this.moveSlime(deltaTime, neighbors as any)
     });
   }
 

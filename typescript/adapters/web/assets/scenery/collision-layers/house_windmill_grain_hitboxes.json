@@ -1,0 +1,24 @@
+{
+  "hitboxes": [
+    {
+      "id": "house_windmill_grain_circle_1",
+      "type": "circle",
+      "coordinates": {
+        "x": 146,
+        "y": 242
+      },
+      "rotation": 0,
+      "radius": 60
+    },
+    {
+      "id": "house_windmill_grain_circle_2",
+      "type": "circle",
+      "coordinates": {
+        "x": 126,
+        "y": 282
+      },
+      "rotation": 0,
+      "radius": 30
+    }
+  ]
+}

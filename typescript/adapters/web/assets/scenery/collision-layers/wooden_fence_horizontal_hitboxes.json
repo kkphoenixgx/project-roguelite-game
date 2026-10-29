@@ -1,0 +1,31 @@
+{
+  "hitboxes": [
+    {
+      "id": "wooden_fence_horizontal_poly_1",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 5,
+          "y": 65
+        },
+        {
+          "x": 145,
+          "y": 65
+        },
+        {
+          "x": 145,
+          "y": 30
+        },
+        {
+          "x": 5,
+          "y": 30
+        }
+      ]
+    }
+  ]
+}

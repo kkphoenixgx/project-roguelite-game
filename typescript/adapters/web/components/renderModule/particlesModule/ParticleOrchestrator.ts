@@ -21,6 +21,10 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles = new Particles(maxParticles);
     }
 
+    public get activeParticlesCount(): number {
+        return this.particles.activeParticlesCount;
+    }
+
     /** 
      * Integração com o Game Loop.
      * Avança a física de todas as milhares de partículas vivas.
@@ -40,6 +44,11 @@ export default class ParticleOrchestrator implements IRenderable {
         this.particles.draw(ctx);
     }
 
+    /** Limpa todas as partículas ativas da tela. */
+    public clear(): void {
+        this.particles.clear();
+    }
+
     // ============================================================================
     // BIBLIOTECA DE EFEITOS VISUAIS (VFX) SEMÂNTICOS
     // ============================================================================
@@ -49,10 +58,16 @@ export default class ParticleOrchestrator implements IRenderable {
      * Encapsula o conhecimento de quais efeitos requerem parâmetros específicos (como angle ou color),
      * blindando o Adapter de saber detalhes de implementação.
      */
-    public executeEffect(payload: { effect: string, x: number, y: number, color?: string, angle?: number }): void {
+    public executeEffect(payload: { effect: string, x: number, y: number, color?: string, angle?: number, count?: number }): void {
         switch (payload.effect) {
             case 'slashSparks':
                 this.slashSparks(payload.x, payload.y, payload.angle || 0);
+                break;
+            case 'windGust':
+                this.windGust(payload.x, payload.y, payload.angle || 0);
+                break;
+            case 'demonTransformation':
+                this.demonTransformation(payload.x, payload.y);
                 break;
             case 'magicAura':
                 this.magicAura(payload.x, payload.y, payload.color);
@@ -63,7 +78,7 @@ export default class ParticleOrchestrator implements IRenderable {
             default:
                 const effectFn = (this as any)[payload.effect];
                 if (typeof effectFn === 'function') {
-                    effectFn.call(this, payload.x, payload.y, payload.color);
+                    effectFn.call(this, payload.x, payload.y, payload.color, payload.count);
                 } else {
                     console.warn(`[ParticleOrchestrator] Efeito de partícula desconhecido requisitado: ${payload.effect}`);
                 }
@@ -214,12 +229,27 @@ export default class ParticleOrchestrator implements IRenderable {
      */
     public dynamicSpellTrail(x: number, y: number, elements: string[]): void {
         const colorMap: Record<string, string[]> = {
+            'abys': ['#3B0764', '#581C87', '#7E22CE'],
+            'air': ['#00FFFF', '#E0FFFF', '#7DD3FC'],
+            'crystal': ['#EC4899', '#F472B6', '#06B6D4'],
+            'dark': ['#18181B', '#3F3F46', '#581C87'],
+            'decay': ['#84CC16', '#4D7C0F', '#14532D'],
             'fire': ['#FFA500', '#FF4500', '#FF0000'],
-            'water': ['#00BFFF', '#1E90FF', '#E0FFFF'],
-            'nature': ['#32CD32', '#228B22', '#00FF00'],
-            'thunder': ['#FFFF00', '#FFD700', '#FFFACD'],
+            'ground': ['#78350F', '#B45309', '#D97706'],
+            'holy': ['#FFD700', '#FDE047', '#FEF08A'],
+            'ice': ['#38BDF8', '#BAE6FD', '#FFFFFF'],
+            'infernous': ['#DC2626', '#991B1B', '#EA580C'],
+            'life': ['#22C55E', '#16A34A', '#DC2626'],
             'light': ['#FFFFFF', '#FFF8DC', '#F0E68C'],
-            'magic': ['#8A2BE2', '#9400D3', '#DA70D6']
+            'magic': ['#8A2BE2', '#9400D3', '#DA70D6'],
+            'magma': ['#EA580C', '#C2410C', '#7C2D12'],
+            'nature': ['#32CD32', '#228B22', '#00FF00'],
+            'negation': ['#6B7280', '#9CA3AF', '#EF4444'],
+            'ordem': ['#F59E0B', '#D97706', '#FEF3C7'],
+            'poison': ['#10B981', '#059669', '#047857'],
+            'potencia': ['#C084FC', '#A855F7', '#7E22CE'],
+            'thunder': ['#FFFF00', '#FFD700', '#FFFACD'],
+            'water': ['#00BFFF', '#1E90FF', '#E0FFFF']
         };
 
         let activeColors: string[] = [];
@@ -323,21 +353,54 @@ export default class ParticleOrchestrator implements IRenderable {
         });
     }
 
-    /** Brilho sagrado que se expande. Ideal para o elemento Light (Luz). */
+    /**
+     * Efeito windGust (Infusão de Ar):
+     * Dispara 3 a 5 lâminas de vento curvas em tons de ciano/branco que se dissipam em 0.25 segundos
+     * na direção do golpe da espada.
+     */
+    public windGust(x: number, y: number, angle: number = 0): void {
+        this.particles.emit({
+            x, y,
+            count: 5,
+            colors: ['#FFFFFF', '#E0FFFF', '#00FFFF', '#7FFFD4', '#F0FFFF'],
+            speedMin: 220, speedMax: 420,
+            sizeMin: 4, sizeMax: 8,
+            lifeMin: 0.15, lifeMax: 0.25, // Dissipação rápida em 0.25s
+            angle: angle, spread: Math.PI / 6, // Cone estreito acompanhando o golpe
+            gravity: 0,
+            friction: 0.86,
+            fade: true,
+            isCircle: true
+        });
+    }
+
+    /**
+     * Efeito lightFlash (Infusão de Luz):
+     * Flash esférico radiante amarelado/dourado com fade-out suave em 0.2 segundos, enfatizando a grande área atingida.
+     */
     public lightFlash(x: number, y: number): void {
         this.particles.emit({
             x, y,
-            count: 45,
-            colors: ['#FFFFFF', '#FFFACD', '#FFFFE0', '#FAFAD2'], // Branco puro e amarelos bem pálidos
-            speedMin: 50, speedMax: 300,
-            sizeMin: 3, sizeMax: 8,
-            lifeMin: 0.3, lifeMax: 0.7,
-            angle: -Math.PI / 2, spread: Math.PI * 2,
-            gravity: -10, // Flutua levemente para cima
-            friction: 0.88,
+            count: 50,
+            colors: ['#FFFFFF', '#FFFACD', '#FFD700', '#FAFAD2', '#FFF8DC'], // Branco puro e dourado radiante
+            speedMin: 80, speedMax: 420,
+            sizeMin: 5, sizeMax: 14,
+            lifeMin: 0.1, lifeMax: 0.2, // Fade-out suave em 0.2s
+            angle: 0, spread: Math.PI * 2,
+            gravity: 0,
+            friction: 0.85,
             fade: true,
-            isCircle: true // Esferas perfeitas de luz divinas
+            isCircle: true // Esferas perfeitas de luz divina
         });
+    }
+
+    /**
+     * Transmutação Demoníaca:
+     * Sobreposição simultânea de fogo vermelho e pulso negro expansivo centrada nas coordenadas do jogador.
+     */
+    public demonTransformation(x: number, y: number): void {
+        this.fireExplosion(x, y);
+        this.darkPulse(x, y);
     }
 
     /** Pulso de energia mística. Ideal para o elemento Magic (Magia Arcana). */
@@ -392,17 +455,18 @@ export default class ParticleOrchestrator implements IRenderable {
     }
 
     /** Pulso de energia sombria e corrompida que consome a luz. Ideal para o elemento Dark (Trevas). */
-    public darkPulse(x: number, y: number): void {
+    public darkPulse(x: number, y: number, color?: string, count: number = 20): void {
+        const isDense = count > 5;
         this.particles.emit({
             x, y,
-            count: 60,
-            colors: ['#1A0033', '#2E0854', '#4B0082', '#000000', '#483D8B'], // Tons de roxo abissal e preto
-            speedMin: 10, speedMax: 150, // Expansão insidiosa
-            sizeMin: 3, sizeMax: 9,
-            lifeMin: 0.8, lifeMax: 1.8, // Permanece como uma névoa densa
+            count,
+            colors: color ? [color, '#1A0033', '#2E0854'] : ['#1A0033', '#2E0854', '#4B0082', '#000000', '#483D8B'], // Tons de roxo abissal e preto
+            speedMin: isDense ? 10 : 8, speedMax: isDense ? 90 : 45, // Expansão sutil para manter o formato de estrela nítido
+            sizeMin: isDense ? 3 : 2, sizeMax: isDense ? 7 : 4, // Partículas menores e delicadas que não cobrem os sprites
+            lifeMin: isDense ? 0.35 : 0.2, lifeMax: isDense ? 0.75 : 0.4, // Dissipação rápida para revelar o sprite
             angle: 0, spread: Math.PI * 2,
-            gravity: -15, // Flutua levemente como um miasma
-            friction: 0.88, // Freia rapidamente e fica pairando
+            gravity: -10, // Flutua levemente como um miasma
+            friction: 0.90, // Freia rapidamente e fica pairando
             fade: true,
             isCircle: true // Bordas suaves para simular energia escura e vazios
         });

@@ -115,7 +115,7 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
     const renderPassDescriptor: GPURenderPassDescriptor = {
       colorAttachments: [{
         view: textureView,
-        clearValue: { r: 0.0, g: 0.2, b: 0.5, a: 1.0 }, // Cor de fundo azul
+        clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }, // Cor de fundo preta fora dos chunks
         loadOp: 'clear',
         storeOp: 'store',
       }],
@@ -190,7 +190,9 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
       
       // Cria um Hash simples e rápido em string baseado no estado mutável da entidade
       const equipHash = state.equipment ? Object.values(state.equipment).map((e: any) => e?.iconId).join('-') : '';
-      const stateHash = `${state.state || 'idle'}-${equipHash}-${state.hasBeard}`;
+      const activeBroochHash = Array.isArray(state.globalActiveLoadout) ? state.globalActiveLoadout.join(',') : '';
+      const passiveBroochHash = Array.isArray(state.passiveLoadout) ? state.passiveLoadout.join(',') : '';
+      const stateHash = `${state.state || 'idle'}-${equipHash}-${state.hasBeard}-${activeBroochHash}-${passiveBroochHash}`;
       
       let cachedComposition = this.composedLayersCache.get(state.id);
       if (!cachedComposition || cachedComposition.hash !== stateHash) {
@@ -231,10 +233,13 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
     const rawOffset = config?.renderOffset;
     const currentOffset = (Array.isArray(rawOffset) ? rawOffset[currentFrame % rawOffset.length] : rawOffset) || { x: 0, y: 0 };
 
+    const logicalW = config?.renderSize?.width || config?.frameWidth || state.size.width;
+    const logicalH = config?.renderSize?.height || config?.frameHeight || state.size.height;
+
     const destX = state.coordinates.x + currentOffset.x * scaleX;
     const destY = state.coordinates.y + currentOffset.y * scaleY;
-    const destWidth = (config?.frameWidth || state.size.width) * scaleX;
-    const destHeight = (config?.frameHeight || state.size.height) * scaleY;
+    const destWidth = logicalW * scaleX;
+    const destHeight = logicalH * scaleY;
 
     this.instanceData[offset] = destX;
     this.instanceData[offset + 1] = destY;

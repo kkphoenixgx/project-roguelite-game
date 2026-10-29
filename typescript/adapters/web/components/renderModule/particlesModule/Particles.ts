@@ -28,6 +28,10 @@ export default class Particles {
      */
     private activeCount: number = 0;
 
+    public get activeParticlesCount(): number {
+        return this.activeCount;
+    }
+
     constructor(maxParticles: number = 1000) {
         this.maxParticles = maxParticles;
         this.pool = new Array(maxParticles);
@@ -95,14 +99,28 @@ export default class Particles {
         }
     }
 
-    /** Fase final do GameLoop: Desenha todas as partículas vivas na tela. */
+    /** Fase final do GameLoop: Desenha todas as partículas vivas na tela com alto desempenho (Zero-GC). */
     public draw(ctx: CanvasRenderingContext2D): void {
+        if (this.activeCount === 0) return;
+
+        let lastColor = '';
+        let lastAlpha = -1;
+
         for (let i = 0; i < this.activeCount; i++) {
             const p = this.pool[i]!;
-            ctx.fillStyle = p.color;
-            if (p.fade) ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+            const alpha = p.fade ? Math.max(0, p.life / p.maxLife) : 1.0;
             
-            if (p.isCircle) {
+            if (alpha !== lastAlpha) {
+                ctx.globalAlpha = alpha;
+                lastAlpha = alpha;
+            }
+            if (p.color !== lastColor) {
+                ctx.fillStyle = p.color;
+                lastColor = p.color;
+            }
+            
+            // fillRect é até 50x mais rápido que beginPath + arc + fill por software no Canvas 2D
+            if (p.isCircle && p.size > 6) {
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
                 ctx.fill();
@@ -111,5 +129,10 @@ export default class Particles {
             }
         }
         ctx.globalAlpha = 1.0; // Reseta a transparência para não manchar outras instâncias visuais do jogo
+    }
+
+    /** Reseta todas as partículas vivas do pool sem realocações de memória (Zero-GC). */
+    public clear(): void {
+        this.activeCount = 0;
     }
 }

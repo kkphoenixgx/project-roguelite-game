@@ -4,6 +4,7 @@ import type { IEventManager } from '../../../../../domain/eventDispacher/IGameEv
 import Attack from '../../../../../domain/ObjectModule/Items/Attack';
 import Entity from '../../../../../domain/ObjectModule/Entities/Entity';
 import Attributes from '../../../../../domain/ObjectModule/Entities/Attributes';
+import Vector2D from '../../../../../domain/shared/Vector2D';
 
 const mockEventManager: IEventManager = { on: vi.fn(), dispatch: vi.fn() };
 
@@ -43,12 +44,48 @@ describe('Leviata', () => {
     expect(takeDamageSpy).toHaveBeenCalledOnce();
   });
 
-  it('não deve aplicar dano ao próprio conjurador', () => {
+  it('não deve sofrer dano (takeDamage deve retornar 0 e não matar o Leviatã)', () => {
     const leviata = new Leviata(101, { x: 100, y: 100 }, mockEventManager, attack);
-    const takeDamageSpy = vi.spyOn(attacker, 'takeDamage');
+    const damageDealt = leviata.takeDamage({
+      totalDamage: 9999,
+      damageType: 'physical',
+      isCritical: false,
+      direction: new Vector2D(1, 0),
+      attacker: attacker as any
+    });
 
-    leviata.hitboxes![0]!.onColision(attacker);
+    expect(damageDealt).toBe(0);
+    expect(leviata.state).not.toBe('dead');
+  });
 
-    expect(takeDamageSpy).not.toHaveBeenCalled();
+  it('deve ignorar aplicação de status effects (stuns/debuffs)', () => {
+    const leviata = new Leviata(101, { x: 100, y: 100 }, mockEventManager, attack);
+    leviata.applyStatus({ id: 'stun', duration: 5 });
+    expect(leviata.activeStatuses.has('stun')).toBe(false);
+  });
+
+  it('não deve aplicar dano a invocações aliadas nem ao jogador', () => {
+    const leviata = new Leviata(101, { x: 100, y: 100 }, mockEventManager, attack);
+    const otherLeviata = new MockEntity(102, 'spawn-leviata');
+    const pet = new MockEntity(103, 'fishPet');
+    const playerEntity = new MockEntity(104, 'player');
+
+    const spyOther = vi.spyOn(otherLeviata, 'takeDamage');
+    const spyPet = vi.spyOn(pet, 'takeDamage');
+    const spyPlayer = vi.spyOn(playerEntity, 'takeDamage');
+
+    leviata.hitboxes![0]!.onColision(otherLeviata);
+    leviata.hitboxes![0]!.onColision(pet);
+    leviata.hitboxes![0]!.onColision(playerEntity);
+
+    expect(spyOther).not.toHaveBeenCalled();
+    expect(spyPet).not.toHaveBeenCalled();
+    expect(spyPlayer).not.toHaveBeenCalled();
+  });
+
+  it('createSpawn deve criar o Leviatã centralizado corretamente com coordenadas padrão de segurança', () => {
+    const spawned = Leviata.createSpawn(105, { type: 'spawn-leviata', coordinates: { x: 200, y: 200 }, attack }, mockEventManager);
+    expect(spawned.coordinates.x).toBe(200 - 64);
+    expect(spawned.coordinates.y).toBe(200 - 64);
   });
 });

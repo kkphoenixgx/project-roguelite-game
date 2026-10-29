@@ -47,7 +47,13 @@ export default abstract class MeleeWeapon extends Weapon {
             radius: currentRange,
             callback: (neighbors) => {
                 neighbors.forEach(neighbor => {
-                    if (neighbor !== attacker && 'takeDamage' in neighbor) {
+                    const isFriendly = neighbor === attacker || 
+                        neighbor.objectId === 'player' || 
+                        neighbor.objectId === 'spawn-leviatã' || 
+                        neighbor.objectId === 'spawn-leviata' || 
+                        neighbor.objectId === 'fishPet';
+
+                    if (!isFriendly && 'takeDamage' in neighbor) {
                         // Calcula o vetor entre o atacante e o vizinho
                         const toNeighborX = (neighbor.coordinates.x + neighbor.size.width / 2) - (attacker.coordinates.x + attacker.size.width / 2);
                         const toNeighborY = (neighbor.coordinates.y + neighbor.size.height / 2) - (attacker.coordinates.y + attacker.size.height / 2);

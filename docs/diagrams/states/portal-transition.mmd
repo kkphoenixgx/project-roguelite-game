@@ -1,0 +1,10 @@
+stateDiagram-v2
+    [*] --> IdleInMap
+    IdleInMap --> TriggeringDirectTransition: COLLIDE_DIRECT_PORTAL
+    IdleInMap --> AwaitingInteractionInput: COLLIDE_REQUEST_PORTAL
+    AwaitingInteractionInput --> IdleInMap: LEAVE_PORTAL_AREA
+    AwaitingInteractionInput --> TriggeringInteractiveTransition: PRESS_E
+    TriggeringDirectTransition --> Teleporting: DISPATCH_MAP_TRANSITION
+    TriggeringInteractiveTransition --> Teleporting: DISPATCH_MAP_TRANSITION
+    Teleporting --> ActiveCooldown: MAP_LOADED
+    ActiveCooldown --> IdleInMap: COOLDOWN_EXPIRED

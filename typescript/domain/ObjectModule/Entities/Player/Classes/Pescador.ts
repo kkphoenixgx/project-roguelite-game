@@ -1,7 +1,8 @@
+import type Entity from "../../Entity";
 import Class from "./Class";
 import Skill from "../../../../Skills/Skill";
 import type IXPTable from "../../IXPTable";
-import type Player from "../Player";
+import type { IPlayer } from "../../../../ports/domain-contracts";
 import type { IEventManager } from "../../../../eventDispacher/IGameEvents";
 import { BindAction } from "../../../../eventDispacher/ActionBindings";
 import type { action } from "../../../../eventDispacher/actions.type";
@@ -29,18 +30,18 @@ export default class Pescador extends Class {
     private readonly petCooldown: number = 10000; // 10s cooldown
     private lastLeviataTime: number = 0;
     private readonly leviataCooldown: number = 8000; // 8s de recarga
-    private leviataSpawnAttack: Attack;
+    private leviataSpawnAttack!: Attack;
     
     private lastNetTime: number = 0;
     private readonly netCooldown: number = 5000;
 
-    constructor(xpTable: IXPTable, player: Player, eventManager: IEventManager) {
+    constructor(xpTable: IXPTable, player: IPlayer, eventManager: IEventManager) {
         super('Pescador', xpTable, player, eventManager);
         // Exemplo de uma passiva inicial temática
         this.skillsByLevel.set(1, new Skill('pesc_t1_fisgada', 'Fisgada Perfeita', 'O seu puxão se torna mais rápido e pesado.', 'passive', 1));
         this.skillsByLevel.set(4, new Skill('pesc_t2_net', 'Rede Pesada', 'Joga uma rede mágica que enraíza inimigos em área.', 'active', 2, 'pesc_t1_fisgada'));
         this.skillsByLevel.set(8, new Skill('pesc_t3_leviata', 'Fúria do Leviatã', 'Invoca um Leviatã das profundezas para esmagar uma área.', 'active', 3, 'pesc_t2_net'));
-        this.skillsByLevel.set(16, new Skill('pesc_t4_fishpet', 'Peixinho de Combate', 'Invoca um peixinho lutador imortal da dimensão aquática.', 'essential', 4));
+        this.skillsByLevel.set(16, new Skill('pesc_t4_fishpet', 'Peixinho de Combate', 'Invoca um peixinho lutador imortal da dimensão aquática.', 'essential', 4, 'pesc_t3_leviata'));
 
         this.eventManager.on('hookDestroyed', (payload) => {
             if (payload.playerId === this.player.id) {
@@ -60,9 +61,12 @@ export default class Pescador extends Class {
     public onSummonPet() {
         if (!this.player.unlockedSkills.has('pesc_t4_fishpet')) return;
         
+        if ((this.player as any).isSkillOnCooldown?.('pesc_t4_fishpet')) return;
+        
         const now = Date.now();
         if (now - this.lastPetTime < this.petCooldown) return;
         this.lastPetTime = now;
+        (this.player as any).setSkillCooldown?.('pesc_t4_fishpet', this.petCooldown);
 
         this.eventManager.dispatch('spawn', {
             type: 'fishPet',
@@ -93,11 +97,17 @@ export default class Pescador extends Class {
             const dir = new Vector2D(mouseCoordinates.x - px, mouseCoordinates.y - py).normalizeMut();
 
             // O Ataque carregado pelo anzol
-            const hookAttack = new Attack(this.player, 5, 'physical', [
+            const hookAttack = new Attack(this.player as any, 5, 'physical', [
                 (attacker, target, damageDealt) => {
                     this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `[Pescador] Anzol bateu no ID: ${(target as any)?.id}`, params: [] });
-                    // Duck Typing: Verifica se o alvo é uma entidade atacável, possui HP e não é o próprio jogador
-                    if ('takeDamage' in target && target.attributes && target.attributes.hp > 0 && target.id !== this.player.id) {
+                    // Duck Typing: Verifica se o alvo é uma entidade atacável, possui HP e não é o próprio jogador nem invocações aliadas
+                    const isAlliedOrSelf = target.id === this.player.id || 
+                        target.objectId === 'player' || 
+                        target.objectId === 'spawn-leviatã' || 
+                        target.objectId === 'spawn-leviata' || 
+                        target.objectId === 'fishPet';
+
+                    if ('takeDamage' in target && target.attributes && target.attributes.hp > 0 && !isAlliedOrSelf) {
                         // Ignora Bosses
                         if (!target.objectId.toString().toLowerCase().includes('boss')) {
                             this.hookEnemy(target);
@@ -105,7 +115,7 @@ export default class Pescador extends Class {
                             this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `[Pescador] Alvo ignorado (é um Boss)`, params: [] });
                         }
                     } else {
-                        this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `[Pescador] Alvo ignorado (Faltam atributos, está morto ou é o player)`, params: [] });
+                        this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `[Pescador] Alvo ignorado (Faltam atributos, está morto, é o player ou invocação aliada)`, params: [] });
                     }
                 }
             ]);
@@ -212,7 +222,7 @@ export default class Pescador extends Class {
                             
                             // Causa dano no vizinho atropelado
                             const damage = 20 + Math.floor(this.player.attributes.strength * 1.5);
-                            const attack = new Attack(this.player, damage, 'physical', []);
+                            const attack = new Attack(this.player as any, damage, 'physical', []);
                             
                             const knockbackDir = new Vector2D(
                                 neighbor.coordinates.x - this.hookedEnemy!.coordinates.x, 
@@ -256,8 +266,8 @@ export default class Pescador extends Class {
         }
 
         // 3. Ao final dos 3 segundos, o pescado toma todo o dano que ele causou (Retribuição!)
-        if (target.attributes.hp > 0 && damage > 0) {
-            const finalAttack = new Attack(this.player, damage, 'true', []);
+        if (target && target.attributes && target.attributes.hp > 0 && damage > 0) {
+            const finalAttack = new Attack(this.player as any, damage, 'true', []);
             finalAttack.execute(target, new Vector2D(0, 0));
             
             this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `O pescado sofreu ${damage} de retribuição!`, params: [] });
@@ -275,16 +285,21 @@ export default class Pescador extends Class {
         this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `[Pescador] Skill ${skillId} executada no Loadout!`, params: [] });
 
         if (skillId === 'pesc_t3_leviata') {
+            if ((this.player as any).isSkillOnCooldown?.(skillId)) {
+                this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `[Pescador] Leviatã em recarga!`, params: [] });
+                return;
+            }
             const now = Date.now();
             if (now - this.lastLeviataTime < this.leviataCooldown) {
                 this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `[Pescador] Leviatã em recarga!`, params: [] });
                 return;
             }
             this.lastLeviataTime = now;
+            (this.player as any).setSkillCooldown?.(skillId, this.leviataCooldown);
 
             // Leviatã dá dano mágico maciço em área (a hitbox já é 128x128 no Leviata.ts)
             const damage = 150 + Math.floor(this.player.attributes.wisdom * 5);
-            const leviataAttack = new Attack(this.player, damage, 'magical', []);
+            const leviataAttack = new Attack(this.player as any, damage, 'magical', []);
 
             this.eventManager.dispatch('spawn', {
                 type: 'spawn-leviatã' as any,
@@ -292,18 +307,23 @@ export default class Pescador extends Class {
                 attack: leviataAttack
             });
         } else if (skillId === 'pesc_t2_net') {
+            if ((this.player as any).isSkillOnCooldown?.(skillId)) {
+                this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `[Pescador] Rede Pesada em recarga!`, params: [] });
+                return;
+            }
             const now = Date.now();
             if (now - this.lastNetTime < this.netCooldown) {
                 this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `[Pescador] Rede Pesada em recarga!`, params: [] });
                 return;
             }
             this.lastNetTime = now;
+            (this.player as any).setSkillCooldown?.(skillId, this.netCooldown);
             
-            // Visual de água/rede
+            // Visual da rede mágica lançada
             this.eventManager.dispatch('spawnVisual', {
-                type: 'waterSplash',
+                type: 'fishing-net',
                 coordinates: { x: mouseCoordinates.x - 48, y: mouseCoordinates.y - 48 },
-                duration: 0.5,
+                duration: 0.6,
                 size: { width: 96, height: 96 }
             });
 
@@ -312,9 +332,9 @@ export default class Pescador extends Class {
             const damage = 20 + Math.floor(this.player.attributes.strength);
             // OnHitAction aplica StunStatus por 3 segundos
             const rootAction = (attacker: Entity, target: Entity) => {
-                target.activeStatuses.set('stun', new StunStatus(target, 3));
+                target.activeStatuses.set('stun', new StunStatus(3) as any);
             };
-            const netAttack = new Attack(this.player, damage, 'physical', [rootAction]);
+            const netAttack = new Attack(this.player as any, damage, 'physical', [rootAction]);
             
             this.eventManager.dispatch('requestNeighbors', {
                 coordinates: mouseCoordinates,

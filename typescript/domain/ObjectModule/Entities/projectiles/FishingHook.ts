@@ -94,7 +94,13 @@ export default class FishingHook extends Projectile {
         if (this.hookedTarget) return; // Só fisga um por vez
 
         // Aplica o ataque no alvo (o que engatilhará a "pesca") e destrói o anzol
-        if ('takeDamage' in otherElement && otherElement.id !== this.attack.attacker.id) {
+        const isFriendly = otherElement.id === this.attack.attacker.id || 
+            otherElement.objectId === 'player' || 
+            otherElement.objectId === 'spawn-leviatã' || 
+            otherElement.objectId === 'spawn-leviata' || 
+            otherElement.objectId === 'fishPet';
+
+        if ('takeDamage' in otherElement && !isFriendly) {
             
             // Bate em chefes apenas com dano (não ancora)
             if (otherElement.objectId.toString().toLowerCase().includes('boss')) {

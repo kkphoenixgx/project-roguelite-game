@@ -1,0 +1,14 @@
+{
+  "hitboxes": [
+    {
+      "id": "stone_well_circle_1",
+      "type": "circle",
+      "coordinates": {
+        "x": 30,
+        "y": 40
+      },
+      "rotation": 0,
+      "radius": 24
+    }
+  ]
+}

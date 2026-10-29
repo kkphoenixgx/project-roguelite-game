@@ -1,0 +1,14 @@
+{
+  "hitboxes": [
+    {
+      "id": "tree_oak_circle_1",
+      "type": "circle",
+      "coordinates": {
+        "x": 55,
+        "y": 108
+      },
+      "rotation": 0,
+      "radius": 14
+    }
+  ]
+}

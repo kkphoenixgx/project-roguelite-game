@@ -1,7 +1,31 @@
 import type { SpriteConfig } from "./GameObjectElement"; 
-import { VisualConfigMap, type ItemVisualConfig } from "../../../shared/VisualConfigMap";
+import { getItemVisualKeyByIconId } from "../../../shared/VisualConfigMap";
 
-export type EquipmentLayerType = 'body' | 'pants' | 'boots' | 'chestplate' | 'beard' | 'helmet' | 'hand' | 'gloves' | 'amulet' | 'ring';
+/**
+ * Posições sequenciais em lista no tronco (32x32) para os broches equipados (por baixo do peitoral).
+ * Cada broche (40x40 original) é renderizado como um pequeno detalhe 3x3 dentro da área útil do peito [10..21, 18..25].
+ */
+export const BROOCH_TORSO_SLOTS: readonly { readonly x: number; readonly y: number }[] = [
+    { x: 10, y: 18 },
+    { x: 13, y: 18 },
+    { x: 16, y: 18 },
+    { x: 19, y: 18 },
+    { x: 10, y: 22 },
+    { x: 13, y: 22 },
+    { x: 16, y: 22 },
+    { x: 19, y: 22 },
+];
+
+export const BROOCH_ID_ALIASES: Readonly<Record<string, string>> = {
+    'brooch_heal': 'brooch_active_heal',
+    'brooch_meteor': 'brooch_active_meteor',
+    'brooch_luck': 'brooch_active_luck',
+    'brooch_dash': 'brooch_active_dash',
+    'brooch_shield': 'brooch_active_shield',
+    'brooch_berserk': 'brooch_active_berserk',
+};
+
+export type EquipmentLayerType = 'body' | 'brooch' | 'pants' | 'boots' | 'chestplate' | 'beard' | 'helmet' | 'hand' | 'gloves' | 'amulet' | 'ring';
 
 export interface VisualLayer {
     id: string;
@@ -12,6 +36,7 @@ export default class VisualComposer {
     /** Z-Index Base padrão para que os equipamentos se sobreponham de forma previsível. */
     private static defaultZIndex: Record<string, number> = {
         'body': 0,
+        'brooch': 5,
         'pants': 10,
         'boots': 20,
         'chestplate': 30,
@@ -22,21 +47,48 @@ export default class VisualComposer {
         'hand': 60
     };
 
+    private static readonly ARMOR_SLOTS = ['chestplate', 'helmet', 'pants', 'boots', 'gloves', 'amulet'] as const;
+
     public static extractLayers(state: any): VisualLayer[] {
         const layers: VisualLayer[] = [{ id: state.entityTypeId, type: 'body' }];
+
+        // Extrai todos os broches equipados (ativos e passivos) em uma lista sequencial no tronco,
+        // posicionados com zIndex 5 (acima do corpo e por debaixo da armadura e do colar).
+        let broochSlotIndex = 0;
+        const maxBroochSlots = BROOCH_TORSO_SLOTS.length;
+        const activeBrooches = state.globalActiveLoadout;
+        if (Array.isArray(activeBrooches)) {
+            for (let i = 0; i < activeBrooches.length && broochSlotIndex < maxBroochSlots; i++) {
+                const rawId = activeBrooches[i];
+                if (typeof rawId === 'string' && rawId.length > 0) {
+                    const canonicalId = BROOCH_ID_ALIASES[rawId] || rawId;
+                    layers.push({ id: `wearable-brooch-${canonicalId}-slot-${broochSlotIndex}`, type: 'brooch' });
+                    broochSlotIndex++;
+                }
+            }
+        }
+
+        const passiveBrooches = state.passiveLoadout;
+        if (Array.isArray(passiveBrooches)) {
+            for (let i = 0; i < passiveBrooches.length && broochSlotIndex < maxBroochSlots; i++) {
+                const rawId = passiveBrooches[i];
+                if (typeof rawId === 'string' && rawId.length > 0) {
+                    const canonicalId = BROOCH_ID_ALIASES[rawId] || rawId;
+                    layers.push({ id: `wearable-brooch-${canonicalId}-slot-${broochSlotIndex}`, type: 'brooch' });
+                    broochSlotIndex++;
+                }
+            }
+        }
 
         if (state.equipment) {
             // Extraímos o Amuleto para pintar. 
             // Ao NÃO colocar 'ring1', 'ring2', 'ring3' aqui, garantimos que eles fiquem invisíveis no corpo!
-            const armorSlots = ['chestplate', 'helmet', 'pants', 'boots', 'gloves', 'amulet'];
-            for (const slot of armorSlots) {
+            for (let i = 0; i < this.ARMOR_SLOTS.length; i++) {
+                const slot = this.ARMOR_SLOTS[i]!;
                 const item = state.equipment[slot];
                 if (item && item.iconId !== undefined) {
-                    const entry = Object.entries(VisualConfigMap).find(([key, config]) => 
-                        (config.category === 'equipment' || config.category === 'weapon') && 
-                        Number((config as ItemVisualConfig).iconId) === Number(item.iconId)
-                    );
-                    if (entry) layers.push({ id: entry[0], type: slot });
+                    const key = getItemVisualKeyByIconId(Number(item.iconId));
+                    if (key) layers.push({ id: key, type: slot });
                 }
             }
         }
@@ -51,7 +103,9 @@ export default class VisualComposer {
     /**
      * Motor de Regras: Avalia as camadas e resolve as exceções de sobreposição (Z-Index).
      */
-    public static compose(layers: VisualLayer[], configs: Map<string, SpriteConfig>, state: string): { config: SpriteConfig, zIndex: number }[] {
+    public static compose(layers: VisualLayer[], configs: Map<string, SpriteConfig>, state: string): { config: SpriteConfig, zIndex: number, type: EquipmentLayerType | string }[] {
+        const isRollState = state === 'roll' || state === 'dodge';
+
         const composed = layers.map(layer => {
             let zIndex = this.defaultZIndex[layer.type] || 0;
 
@@ -63,14 +117,24 @@ export default class VisualComposer {
                 }
             }
 
+            // Broches ficam ocultos durante a cambalhota (roll/dodge)
+            if (layer.type === 'brooch' && isRollState) {
+                return { config: undefined, zIndex, type: layer.type };
+            }
+
             // Resgata o Sprite correspondente à animação atual (ex: 'iron-chest-walking')
+            // Caso o equipamento/acessório não possua sprite específico para o estado (ex: 'roll'/'dodge'),
+            // reutiliza automaticamente o sprite estático 'idle' para transformação via Socket Rig.
             const configKey = `${layer.id}-${state}`;
-            const config = configs.get(configKey);
+            let config = configs.get(configKey);
+            if (!config && layer.type !== 'body' && state !== 'idle') {
+                config = configs.get(`${layer.id}-idle`);
+            }
             
-            return { config, zIndex };
+            return { config, zIndex, type: layer.type };
         });
 
         // Ignora camadas com sprites faltantes e ordena a pintura pelo Z-Index calculado
-        return composed.filter(item => item.config !== undefined).sort((a, b) => a.zIndex - b.zIndex) as { config: SpriteConfig, zIndex: number }[];
+        return composed.filter(item => item.config !== undefined).sort((a, b) => a.zIndex - b.zIndex) as { config: SpriteConfig, zIndex: number, type: EquipmentLayerType | string }[];
     }
 }

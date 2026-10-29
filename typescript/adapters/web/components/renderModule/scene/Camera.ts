@@ -32,13 +32,37 @@ export default class Camera {
     let camX = (this.target.coordinates.x + this.target.size.width / 2) - viewWidth / 2; // Calcula a posição X da câmera para centralizar o alvo.
     let camY = (this.target.coordinates.y + this.target.size.height / 2) - viewHeight / 2; // Calcula a posição Y da câmera para centralizar o alvo.
 
-    camX = Math.max(0, Math.min(camX, world.width - viewWidth)); // Restringe a câmera para não mostrar áreas fora do mundo (eixo X).
-    camY = Math.max(0, Math.min(camY, world.height - viewHeight)); // Restringe a câmera para não mostrar áreas fora do mundo (eixo Y).
+    const minX = world.bounds?.minX ?? world.minX ?? 0;
+    const minY = world.bounds?.minY ?? world.minY ?? 0;
+    const maxX = world.bounds?.maxX ?? world.maxX ?? (minX + world.width);
+    const maxY = world.bounds?.maxY ?? world.maxY ?? (minY + world.height);
+    const totalW = maxX - minX;
+    const totalH = maxY - minY;
 
-    this.camX = camX
-    this.camY = camY
+    const clampedCamX = totalW < viewWidth 
+      ? minX + (totalW - viewWidth) / 2 
+      : Math.max(minX, Math.min(camX, maxX - viewWidth));
+    const clampedCamY = totalH < viewHeight 
+      ? minY + (totalH - viewHeight) / 2 
+      : Math.max(minY, Math.min(camY, maxY - viewHeight));
+
+    this.camX = clampedCamX;
+    this.camY = clampedCamY;
 
     ctx.scale(this.zoom, this.zoom); // Aplica o fator de zoom ao contexto.
-    ctx.translate(-camX, -camY); // Aplica a translação para posicionar o mundo de acordo com a câmera.
+    ctx.translate(-clampedCamX, -clampedCamY); // Aplica a translação para posicionar o mundo de acordo com a câmera.
+  }
+
+  /** Verifica se uma caixa delimitadora no mundo está dentro da área visível da câmera (Frustum Culling). */
+  public isInViewport(x: number, y: number, width: number, height: number, padding: number = 128): boolean {
+    const viewWidth = this.canvas.element.width / this.zoom;
+    const viewHeight = this.canvas.element.height / this.zoom;
+
+    const minX = this.camX - padding;
+    const maxX = this.camX + viewWidth + padding;
+    const minY = this.camY - padding;
+    const maxY = this.camY + viewHeight + padding;
+
+    return x + width >= minX && x <= maxX && y + height >= minY && y <= maxY;
   }
 }

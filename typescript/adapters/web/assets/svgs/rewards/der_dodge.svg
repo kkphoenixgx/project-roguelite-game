@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+  <defs>
+    <linearGradient id="ddg_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#70a1ff"/>
+      <stop offset="60%" stop-color="#00d2d3"/>
+      <stop offset="100%" stop-color="#01a3a4"/>
+    </linearGradient>
+    
+  </defs>
+  <g>
+    <!-- Pós-Imagem 1 (Sombra Fantasma) -->
+    <path d="M10 18 Q16 10 22 18 T34 18" fill="none" stroke="#00d2d3" stroke-width="1" stroke-dasharray="2 2" opacity="0.4"/>
+    <!-- Silhueta Espectral da Esquiva (Boneco em Evasão) -->
+    <path d="M14 34 C12 28 16 22 22 20 C28 18 34 22 36 28 C37 32 34 36 28 36 Z" fill="url(#ddg_grad)" opacity="0.8" stroke="#ffffff" stroke-width="1"/>
+    <!-- Trajetória Ágil em Espiral -->
+    <path d="M6 38 C14 42 34 42 42 32 C46 22 38 12 28 8 C18 4 8 14 12 26" fill="none" stroke="#70a1ff" stroke-width="1.8" stroke-linecap="round"/>
+    <!-- Olhos Rápidos na Sombra -->
+    <ellipse cx="23" cy="26" rx="2" ry="1" fill="#ffffff"/>
+    <ellipse cx="29" cy="26" rx="2" ry="1" fill="#ffffff"/>
+    <!-- Linhas de deslocamento súbito -->
+    <path d="M4 28 L10 28 M6 32 L14 32" stroke="#00d2d3" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+</svg>

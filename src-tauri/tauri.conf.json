@@ -10,8 +10,10 @@
     "beforeBuildCommand": "npx vite build"
   },
   "app": {
+    "enableGTKAppId": true,
     "windows": [
       {
+        "label": "main",
         "title": "rpg-roguelite-game",
         "width": 800,
         "height": 600,
@@ -20,7 +22,8 @@
         "center": true,
         "decorations": false,
         "theme": "Dark",
-        "additionalBrowserArgs": "--enable-features=WebGPU,Vulkan,CanvasOopRasterization --ignore-gpu-blocklist --enable-gpu-rasterization --enable-zero-copy"
+        "devtools": true,
+        "windowClassname": "com.kkphoenix.rpgroguelite"
       }
     ],
     "security": {
@@ -30,7 +33,7 @@
   "bundle": {
     "active": true,
     "targets": ["nsis", "appimage", "dmg"],
-    "externalBin": ["bin/ollama"],
+    "externalBin": ["bin/ollama", "bin/panteao-engine"],
     "icon": [
       "icons/icon.ico",
       "icons/icon.png",

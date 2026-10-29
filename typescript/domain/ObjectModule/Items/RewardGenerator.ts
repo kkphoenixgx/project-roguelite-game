@@ -21,13 +21,16 @@ import DemonBlood from "./Consumables/DemonBlood";
 import ExperienceTome from "./Consumables/ExperienceTome";
 
 export default class RewardGenerator {
-    public static generateDrop(coordinates: { x: number, y: number }, eventManager: IEventManager): void {
+    public static generateDrop(coordinates: { x: number, y: number }, eventManager: IEventManager, doubleRareChance: boolean = false): void {
         const dropChance = Math.random();
         
         if (dropChance > 0.40) return; // 40% de chance do inimigo dropar alguma coisa
 
         let itemFactory: () => any;
         const categoryRoll = Math.random();
+
+        // Com o Amuleto do Leprechaun, dobra a chance de itens épicos / Jackpot (de 8% para 16%)!
+        const epicThreshold = doubleRareChance ? 0.84 : 0.92;
 
         if (categoryRoll < 0.40) {
             // 40% de chance de ser ouro (entre 5 e 20 moedas)
@@ -36,8 +39,8 @@ export default class RewardGenerator {
             // 35% de chance de serem consumíveis leves
             const consumables = [ () => new HealthPotion(), () => new ManaPotion(), () => new Apple() ];
             itemFactory = consumables[Math.floor(Math.random() * consumables.length)]!;
-        } else if (categoryRoll < 0.92) {
-            // 17% de chance de dropar um equipamento (armas ou armaduras)
+        } else if (categoryRoll < epicThreshold) {
+            // Equipamentos (armas ou armaduras)
             const equips = [
                 () => new SimpleSword(), () => new SimpleStaff(), () => new Gun(), () => new Scythe(),
                 () => new IronHelmet(), () => new IronChestplate(), () => new IronPants(), () => new IronBoots(), () => new IronGloves(),
@@ -45,7 +48,7 @@ export default class RewardGenerator {
             ];
             itemFactory = equips[Math.floor(Math.random() * equips.length)]!;
         } else {
-            // 8% de chance de ser um item épico / de meta-progressão (Jackpot!)
+            // Itens épicos / de meta-progressão (Jackpot!)
             const rares = [ () => new VampireFang(), () => new MegaMushroom(), () => new AdrenalineFlask(), () => new DemonBlood(), () => new ExperienceTome() ];
             itemFactory = rares[Math.floor(Math.random() * rares.length)]!;
         }

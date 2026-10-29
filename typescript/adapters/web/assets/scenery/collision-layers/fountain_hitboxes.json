@@ -1,0 +1,14 @@
+{
+  "hitboxes": [
+    {
+      "id": "fountain_circle_1",
+      "type": "circle",
+      "coordinates": {
+        "x": 32,
+        "y": 32
+      },
+      "rotation": 0,
+      "radius": 30
+    }
+  ]
+}

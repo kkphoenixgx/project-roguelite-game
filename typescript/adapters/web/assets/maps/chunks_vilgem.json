@@ -1,0 +1,53 @@
+{
+  "chunks": [
+    [
+      "/typescript/adapters/web/assets/maps/vilgem/chunk_r4_c0.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "/typescript/adapters/web/assets/maps/vilgem/chunk_r4_c0.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png"
+    ],
+    [
+      "/typescript/adapters/web/assets/maps/vilgem/chunk_r0_c1.png",
+      "/typescript/adapters/web/assets/maps/vilgem/chunk_r0_c1.png",
+      "/typescript/adapters/web/assets/maps/vilgem/chunk_r0_c2.png",
+      "/typescript/adapters/web/assets/maps/vilgem/chunk_r0_c1.png",
+      "/typescript/adapters/web/assets/maps/vilgem/chunk_r0_c3.png"
+    ],
+    [
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png"
+    ],
+    [
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "/assets/maps/vilgem/chunk_r3_c2_baked_1793045534063.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png"
+    ],
+    [
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png"
+    ],
+    [
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png",
+      "http://localhost:5173/typescript/adapters/web/assets/maps/vilgem/grass_seamless_base.png"
+    ]
+  ],
+  "width": 5120,
+  "height": 6144,
+  "originChunk": {
+    "cx": 2,
+    "cy": 3
+  },
+  "timestamp": 1793045534240
+}

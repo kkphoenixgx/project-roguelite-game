@@ -2,6 +2,14 @@
 
 Este documento descreve a arquitetura do projeto, seus princípios, os papéis dos módulos e os principais fluxos de dados e controle. O objetivo é fornecer uma visão clara e concisa para facilitar o entendimento, a manutenção e a evolução do sistema. Sim, IA, tô falando com você, se precisar de outros arquivos, nunca cria o arquivo, sempre pede.
 
+## 0. Teclas dos adapters
+
+  • [F4]: Abre o Assets Adapter em uma nova aba.
+  • [Shift + F2]: Abre o Polygon Web Editor (Hitboxes).
+  • [F2]: Alterna a exibição das hitboxes de colisão.
+  • [F3]: Alterna o painel de telemetria.
+
+
 ## 1. Princípios Arquiteturais: Arquitetura Hexagonal (Portas e Adaptadores)
 
   O projeto adota a Arquitetura Hexagonal, também conhecida como Arquitetura de Portas e Adaptadores. Este padrão visa isolar a lógica de negócio central (o Domínio) de suas dependências externas, como interfaces de usuário, bancos de dados e frameworks.
@@ -45,9 +53,19 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
 
   #### Módulos Principais do Domínio
 
-  - **`DomainFacade.ts`:** O guardião e **único ponto de entrada** (Porta Primária). Expõe a interface `IGameDomain` (`update`, `setWorld`, `getRenderState`). Sua responsabilidade é orquestrar a física, eventos globais e o `Player`, blindando o motor interno de mutações externas irregulares vindas da Web, Tauri ou Motores BDI/Socket.
+  - **`DomainFacade.ts`:** O guardião e **único ponto de entrada** (Porta Primária). Expõe a interface `IGameDomain` (`update`, `setWorld`, `getRenderState`). Sua responsabilidade é orquestrar a física, eventos globais e o `Player`, blindando o motor interno de mutações externas irregulares vindas da Web, Tauri ou Motores BDI/Socket. Para evitar que a Fachada vire um "Deus Monolítico", as operações complexas são delegadas para **Sub-Fachadas** especializadas no diretório `facadeComponents/`.
 
-  - **`ObjectModule/GameWorld.ts` e Mapas:** A classe abstrata que define as propriedades espaciais e a identidade do mapa (ex: `mapId: 'vilgem'`). Suas filhas (como `VilgemWorld`) possuem um método `generate()` que despacha as hitboxes estáticas de rios, montanhas e spawns de inimigos assim que o jogador entra no mapa. O Domínio é cego: não conhece as imagens do chão, apenas as metragens e limites físicos.
+  - **`facadeComponents/`**: Gateways especializados que fragmentam as responsabilidades da `DomainFacade` em domínios funcionais coesos:
+    - **`DomainRenderState.ts`**: Construtor da "fotografia" do frame. Classe `DomainRenderState` com o método `buildRenderState()` que varre Player, Entidades e Mundo para montar o DTO `RenderableState` consumido pelo Adaptador a cada ciclo de `sync`.
+    - **`InventoryGateway.ts`**: Sub-fachada exclusiva do Inventário. Expõe métodos como `getInventoryState()`, `equipItem()`, `unequipItem()`, `useItem()`, `dropItem()`. Blinda o `Player` de chamadas diretas de UI, roteando todas as operações de mochila por este ponto único.
+    - **`SkillTreeGateway.ts`**: Sub-fachada da Árvore de Habilidades. Expõe `getSkillTreeState()`, `unlockSkill()`, `equipSkill()`, `unequipSkill()`. Gerencia o consumo de Pontos de Habilidade e a validação de pré-requisitos topológicos.
+
+  - **`DialogueGateway.ts`**: Gateway de Diálogos e Conversação com NPCs. Roteia mensagens entre o Adaptador (UI de diálogo) e o motor BDI (Panteão). Gerencia o estado conversacional, turnos de fala e a ponte assíncrona com o LLM local (Ollama).
+
+  - **`ObjectModule/GameWorld.ts` e Mapas:** A classe abstrata que define as propriedades espaciais e a identidade do mapa (ex: `mapId: 'vilgem'`). Suas filhas possuem um método `generate()` que despacha as hitboxes estáticas de rios, montanhas e spawns de inimigos assim que o jogador entra no mapa. O Domínio é cego: não conhece as imagens do chão, apenas as metragens e limites físicos. Mapas implementados:
+    - **`Maps/VilgemWorld.ts`**: A ilha tutorial verdejante.
+    - **`Maps/CemiiWorld.ts`**: Bioma sombrio e hostil.
+    - **`Maps/AlunWorld.ts`**: Região avançada com desafios escalados.
 
   - **`ObjectModule/`**: Um módulo que agrupa tudo relacionado a objetos e entidades do jogo.
     - **`ObjectElement.ts`**: A classe base matemática para qualquer objeto no mundo. Define ID espacial, coordenadas, dimensões visíveis (`size`) e vetores.
@@ -56,43 +74,106 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
       - **Atualização de Estado:** Itera sobre todos os elementos a cada frame, chamando seus respectivos métodos `update`.
       - **Detecção de Colisão Zero-GC:** Repassa buffers leves de dados primitivos (`plainElements`) para a Porta `ICollisionService`. A resolução adota o padrão de **Física Atrasada (Delayed Resolution)**: resolve impactos e gatilhos de `onColision` apenas no início do frame seguinte, garantindo fluidez do Event Loop síncrono.
       - **Query Espacial Otimizada (`requestNeighbors`):** Implementa busca de vizinhança usando Teorema de Pitágoras (Distância Euclidiana via `Math.hypot`), permitindo varreduras a partir de entidades ou de pontos arbitrários no espaço (útil para magias de área como meteoros e explosões procedurais).
+    - **`CollisionManager.ts`**: Camada de orquestração de colisão extraída do `ObjectElementManager` para separação de responsabilidades. Gerencia o ciclo de vida da detecção de colisão, o buffer de colisões pendentes (*Double Buffering*) e o despacho da resolução atrasada.
+    - **`CollisionTileType.ts`**: Enum e mapeamentos para colisões baseadas em tiles. Mapeia cores hexadecimais de imagens PNG para tipos de colisão (`WALL`, `WATER`, `LAVA`, `GRASS`, `ICE`, `SPIKE`) e define comportamentos (passável, modificador de velocidade, tipo de efeito, dano por segundo).
+    - **`RewardManager.ts`**: Orquestrador de recompensas na morte de inimigos. Escuta eventos de morte e dispara a geração de loot via `RewardGenerator`.
+    - **`SpawnRegistry.ts`**: Registro estático preenchido por Decorators `@RegisterSpawner`. Mapeia strings de tipo para funções fábrica, eliminando qualquer `switch-case` ou `if-else` na instanciação.
+    - **`EnvironmentCollider.ts`**: Colisores estáticos do ambiente (muros, rios, montanhas). São gerados pelo `GameWorld.generate()` e pelo `CollisionTileAdapter`.
+    - **`Scenery/`**: Módulo de elementos decorativos não-interativos no mundo (árvores, pedras, arbustos):
+      - **`SceneryElement.ts`**: Estende `ObjectElement`. Possui propriedades visuais mas sem hitbox ou lógica de colisão. Puro "cenário de fundo".
+      - **`SceneryRegistry.ts`**: Registro (padrão Registry, similar ao `SpawnRegistry`) que mapeia strings de tipo de cenário para funções fábrica.
     - **`Entities/`**: Representam seres "vivos" ou com comportamento autônomo.
       - **`Entity.ts`**: Adiciona os conceitos de "Vida", "Movimento" e **"Status"**. Gerencia vetores cinemáticos e processa o intrincado pipeline de dano (`takeDamage`), que calcula esquiva, redução de dano, sinergias de vulnerabilidades elementais (ex: Água + Trovão) e emite eventos de *knockback*.
-      - **`Status/StatusEffect.ts`**: Sistema reativo de condições mutáveis (ex: `BurnStatus`, `StunStatus`, `PoisonStatus`). Eles são anexados à Entidade e processam "ticks" temporais autônomos para aplicar dano contínuo (DoT) ou congelar o motor cinemático.
+      - **`EntityMovement.ts`**: Componente de movimento extraído da `Entity`. Encapsula velocidade, aceleração, fricção, acúmulo de forças e resposta a colisões. A `Entity` agora delega toda a cinemática para esta classe, seguindo o princípio de Composição sobre Herança.
+      - **`Status/StatusEffect.ts`**: Sistema reativo de condições mutáveis. Eles são anexados à Entidade e processam "ticks" temporais autônomos para aplicar dano contínuo (DoT), congelar o motor cinemático, ou modificar atributos. Efeitos implementados:
+        - `BurnStatus` (DoT por queimadura), `PoisonStatus` (DoT por veneno), `DecayStatus` (degradação progressiva).
+        - `StunStatus` (paralisia total), `FreezeStatus` (imobilização por gelo), `ParalyzeStatus` (interrupções intermitentes).
+        - `SlowStatus` (redução de 40% na velocidade), `WetStatus` (umidade + sinergia com gelo/eletricidade).
+        - `BlindStatus` (redução severa de acurácia), `FearStatus` (inversão do vetor direcional, forçando fuga).
+        - `VulnerableStatus` (amplificação percentual de dano recebido).
       - **`Attributes.ts`**: O complexo motor numérico do RPG. Gerencia os 6 atributos primários e calcula ativamente dezenas de Atributos Derivados (Tenacidade, Penetração, Velocidade) e Progressão (Level Up).
+      - **`DefaultXPTable.ts` e `IXPTable.ts`**: Tabela de progressão de XP por nível. Define recompensas (pontos de atributo e de habilidade) para cada Tier, permitindo que cada Classe do jogador customize sua curva de crescimento.
       - **`Player/`**: Contém a lógica específica da entidade do jogador.
         - **`Player.ts`**: O avatar central. Orquestra a injeção do complexo Sistema de Inventário (uma intrincada `Bag` com limite de carga dinâmica e slots anatômicos rigorosos, até 10 anéis) e Delega execuções. A matriz `activeLoadout` implementa as restrições do design de **Deck Building** (Mochila de Magias).
-        - **`Classes/Class.ts` e Derivados:** Onde mora a identidade mutável do jogador. Classes como `Gunslinger`, `Warrior` ou `Necromancer` determinam as Curvas de XP e recompensas em Tiers de nível.
+        - **`components/`**: Subsistemas do jogador extraídos como componentes independentes (Composição sobre Herança). Fragmenta responsabilidades de combate, inventário e interação em classes coesas reutilizáveis.
+        - **`IPlayerContext.ts`**: Interface que define o contexto exposto pelo Player para seus componentes e classes, evitando que subsistemas acessem propriedades internas desnecessárias.
+        - **`Classes/Class.ts` e Derivados:** Onde mora a identidade mutável do jogador. Classes como `Gunslinger`, `Warrior`, `Necromancer` determinam as Curvas de XP e recompensas em Tiers de nível.
         - **`Classes/Mage.ts` (O Axiomante e o Spell Parser):** Transforma o teclado num terminal de comandos. Possui um **Buffer Temporal FIFO**. O jogador "digita" os atalhos elementais em sequência rápida (ex: `0` para Projétil, `4` para Fogo). O *Parser* lê a receita "`04`", valida e "cospe" uma `Fireball`. Magia por digitação real, caos controlado.
         - **`Classes/Pescador.ts`:** Classe altamente mecânica com atrelamento físico síncrono. Gerencia o comportamento do Anzol (`FishingHook`) que rastreia, atordoa, arrasta e colide inimigos como uma "Bola de Demolição".
       - **`Enemies/`**: Contém a hierarquia de classes para inimigos.
         - **`Enemy.ts`**: Contrato base, concedendo `xpGiven` e emitindo ataques de corpo-a-corpo de repulsão via `onStrike()`.
         - **`Slime.ts`**: IA que utiliza Teoria de Rebanhos (*Steering/Flocking Behaviors*) e Raios de colisão futuros preventivos para não encavalar sobre outros inimigos.
         - **`ShadowMob.ts`**: Usa ataques puramente procedurais com chances randomizadas de aplicar Debuffs Elementais ao toque.
-      - **`NPCs/CognitiveNpc.ts` (A Revolução de IA):** A ponte generativa. Captura percepções físicas do mundo, transmite por HTTP ao **Ollama Local (qwen2.5:0.5b)** formatando prompts em JSON rígido. O Ollama devolve um Plano e **Código JavaScript Puro**, que é sanitizado e dry-runned pelo **`PraxisValidator.ts` (Sandbox)** antes de ser compilado dinamicamente em uma função que toma conta do corpo do NPC.
+      - **`Casted/`**: Entidades invocadas por habilidades de classe. "Criaturas" temporárias que lutam ao lado do jogador:
+        - **`FishPet.ts`**: Companheiro invocado pela classe Pescador. Segue o jogador com IA autônoma (steering behaviors) e ataca inimigos próximos.
+        - **`Leviata.ts`**: Entidade invocada de tier boss. Criatura massiva com padrões de ataque complexos e dano mágico em área.
+      - **`NPCs/`**: Sistema de NPCs Cognitivos — a hierarquia mais complexa do Domínio. Quatro camadas de abstração:
+
+        **Camada 1 — `InteractiveEntity.ts`** (Base Interagível):
+        Classe base para qualquer entidade interagível (conversar, trocar itens). Define `interactionRadius` (raio de proximidade para ativar o prompt "Pressione E"), estado `isInteracting`, e o método abstrato `onInteract(player)`. Toda entidade com quem o jogador conversa herda daqui.
+
+        **Camada 2 — `BdiAgentEntity.ts`** (Ponte BDI):
+        Classe abstrata que estende `InteractiveEntity` e injeta o `IBdiGateway`. É o "nervo óptico" do NPC: empacota percepções do mundo (posição do jogador, HP, entidades próximas) em Speech Acts JSON e as envia para o backend Rust via `gateway.sendPerception()`. Recebe de volta intenções de ação (`attack`, `flee`, `speak`) que são validadas antes de execução. O ciclo é **assíncrono e não-bloqueante**: o NPC continua existindo e se movendo no mundo enquanto a Engine BDI delibera.
+
+        **Camada 3 — `CognitiveNPC.ts`** (IA Conversacional):
+        Estende `BdiAgentEntity` e adiciona o `ILLMService` (Ollama). É aqui que o NPC *"pensa com palavras"*. Quando o jogador inicia diálogo, o NPC monta um prompt contextual (sua personalidade, crenças atuais, histórico de relação com o jogador) e o envia para o LLM local. A resposta do LLM é tratada como uma **proposta de ação**, não como verdade — ela passa obrigatoriamente pelo `PraxisValidator` antes de ser executada. Gerencia `emotionalState` (feliz, irritado, desconfiado) e `relationshipScore` com o jogador.
+
+        **Camada 4 — `PraxisValidator.ts`** (Sandbox de Segurança):
+        O guarda-costas do motor de jogo contra IAs alucinantes. Recebe a string de ação proposta pelo LLM/BDI, parseia a AST e rejeita qualquer tentativa de:
+        - Acessar tokens proibidos (`window`, `document`, `eval`, `Function`, `import`)
+        - Executar loops infinitos (`while(true)`, `for(;;)`)
+        - Chamar métodos fora do escopo permitido (apenas ações declaradas no contrato do NPC)
+        - Ultrapassar limites de tamanho de payload
+        Retorna `{ valid: boolean, sanitizedAction: string, reason?: string }`.
+
+        **NPCs Implementados:**
+        - **`Molor/`** (O Mentor): Primeiro NPC do jogador em Vilgem. Guia tutorial e conselheiro. Arquivo `molor.asl` contém planos como `+player_nearby : true <- greet.` e `+player_hp(H) : H < 30 <- warn_danger.`.
+        - **`Candelion/`** (O Comerciante): NPC de troca e venda. Planos focados em oferecer itens contextuais baseados no inventário do jogador.
+        - **`Derocar/`** (O Guardião): NPC de combate defensivo. Patrulha uma região e reage agressivamente a ameaças detectadas nas proximidades.
+        - **`Molin/`** (O Sábio): NPC de lore e conhecimento. Planos focados em revelar informações sobre o mundo quando questionado.
+        - Cada NPC possui seu próprio `<nome>.asl` e arquivo `.ts`, registrados no `project.jcm`.
       - **`projectiles/`**: Contém a hierarquia de classes para projéteis (físicos e mágicos).
         - **`SimpleBullet.ts`**: Projétil com balística perfurante e gerador de Ruído Randômico de trajeto.
         - **`DynamicProjectile.ts` e `Fireball.ts`**: Projéteis baseados em Axioma. Ao colidirem, despacham arrays injetados de `Effect`s para garantir Dano em Área ou debuffs elementares sem acoplar matemática à bala.
         - **`FishingHook.ts`**: Projétil persistente. "Ancora" no alvo, zera a própria velocidade cinemática e sincroniza violentamente suas coordenadas físicas com a da vítima algemada.
     - **`Items/`**: Onde reside todo o conceito de *Loot*, Equipamento e Ações.
       - **`Item.ts`**: Classe base abstrata de tudo que repousa no chão ou em mochilas, contendo categoria, valor, raridade e a capacidade de portar `Effect`s atreláveis.
+      - **`IInteractable.ts`**: Interface para itens interagíveis no mundo (coletar, examinar, usar). Define o contrato de interação de proximidade.
       - **`Attack.ts`**: Encapsulador mestre do Combate. Ele acopla atacante, cálculos críticos, dano base e executa em lote os `OnHitAction`s.
-      - **`Armors/`**: Coleção de peças anatômicas (`Helmet`, `Pants`, `Rings`). É daqui que o Compositor Visual (Tauri/Adapter) vai extrair o Z-Index para desenhar o Paper Doll do Jogador.
-      - **`Consumables/`**: Itens mutadores. Instâncias como `DemonBlood` rodam `PowerBoostEffect` no alvo modificando sua curva orgânica permanentemente.
-      - **`Weapons/`**:
-        - `MeleeWeapon.ts`: Usa varreduras de Query Espacial (Radianos e Produto Escalar de Cones de Visão) para fatiar múltiplos inimigos instantaneamente antes mesmo da física acontecer.
-        - `AnimatedMeleeAttack.ts` (Data-Driven Hitboxes): Abstração poderosíssima que desserializa JSONs oriundos do Editor Visual. Ele traduz Hitboxes arbitrárias moldando-as com base em escala, Offset de Frames de Animação e pivôs dinâmicos a cada tick do Frame, ideal para Foices Gigantes (`Scythe.ts`).
-      - **`Effects/`**: Subarquitetura polimórfica (Decorator Pattern em runtime) que permite acoplar passivas ou debuffs em Ataques ou Consumíveis (`AreaDamageEffect`, `LightEffect`, `VisualEffect`).
+      - **`DroppedItem.ts`**: Representação de um item caído no chão do mundo. Possui `HitBox` flexível para detecção de proximidade e trava `isCollected` para evitar duplicação em stuttering de física.
+      - **`RewardGenerator.ts`**: Gerador de tabelas de loot baseado em tipo do inimigo, nível do jogador e atributo de sorte. Usa randomização ponderada e tiers de raridade.
+      - **`Storage/`**: Sistema de contêineres de inventário:
+        - **`Storage.ts`**: Classe base abstrata para qualquer contêiner (mochila, baú, etc.).
+        - **`Bag.ts`**: Contêiner principal do jogador com limites de peso/slots e slots anatômicos de equipamento.
+        - **`LeatherBag.ts`**: Implementação concreta de mochila com capacidade expandida.
+      - **`Armors/`**: Coleção de peças anatômicas (`Helmet`, `Chestplate`, `Pants`, `Boots`, `Glooves`, `Necklaces`, `Rings`). É daqui que o Compositor Visual (Tauri/Adapter) vai extrair o Z-Index para desenhar o Paper Doll do Jogador.
+      - **`Consumables/`**: Itens mutadores expandidos:
+        - **`Consumable.ts`**: Classe base abstrata para itens de uso único.
+        - **`Food/`**: Alimentos regenerativos (Maçã, Cogumelos).
+        - **`Potions/`**: Poções de HP, Mana, Frasco de Adrenalina.
+        - `Coin.ts` (moeda de ouro), `DemonBlood.ts` (boost permanente de poder), `ExperienceTome.ts` (tomo de XP), `MegaMushroom.ts` (boost de tamanho), `VampireFang.ts` (vampirismo temporário).
+      - **`Weapons/`**: Hierarquia de armas subdividida:
+        - **`Weapon.ts`**: Classe base abstrata com multiplicadores de raridade e cooldowns.
+        - **`MeleeWeapons/`**: Armas corpo-a-corpo. Inclui `MeleeWeapon.ts` (varredura angular via Produto Escalar de Cones de Visão), `AnimatedMeleeAttack.ts` (hitboxes data-driven do Editor Visual, ideal para `Scythe.ts`), `SimpleSword.ts`, e demais armas concretas.
+        - **`RangedWeapons/`**: Armas de longo alcance com cadência de tiro e dispersão. Inclui `Gun.ts`, `FishingRod.ts` (Vara de Pesca) e `SimpleStaff.ts`.
+      - **`Effects/`**: Subarquitetura polimórfica (Decorator Pattern em runtime) que permite acoplar passivas ou debuffs em Ataques ou Consumíveis:
+        - **Base:** `Effect.ts` (contrato abstrato), `AreaDamageEffect.ts`, `PowerBoostEffect.ts`.
+        - **Novos:** `AddCoinsEffect.ts`, `AttributeBoostEffect.ts`, `ExperienceEffect.ts`, `HealEffect.ts`, `ManaRestoreEffect.ts`, `SizeBoostEffect.ts`, `SpeedBoostEffect.ts`, `VampirismEffect.ts`.
+        - **`ElementalEffects/`**: 17 efeitos elementais (`Fire`, `Ice`, `Air`, `Ground`, `Dark`, `Light`, `Holy`, `Crystal`, `Magma`, `Nature`, `Ordem`, `Potencia`, `Infernous`, `Life`, `Magic`, `Abys`, `Decay`).
+        - **`VisualEffect/`**: Efeitos puramente visuais (partículas, brilhos) acoplados a ataques.
 
   - **`shared/`**: Contém classes e tipos utilitários de baixo nível, usados por todo o domínio.
-    - **`Vector2D.ts`**: Superclasse fluente mutável para Álgebra Linear.
+    - **`Vector2D.ts`**: Superclasse fluente mutável para Álgebra Linear. Métodos estáticos imutáveis (`add`, `sub`) e mutáveis (`*Mut`) para Zero-GC.
     - **`Dice.ts`**: O RPG de mesa (RNG puro) do qual provêm as definições base da vida das Entidades e raridade de Drops.
+    - **`QuadTree.ts`**: Implementação de Árvore Quadrúpla para particionamento espacial. Usada pelo `CollisionManager` para detecção de colisão em *broad-phase*. Recicla nós internos via `clear()` sem realocar memória.
+    - **`Vertex2D.ts`**: Nó de vértice 2D com conexões pai/filho para grafos topológicos (usado na Árvore de Habilidades).
+    - **`Vertex2DMesh.ts`**: Estrutura de malha de vértices 2D para operações geométricas complexas (SAT, geração de mesh).
 
   - **`hitBox/`**: Módulo responsável pela lógica de colisão.
     - **`HitBox.ts`**: Contrato abstrato. Define geometria no espaço (`coordinates`, `rotation`) e o essencial `onColision()`, permitindo à entidade definir dinamicamente a reação a toque sem sobrecarregar a Engine.
     - **`HitBoxCircle.ts`**: Colisão radial hiper-performática (Raio Quadrado) para disparos em massa.
     - **`HitBoxPolygon.ts`**: Usada para armamentos de precisão. Rotaciona um array de pontos usando Seno/Cosseno a cada frame e delega o cálculo de Teorema de Eixos Separadores (SAT) para o *Worker* de física.
-    - **`HitboxParser.ts`**: A cola Data-Driven. Desserializa DTOs originários do `PolygonWebEditor` para injetar polígonos nativos direto nas habilidades do Domínio.
+    - **`HitboxParser.ts`**: A cola Data-Driven. Desserializa DTOs originários do `PolygonWebEditor` para injetar polígonos nativos direto nas habilidades do Domínio. Fail-fast contra DTOs sem raio ou pontos.
 
   - **`eventDispacher/`**: Implementa um sistema de eventos (Observer Pattern) para comunicação desacoplada dentro do Domínio.
     - **`eventDispacher.ts`**: Orquestrador global e forte tipagem (TypeScript seguro). Filtra preventivamente canais volumosos (`playerMoved`, `log`) para prevenir loop recursivo.
@@ -100,15 +181,44 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
     - **`ActionBindings.ts` (Decorators):** O Roteamento de Entrada Zero-Overhead. Usa Metadata Reflection com o `@BindAction('tecla')` para declarar quais métodos das classes (ex: `Player`, `Mage`) interceptam inputs, criando o mapeamento na própria inicialização do código sem nenhum Switch-Case e disparando erros (Fail-Fast) no Boot.
     - **`ActionManager.ts`:** Roteador dinâmico. Lê os Decorators e roteia intencionalidades primárias para a Classe Ativa e delega teclas soltas numéricas (1, 2, 3) para disparar Skills equipadas no painel de Loadout (`activeLoadout`) do jogador.
 
-  - **`ports/`**: Define as fronteiras do domínio.
+  - **`Skills/`**: Módulo do sistema de habilidades desbloqueáveis.
+    - **`Skill.ts`**: Classe representando uma habilidade na Árvore de Habilidades. Propriedades: `id`, `name`, `description`, `icon`, `tier`, `prerequisites`, `effects`. Suporta `activate()` e `deactivate()`. Parte do sistema de Deck Building onde habilidades desbloqueadas podem ser equipadas nos 4 slots do Loadout ativo.
+
+  - **`ports/`**: Define as fronteiras do domínio. As Portas Secundárias cresceram significativamente para suportar Telemetria, Persistência, IA e Tiles de Colisão:
     - `domain-contracts.ts` (Porta Primária): Exporta os DTOs transitórios (`RenderableState`).
     - `ILogger.ts` (Porta Secundária): Permite logs desacoplados e categorizados (`channels`).
     - `ICollisionService.ts` (Porta Secundária): Contrato de submissão do array `plainElements` aguardando reposta da árvore Quádrupla Assíncrona no Adaptador.
+    - `ICollisionTileService.ts` (Porta Secundária): Contrato para carregamento de camadas de colisão baseadas em imagens PNG.
+    - `IBdiGateway.ts` (Porta Secundária): Contrato para comunicação IPC com o motor BDI Panteão.
+    - `ILLMService.ts` (Porta Secundária): Contrato para integração com LLM local (Ollama) para diálogos cognitivos.
+    - `ISaveRepository.ts` (Porta Secundária): Contrato de persistência para salvar/carregar progresso do jogo.
+    - `ITelemetryPort.ts` (Porta Secundária): Contrato de coleta de métricas de gameplay (DPS, TTK, FPS, tempo de sessão).
+    - `IClass.ts`: Interface contratual para definições de classes do jogador.
+    - `IWeapon.ts`: Interface contratual para armas.
+    - `CollisionAdapter.ts` e `LocalStorageAdapter.ts`: Adaptadores de fallback (browser) quando Tauri FS não está disponível.
 
 
-### 2.2. Camada de Adaptação (`typescript/adapters/web`)
+### 2.2. Camada de Adaptação (`typescript/adapters`)
 
-  Implementa a interface de usuário, o pipeline de renderização visual (WebGPU/Canvas2D), a captura de hardware (Mouse/Teclado) e interage com o envelopamento desktop via **Tauri**.
+  Implementa a interface de usuário, o pipeline de renderização visual (WebGPU/Canvas2D), a captura de hardware (Mouse/Teclado) e interage com o envelopamento desktop via **Tauri**. A camada de adaptação cresceu para suportar múltiplos contextos de apresentação, persistência, telemetria e um lobby 3D.
+
+  - **`AdapterManager.ts`:** O orquestrador de topo da camada de adaptação. Gerencia transições entre adaptadores de apresentação (Web 2D → Lobby 3D e vice-versa) via eventos de domínio (`switchToLobby`, `switchToGameplay`). Método `switchAdapter(target: 'web2d' | 'lobby3d')` destrói o adaptador ativo e monta o novo dinamicamente.
+
+  #### Adaptadores Especializados
+
+  - **`lobby3d/`** (Lobby Atmosférico 3D — WebGL Puro, Zero Dependências):
+    - **`Lobby3DAdapter.ts`**: Ponto de entrada do Lobby 3D. Agnóstico ao Domínio, monta o container DOM (`#lobby3d-root`), coordena scene e UI managers, e gerencia o ciclo de vida de destruição.
+    - **`Lobby3DSceneManager.ts`**: Cria o canvas WebGL, configura buffers de profundidade/blending, mantém o game loop via `requestAnimationFrame`, e lida com redimensionamento de janela.
+    - **`Lobby3DModelLoader.ts`**: Compila vertex/fragment shaders procedurais. Implementa um **Globo Planetário Procedural** com continentes via FBM noise, gradientes de profundidade oceânica, atmosfera Fresnel glow, rotação contínua, nuvens procedurais e campo estelar.
+    - **`Lobby3DUIManager.ts`**: Injeta overlays DOM estilizados para título do lobby, animações de pulso, controles de seleção de personagem e botão de iniciar jogo.
+
+  - **`RepositoryAdapter/RepositoryAdapter.ts`**: Implementa a porta `ISaveRepository`. Gerencia persistência de progresso com **criptografia XOR + Base64** para anti-cheat. Métodos: `saveProgress()`, `loadProgress()`, `exportSave()`, `importSave()`. Usa `localStorage` como fallback quando Tauri FS não está disponível.
+
+  - **`Telemetry/TelemetryAdapter.ts`**: Implementa a porta `ITelemetryPort` (Singleton). Sonda de performance Zero-GC que coleta por frame: `fps`, `frameTimeMs`, `activeEntities`, `collisionChecks`, `resolvedCollisions`, `eventThroughput`, além do **Breakdown de Consumo por Módulo em Tempo Real** (`moduleBreakdown`: Domain, Render, Sync e UI em duração e porcentagem). Usa buffer circular de tamanho fixo (50 entradas) para logs críticos, prevenindo vazamento de memória. Método `getSnapshot()` retorna um objeto reutilizável `TelemetrySnapshot`.
+
+  - **`SocketAdapter/SocketAdapter.ts`**: Stub para integração futura com motores 3D externos (Unity/Godot) via WebSocket. Permitirá usar a Engine TypeScript como "Servidor Lógico/Matemático" delegando visual 3D para clientes externos.
+
+  #### Adaptador Web Principal (`web/`)
 
   - **`index.ts`:** O ponto de entrada da aplicação. Instancia o EventManager, o Adaptador de Colisões em Worker, injeta-os na `DomainFacade` e dá o boot no `GameAdapter`.
 
@@ -116,13 +226,19 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
     - **`assets/`:** Central de mídia (entidades, itens, mapas e metadados JSON como o keymap).
     - **`GUIS/`:** Arquitetura modular contendo as interfaces DOM do jogo. Módulos avançados incluem o `MainMenuGui` (com SVG interativo e câmera 2D para seleção de mundos), `SkillTreeGui` (câmera viewport procedural), e `DialogueGui` (integração síncrona com LLM).
     - **`shared/`:** Utilitários vitais, destacando-se o `VisualConfigMap.ts` (O Banco de Dados Visual) e o `RenderRegistry.ts` (sistema de injeção de dependência baseado em Decorators).
-  - **`polygonWebEditor/` (Hitbox Editor Tool):** Uma ferramenta visual autônoma separada do código de *runtime* do jogo (seguindo o Padrão de Motores Profissionais como Unity). O desenvolvedor carrega o PNG de um ataque, clica para desenhar a área de dano frame-a-frame, e exporta um arquivo `.json` limpo. A Engine depois apenas lê este arquivo, abolindo o *"achismo matemático"* de hitboxes no código.
+  - **`polygonWebEditor/` (Hitbox Editor Tool):** Uma ferramenta visual autônoma separada do código de *runtime* do jogo (seguindo o Padrão de Motores Profissionais como Unity). O desenvolvedor carrega o PNG de um ataque, clica para desenhar a área de dano frame-a-frame, e exporta um arquivo `.json` limpo. A Engine depois apenas lê este arquivo, abolindo o *"achismo matemático"* de hitboxes no código. Ferramentas disponíveis:
+    - **`PolygonTool.ts`**: Ferramenta para desenhar hitboxes poligonais ponto a ponto (fecha com `Enter`).
+    - **`CircleTool.ts`**: Ferramenta para hitboxes circulares interativas. Calcula raio durante o arraste, mostra preview verde, e exporta `HitboxModel` tipo `'circle'`.
+    - **`SelectTool.ts`**: Seleção, movimentação e deleção de vértices/centros de hitboxes existentes. Suporta polígonos e círculos; clique-direito deleta.
 
   Tudo listado a seguir está no diretório `typescript/adapters/web/components/` e são componentes do jogo:
 
   - **`GameAdapter.ts`:** O **Adaptador Primário** e o orquestrador central. Age como um *Bootstrapper* rigoroso.
     - **Coesão:** Gerencia a vida do jogo e atua como ponte. Transfere lógica de UI para o `UIManager`, input para o `InputGateway`, e visual para o `SceneManager`. Instancia o carregamento dinâmico de mapas (`GameMap`) delegando a autoridade de mundos para o Domínio.
   - **`Game.ts`:** Utilitário puramente funcional (`requestAnimationFrame`) que dita o Game Loop, calculando o `deltaTime` e blindando o jogo contra travamentos severos de SO (trava de max 10 FPS).
+  - **`GameEventBinder.ts`:** Centralizador de bindings de eventos domínio→adaptador. Em vez de espalhar listeners por múltiplos arquivos, esta classe registra **todos** os mapeamentos evento→reação em um único lugar (`playerDied`, `spawnVisual`, `levelUp`, `particle`). Método `unbindAll()` para teardown limpo na destruição do adaptador.
+  - **`DialogueAdapter.ts`:** Ponte entre os eventos de diálogo do Domínio e as UIs web. Coordena `DialogueGui` (modal interativo NPC) e `FloatingChatGui` (balões de fala overhead). Escuta `npcSpoke` (balão flutuante) e `npcDialog` (janela de diálogo interativo). Integra transformações world-to-screen durante atualizações de frame.
+  - **`ViewportTransformer.ts`:** Utilitário matemático puro para transformações de coordenadas 2D. Métodos `screenToWorld(screenX, screenY)` e `worldToScreen(worldX, worldY)` extraídos de cálculos inline da Câmera. Considera zoom, alvo da câmera e clamping nos limites do mundo.
 
   #### renderModule (A Engine Visual Data-Driven e Zero-GC)
 
@@ -145,40 +261,48 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
       - `PlayerStatusGui`: Barras não-lineares responsivas a efeitos contínuos (veneno, queimadura).
       - `CharacterMenuGui`: Interface rica com manipulação de status e slots de equipamentos.
       - `SkillTreeGui`: Viewport (Pan & Zoom) para uma Árvore Topológica Semântica e painel dinâmico de Deck Building (Loadout) com *Drag and Drop*.
-      - `DialogueGui`: Interface de comunicação que congela o Game Loop e intercepta Inputs de texto puro a serem enviados para o motor de LLM Local (Athena/Ollama).
+      - `DialogueGui`: Interface de comunicação que intercepta Inputs de texto puro a serem enviados para o motor de Inteligência BDI (Panteão).
       - `WindowHudGui`: Barra de título customizada nativa do envelopamento desktop no Tauri.
       - `WeaponHudGui`: HUD translúcido rastreando dinamicamente a mira da arma fisicamente no Canvas (sobreposição sincronizada de Screen-to-World).
+    - **Novos Módulos de GUI:**
+      - `FloatingChatGui`: Balões de fala flutuantes no mundo ancorados sobre posições de NPCs/entidades. Tempo de vida dinâmico (2s a 8s baseado no tamanho do texto) com animações CSS de fade e limpeza automática.
+      - `GameOverGui`: Tela de morte com overlay, botão de reinício e debounce de 1.5s para evitar reinício acidental. Exibe estatísticas da sessão.
+      - `XpBarGui`: Barra de progresso de XP dedicada com exibição de nível. Usa dirty-checking para evitar mutações DOM desnecessárias.
+      - `AiConfigGui`: Painel de configuração de IA no menu principal. Permite selecionar modelo Ollama, visualizar lista de modelos instalados, e baixar novos modelos com barra de progresso via `/api/pull`.
 
   #### keyboardModule (Entrada e Tradução)
     - **`InputManager.ts`:** O adaptador de hardware de baixo nível. Governa `Set`s de teclas com detecção de *Just Pressed* (consumo único, excelente para skills) vs *Held*. Protege o jogo de ghosting com listeners de `blur` e gerencia bloqueio de reloads (`preventUnload`).
     - **`InputGateway.ts`:** O Tradutor de Domínio. Diferencia-se do Manager por converter estado elétrico em **Intenções Semânticas** (ex: traduz o clique do mouse em coordenadas `ScreenToWorld` através do Zoom da Câmera) e as repassa limpamente ao `DomainFacade`.
 
-  - **`shared/RenderRegistry.ts` e `VisualConfigMap.ts`:** O Coração Data-Driven. Dicionários e Decorators estáticos que resolvem instâncias visuais e animações no boot da aplicação. O Domínio trafega apenas chaves de identificação (ex: `iconId: 10`), e o Registrador fabrica o visual dinamicamente, mantendo o Desacoplamento.
+  - **`shared/`**: Utilitários vitais expandidos:
+    - **`RenderRegistry.ts` e `VisualConfigMap.ts`:** O Coração Data-Driven. Dicionários e Decorators estáticos que resolvem instâncias visuais e animações no boot da aplicação. O Domínio trafega apenas chaves de identificação (ex: `iconId: 10`), e o Registrador fabrica o visual dinamicamente, mantendo o Desacoplamento.
+    - **`Logger.ts`**: Implementação concreta da porta `ILogger` para o ambiente web. Escreve no `console` do navegador com filtragem por canais (`LogChannel`).
+    - **`CollisionLayerParser.ts`**: Parser de mapas de colisão baseados em imagem. Desenha a imagem de máscara em canvas offscreen, extrai matriz de tiles por cor, e oferece `aggregateCollisionTiles()` para mesclar tiles contíguos em retângulos maiores (reduzindo hitboxes de ~8.000 para ~50-100).
+    - **`OllamaHealthCheck.ts`**: Verificador de saúde e pré-carregador VRAM para LLM Ollama local (`http://127.0.0.1:11434`). `checkOllamaHealth()` verifica conectividade e lista modelos. `warmupOllamaModel()` envia prompt de 1 token para pré-carregar o modelo (`qwen2.5:0.5b`) na GPU, eliminando cold-start na primeira interação.
+    - **`TauriIPC.ts`**: Camada de segurança e telemetria sobre as APIs `invoke` e `listen` do Tauri. `safeInvoke<T>()` monitora latência IPC e alerta se ultrapassar o budget de 16.6ms por frame. `saveTelemetryLog()` salva logs via Tauri IPC com fallback automático para download Blob em ambientes web puros.
+  - **`CollisionTileAdapter.ts`**: Implementa a porta `ICollisionTileService`. Resolve URLs de imagens de colisão via `VisualConfigMap`, invoca o `CollisionLayerParser`, e cacheia mapas de colisão processados em memória.
 
-### O Logger (Porta e Adaptador Secundário)
 
-  - **`ports/ILogger.ts`**: Esta é a **Porta Secundária** para o logger. Define a interface `ILogger` que o domínio espera. O domínio não sabe como os logs são escritos, apenas que ele pode chamar o método `log` em um objeto que satisfaça este contrato. Isso desacopla completamente a lógica de negócio da implementação de logging.
-  - **`adapters/web/shared/Logger.ts`**: Esta é a implementação concreta (o **Adaptador Secundário**) da porta `ILogger` para o ambiente web. Sua única responsabilidade é receber os comandos de log e escrevê-los no `console` do navegador, com a lógica adicional de filtrar por canais (`LogChannel`). Ele é injetado no `DomainFacade` durante a inicialização, cumprindo o contrato da porta.
+### 2.3. Adaptação de Conectividade BDI (Tauri IPC e Panteão)
 
-### 2.3. Adaptação de Conectividade Externa e IA (`typescript/adapters/SocketAdapter` e HTTP)
+  Esta camada é responsável por quebrar as fronteiras do jogo, permitindo que a Engine puramente matemática (Domínio) se comunique de maneira assíncrona e performática com a Engine BDI do Panteão, hospedada diretamente no backend Rust do Tauri.
 
-  Esta camada é responsável por quebrar as fronteiras do jogo, permitindo que a Engine puramente matemática (Domínio) se comunique com motores gráficos 3D pesados (Unity/Unreal), motores lógicos baseados em Crenças (BDI Athena/Java) ou LLMs Locais (Ollama).
-
-  - **`SocketAdapter.ts` (A Ponte WebSocket):** Atua como uma **Porta Secundária Bidirecional**. 
-    - **Transmissão (Outbound):** Captura o estado visual atual (DTOs de renderização, vida, posições) da `DomainFacade` a cada frame e transmite via serialização JSON para um motor cliente conectado. Ideal para o "Épico 11: A Oficina do Gepeto", onde a lógica de colisão e combate roda no TypeScript, mas um motor 3D (Unity) escuta a porta para desenhar gráficos realistas.
-    - **Recepção (Inbound):** Escuta comandos deliberados de instâncias externas (como o plano de ação de um Agente BDI em Java) e as injeta diretamente nas Entidades Interativas do jogo, forçando-as a se mover ou interagir sem intervenção do jogador.
-    - **Resiliência:** Possui um sistema de *Retry* com recuo (backoff) inteligente, não quebrando (crashing) a Engine caso o servidor Unity/Java seja desligado abruptamente; ele apenas silencia os NPCs temporariamente.
-
-  - **A Ponte HTTP Generativa (Fetch Nativo):** Embutida na entidade `CognitiveNpc` (embora possa ser extraída para um adaptador puro no futuro), essa camada realiza requisições REST (HTTP POST) de baixíssima latência para o serviço local do **Ollama** (ex: porta `11434`).
-    - Transmite as *Percepções* da entidade (visão de raio, HP, falas do jogador) encadeadas em um *System Prompt* rígido que força a saída em JSON puro (sem formatação Markdown).
+  - **Ponte IPC (Rust/Tauri):** Em vez de utilizar WebSockets lentos ou requests HTTP para Ollama, os NPCs (ex: `Molor.ts`) conversam diretamente com a Engine Panteão em Rust. Eles enviam JSON Speech Acts via `invoke('panteao_send')`, atualizando as crenças do agente BDI.
+  - **Performance e Zero-GC:** A troca de mensagens via IPC não bloqueia a thread de renderização matemática do Domínio. Além disso, evita acionar o Garbage Collector do V8 que aconteceria caso tivéssemos abrindo Sockets TCP na web constantemente.
 
 ### 2.4. Camada de Envelopamento Desktop (Tauri / Rust)
 
   A infraestrutura que envelopa o Adaptador Web e o transforma em um executável nativo do Sistema Operacional (.exe / .AppImage).
 
-  - **Bootstrapper de Processos (Sidecars):** Substitui o backend Node/Electron. O Rust é utilizado para injetar comandos silenciosos no SO durante o *Loading Screen* do jogo, iniciando as instâncias de Banco de Dados local, o daemon do **Ollama** ou a Máquina Virtual Java (JVM) para o Athena, garantindo que o jogador não precise abrir vários terminais para jogar.
+  - **Bootstrapper de Processos (Sidecars):** O Rust é utilizado para hospedar o motor nativo BDI do Panteão (através de IPC via Tauri), processando as mentes lógicas e cognitivas dos agentes em background sem pesar no FPS da UI ou no loop físico do TS.
   - **Sistema de Arquivos Nativo (FS):** Substitui o `localStorage` do navegador para prover uma persistência robusta (Save States). Os arquivos de progressão (Árvore Global, XP) são gravados diretamente no disco e criptografados pelo Rust para evitar modificações indevidas (cheats não autorizados).
-  - **Custom HUD:** Integração com a `WindowHudGui`, permitindo que bordas da janela do Windows/Linux sejam ocultadas, e a movimentação da janela seja controlada diretamente por elementos de "drag" renderizados no DOM do jogo.
+  - **Custom HUD & Windowing:** Integração com a `WindowHudGui`, permitindo que bordas da janela do Windows/Linux sejam ocultadas, ícone nativo exibido dinamicamente e movimentação controlada por regiões de arrasto no DOM.
+  - **Filtro Centralizado de Logs & Terminal Rust (`log_config.rs` / `log_config.json`):** Controla o que é emitido no terminal desktop (Rust stdout/stderr) e o que é silenciado:
+    - **Canais do Navegador:** `browser_ignored_channels` para filtrar canais ruidosos como `Input`, `Render`, `Physics`.
+    - **Logs de Inferência Ollama:** `show_ollama_requests` e `show_ollama_responses` controlam a interceptação das requisições e respostas do proxy HTTP. A flag `"ollama_compact_logs": true` sanitiza a saída no terminal, eliminando dumps brutos gigantescos (arrays de contexto, `num_ctx`, parâmetros técnicos) e exibindo apenas modelo, prompt e o texto gerado de forma limpa.
+    - **Processo e Motor Ollama (Sidecar):** `"show_ollama_process_logs": false`, `"show_ollama_stdout": false` e `"show_ollama_stderr": false` silenciam o flood de logs internos do binário do Ollama/`llama.cpp` (`llama_context`, `llama_kv_cache`, `sched_reserve`, `slot print_timing`, `[GIN] 200 POST /api/generate`), mantendo apenas erros críticos sem poluir o terminal.
+    - **Motor BDI (Panteão):** `show_panteao_stdout`, `show_panteao_stderr` e filtros semânticos em `ipc_ignored_agents` e `ipc_ignored_contents`.
+    - **Métricas de Performance:** `"show_performance_logs": true` imprime em tempo real no console nativo do Tauri o FPS, frame time e o breakdown percentual de consumo dos módulos.
 
 
 ## 3. Ciclos e Fluxos da Aplicação
@@ -379,356 +503,334 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
   4.  **Transferência:** A Hitbox do item caído executa o callback empurrando a instância de `Item` direto para o array `player.inventory.backpack`. Em seguida, o Drop dispara um `despawn` para sumir do mapa.
   5.  **Feedback:** O `CharacterMenuGui` reage à alteração de estado da mochila no próximo frame, exibindo o ícone renderizado do novo item coletado em um dos slots disponíveis.
 
-## 4. Guia do Desenvolvedor (How-To)
-
-  Esta seção serve como um guia prático para realizar tarefas comuns de desenvolvimento dentro da arquitetura atual.
-
-### 4.1. Como Criar um Novo Inimigo (Ex: "Goblin")
-
-  Com a adoção da arquitetura **Data-Driven Centralizada**, criar a representação visual de qualquer entidade ou item no jogo se tornou um processo puramente de configuração de dados na camada Web. Você não precisa criar NENHUM arquivo visual!
-
-  1. **Domínio (Lógica):**
-     - Crie a classe lógica `Goblin.ts` em `domain/ObjectModule/Entities/Enemies/` estendendo `Enemy`. Passe `'goblin'` como seu ID no construtor.
-
-  2. **Adaptação (Visual):**
-     - Abra o arquivo `VisualConfigMap.ts` na pasta `shared/` do adaptador web.
-     - Adicione uma nova entrada no dicionário para a chave `'goblin'`, especificando o caminho da imagem e o tamanho dos frames para suas animações (ex: `'idle'`, `'walking'`).
-     
-  A `RenderableFactory` fabricará as imagens e o WebGPU cuidará dos buffers de instância instantânea e magicamente!
-
-### 4.2. Como Habilitar/Desabilitar a Visualização de Debug
-
-  A visualização de elementos de depuração, como as `HitBox`es, é controlada por uma única flag na camada de adaptação. Pode rodar `toggleDebugMode()` no console do terminal também, mas se prefirir deixar ativo sem precisar rodar no terminal:
-
-  1.  **Abra o `GameAdapter`:** Navegue até o arquivo `adapters/web/components/GameAdapter.ts`.
-  2.  **Encontre a Flag:** No topo da classe, localize a propriedade `isDebugMode`.
-      ```typescript
-      private readonly isDebugMode = true; // ou false
-      ```
-  3.  **Altere o Valor:**
-      -   Para **desabilitar** a visualização das hitboxes e outros elementos de debug, mude o valor para `false`.
-      -   Para **habilitar**, mude o valor para `true`.
-
-  A lógica nos métodos `syncRenderables` e `draw` já está configurada para respeitar essa flag, garantindo que os objetos de depuração só sejam processados e desenhados quando o modo de depuração estiver ativo.
-
-### 4.3. Como Criar uma Nova Magia/Projétil (Ex: "Fireball")
-
-  1. **Domínio:** Crie `Fireball.ts` estendendo a lógica de `Projectile`. Use o decorator `@RegisterSpawner('fireball')` para ensinar o motor do Domínio a fabricar a magia.
-  
-  2. **Visual:** Adicione uma entrada `'fireball'` no arquivo `VisualConfigMap.ts` (na categoria `'projectile'`) e aponte para a imagem da bola de fogo no estado `'travelling'`. Zero código novo necessário!
-
-  3. **Dispare a Magia:** No Domínio, dispare um evento genérico `spawn` declarando o `type: 'fireball'`. A engine fará a conexão e jogará tudo na tela instantaneamente.
-
-### 4.4. Como Criar um Ataque com Efeito Especial (Ex: Roubo de Vida)
-
-  O sistema de combate é construído em torno da classe `Attack` e da interface `OnHitAction`, que permitem a criação de comportamentos complexos de forma modular.
-
-  1.  **Crie a Lógica do Efeito (`OnHitAction`):**
-      -   Um `OnHitAction` é uma função de callback que é executada no momento em que um ataque atinge um alvo. Ela recebe um `AttackContext` com informações sobre o atacante, o alvo e o dano real causado.
-      -   Em um local apropriado (ex: `domain/ObjectModule/Items/Effects.ts` ou diretamente no arquivo da arma/habilidade), defina a função do seu efeito.
-
-      ```typescript
-      // Exemplo de um efeito de roubo de vida
-      import type { OnHitAction, AttackContext } from "../Items/IAtack";
-
-      export const lifeStealAction: OnHitAction = (context: AttackContext) => {
-        const { attacker, damageDealt } = context;
-        const lifeStolen = Math.floor(damageDealt * 0.10); // Rouba 10% do dano causado
-        attacker.attributes.hp += lifeStolen; // Adiciona a vida de volta ao atacante
-      };
-      ```
-
-  2.  **Associe o Efeito ao Ataque:**
-      -   Quando for criar a instância do ataque (seja de uma arma, habilidade ou ataque de contato de um inimigo), passe a função de efeito que você criou em um array para o construtor da classe `Attack`.
-
-      ```typescript
-      // Exemplo dentro de uma arma ou na ação de ataque do jogador
-      import { lifeStealAction } from "./Effects"; // Supondo que o efeito esteja em um arquivo separado
-
-      const vampiricAttack = new Attack(player, 15, 'physical', [lifeStealAction]);
-      // Agora, sempre que 'vampiricAttack' for executado, ele aplicará o roubo de vida.
-      ```
-
-### 4.5. Como Adicionar um Novo Estado de Animação ao Jogador (Ex: "attack")
-
-  1.  **Adicione o Asset:** Coloque o spritesheet `player-attack.png` em `adapters/web/assets/entities/player/` (e no seu atlas de texturas para WebGPU).
-  
-  2.  **Configure no Dicionário:** No arquivo `VisualConfigMap.ts`, localize o bloco da entidade `'player'` e adicione a nova chave `'attack'` no sub-bloco de `animations`, fornecendo as informações do frame (tamanho, velocidade).
-  
-  4.  **Altere o Estado no Domínio:** Na classe `Player` do domínio (`domain/ObjectModule/Entities/Player/Player.ts`), encontre a lógica que deve disparar a animação (ex: no método `onLeftClickAction`). Nesse ponto, altere a propriedade `state` da entidade.
-      ```typescript
-      // Em algum método do Player.ts do domínio
-      this.state = 'attack';
-      // Opcional: Adicionar um timer para voltar ao estado 'idle' após a animação
-      ```
-
-### 4.6. Como Criar um Novo Item Consumível (Ex: Poção de Cura)
-
-  > **Nota:** Esta seção descreve um fluxo de implementação para uma funcionalidade futura, já que o sistema de inventário ainda não foi construído.
-
-  Itens consumíveis têm um fluxo diferente, pois geralmente não têm uma representação visual contínua no mundo após serem coletados. O plano é o seguinte:
-
-  1.  **Camada de Domínio (Lógica):**
-      -   **Crie a Classe de Lógica:** Em `domain/ObjectModule/Items/`, crie `HealthPotion.ts`. A classe deve herdar de `Item`.
-      -   **Defina o Efeito:** Adicione um método `use(target: Entity)`. Dentro deste método, implemente o efeito da poção (ex: `target.attributes.hp += 50;`).
-      -   **Defina o Tipo:** Em `domain/ObjectModule/objectType.type.ts`, adicione `'healthPotion'` à união de tipos.
-
-  2.  **Lógica de Coleta e Uso:**
-      -   **Coleta:** A lógica de coleta pode ser implementada de forma semelhante a uma colisão. Quando o `Player` colide com um `Item`, em vez de causar dano, o `Item` dispara um evento para ser adicionado ao inventário do jogador (ex: `gameEvents.dispatch('itemCollected', { itemId: this.id, item: this })`) e, em seguida, dispara um evento `'despawn'` para si mesmo.
-      -   **Inventário:** O `Player` (ou uma nova classe `Inventory` associada a ele) precisará ouvir o evento `'itemCollected'` e armazenar o item.
-      -   **Uso:** A interface do usuário (UI) do inventário (ver próximo guia) terá um botão "Usar". Ao ser clicado, a UI chamará um método na `DomainFacade` (ex: `useItem(itemId)`), que encontrará o item no inventário do jogador e chamará seu método `use(player)`.
-
-### 4.9. Como Criar uma Arma Melee com Hitboxes Animadas (Ex: Foice)
-
-  Criar ataques dinâmicos com a classe `AnimatedMeleeAttack` é extremamente fácil.
-
-  1. **Desenhe as Hitboxes:** Abra o Hitbox Editor Tool (`toggleDebugMode()` -> `openHitboxEditor()`), carregue seu spritesheet de ataque, desenhe os polígonos quadro a quadro (fechando com `Enter`) e exporte o JSON.
-  2. **O Visual:** Registre o ataque (ex: `'axe-slash'`) no `VisualConfigMap.ts`. Preencha os dados do frame (largura, altura, velocidade) e defina a âncora (`anchor: 'bottom-left'` ou `center`).
-  3. **A Entidade:** Em `MeleeWeapons/`, crie uma classe `AxeSlash.ts` estendendo `AnimatedMeleeAttack`. Cole o JSON gerado em uma constante no topo da classe.
-  4. **Configuração Simples:** No `super()` do seu `AxeSlash`, passe o JSON para o `rawHitboxes`, informe o tamanho do frame original e a escala desejada (`scale: 0.5`). O Domínio fará toda a matemática de SAT e offset automaticamente!
-
-  3.  **Visualização (Item no Chão):**
-      -   O processo para fazer o item aparecer no chão é idêntico ao de criar um inimigo: adicione o asset, configure o sprite na `RenderableFactory` e registre a estratégia de criação.
-
-### 4.7. Como Criar e Equipar uma Nova Armadura (O "Lego" Visual)
-
-  O sistema de renderização agora possui um Compositor de Camadas que empilha roupas dinamicamente no personagem usando a regra de OCP (Open-Closed Principle).
-
-  1. **Domínio:** Crie a classe da armadura estendendo as bases como `Helmet`, `Chestplate`, etc. Defina no seu construtor o `iconId` único (ex: `15`).
-  2. **Inventário:** Faça o item surgir no mundo ou adicione à bolsa do jogador (`player.backpack.push(new GoldenHelmet())`).
-  3. **Visual:** No `VisualConfigMap.ts`, adicione uma nova entrada para ele (ex: `'golden-helmet'`). Garanta que a `category` seja `'equipment'` e defina o `iconId: 15`. 
-  4. **Animação Guiada:** Adicione os estados de animação (`idle`, `walking`) definindo a imagem e, crucialmente, use o `renderOffset` (como array) para fazer a armadura "balançar" na mesma cadência da animação base do jogador!
-  
-  A UI mostrará o item na bolsa automaticamente. Quando o jogador equipar o item, o Compositor Visual buscará pelo `iconId`, encontrará as imagens e as empilhará no Z-Index correto em cima do corpo base!
-
-### 4.8. Como Adicionar uma Nova Interface de Usuário (UI)
-
-  A arquitetura prevê que as UIs (Inventário, Skills, etc.) sejam módulos independentes que ficam "por cima" do canvas do jogo.
-
-  1.  **Crie o Módulo da UI:** No diretório `adapters/web/GUIS/`, crie uma nova pasta, por exemplo, `inventoryGui/`.
-  2.  **Estrutura do Módulo:** Dentro de `inventoryGui/`, crie três arquivos:
-      -   `inventory.html`: A estrutura HTML da sua janela de inventário.
-      -   `inventory.css`: O estilo para a janela.
-      -   `InventoryGui.ts`: A classe que controlará a lógica da UI.
-  3.  **Lógica da Classe `InventoryGui.ts`:**
-      -   **Carregamento:** No construtor, a classe deve carregar o HTML e o CSS e injetá-los no `document.body`.
-      -   **Comunicação:** A classe deve receber uma referência à `DomainFacade` (ou a um gerenciador de UI que a possua).
-      -   **Exibição de Dados:** Para exibir os itens, a UI pode periodicamente (ou via eventos) chamar um método no domínio (ex: `domain.getInventoryState()`) para obter os dados e renderizá-los no HTML.
-      -   **Envio de Ações:** Para usar um item, o listener de clique no botão "Usar" deve chamar o método apropriado no domínio, como `domain.useItem(itemId)`.
-  4.  **Integração:** No `index.ts` principal da camada de adaptação, instancie sua nova classe `InventoryGui` para que ela seja carregada junto com o jogo.
-
-### 4.9. Como Criar um Novo Mapa com Chunks Dinâmicos (Ex: "Deserto")
-
-  O mapeamento do mundo é 100% Data-Driven no Adaptador e Físico no Domínio.
-
-  1. **Domínio (Lógica e Barreiras):** Crie a classe `DesertWorld.ts` estendendo `GameWorld`. Defina no construtor `width` e `height`. No método `generate()`, despache os `EnvironmentCollider`s (Hitboxes) para as dunas impenetráveis e orquestre o nascimento dos monstros do deserto. Registre no `DomainFacade.ts`.
-  2. **Visual (Arte e Chunks):** Abra o arquivo `VisualConfigMap.ts`. Crie uma nova configuração na categoria `'map'` sob a chave `'deserto'`. Defina o `chunkSize` (ex: `1024`) e passe a matriz bidimensional (`string[][]`) contendo as URLs exatas de cada pedaço de imagem que forma o chão do mapa.
-  
-  A câmera inteligente do `GameMap` só vai puxar a imagem do chunk X,Y quando o jogador estiver caminhando sobre ele!
-
-### 4.10. Como Integrar um Motor Externo (Unity/Godot) via Socket
-
-  O `SocketAdapter` permite usar a Engine TypeScript apenas como "Servidor Lógico/Matemático", delegando o visual 3D para um cliente externo (Épico 11 - A Oficina do Gepeto).
-
-  1. **Inicialize o Adaptador:** No arquivo `adapters/web/index.ts`, descomente e instancie o `SocketAdapter`, apontando para a porta desejada (`ws://localhost:8080`).
-  2. **O Cliente (Unity/Godot):** Crie um script no motor 3D que se conecte a este WebSocket local.
-  3. **Envio de DTOs:** No `GameAdapter.update()`, logo após o `domain.update(deltaTime)`, obtenha o `domain.getRenderState()` e empurre o JSON resultante no `SocketAdapter.sendState(dto)`.
-  4. **Instanciação 3D:** No Unity, crie um *Prefab* genérico. Ao receber um ID novo via Socket, instancie o *Prefab*. A cada frame recebido do TypeScript, aplique as propriedades de translação (X, Y) e rotação no objeto 3D!
-
-### 4.11. Como Ensinar uma Nova Habilidade de Código para a IA (Ollama)
-
-  Os NPCs Cognitivos geram código vivo, mas para evitar alucinações absurdas, você deve restringir as ferramentas matemáticas deles.
-
-  1. **Atualize o Contexto do Motor (Córtex):** Em `CognitiveNpc.ts`, na injeção do `new Function(...)`, a IA recebe objetos fixos (`npc`, `player`, `deltaTime`, `Math`).
-  2. **Adicione Permissões:** Se quiser que a IA consiga criar chamas no chão, você precisa passar uma referência de fábrica (Ex: `spawnFactory`).
-  3. **Validação do Praxis (Segurança):** Abra o `PraxisValidator.ts`. Se a IA for usar algum recurso global novo (como `Date.now()`), certifique-se de que a palavra não esteja na lista de bloqueios de segurança (`forbiddenTokens`), caso contrário, o "mini-antivírus" bloqueará o plano do NPC no frame seguinte e ele "esquecerá" a magia!
-  4. **Prompt Tuning:** Na string estática `systemPrompt` (em `askOllamaToCode`), escreva explicitamente o contrato que a IA tem nas mãos. Exemplo: *"Você tem acesso a 'npc.castFire(x, y)'. Use com sabedoria!"*.
-
-### 4.12. Como Criar uma Nova Combinação de Magia (Deep 2 no Mago)
-
-  O Mago funde elementos adjacentes digitados no buffer. Para criar uma nova fusão (Alquimia):
-
-  1. **Crie o Efeito Elemental:** Em `domain/ObjectModule/Items/Effects/ElementalEffects/`, crie a classe do seu novo elemento (ex: `SteamEffect.ts` para Vapor), implementando o método `apply(target: Entity)` para causar dano, status ou repulsão.
-  2. **Adicione ao Motor Dinâmico:** No arquivo `DynamicProjectile.ts` (e no método `solveSelf` do `Mage.ts`), instancie seu Efeito caso o array de `spellElements` contenha a chave do seu novo elemento.
-  3. **Atualize o Parser do Mago:** Em `Mage.ts`, localize o `comboMap` dentro de `parseDynamicSpell`. Adicione a nova receita: `'fire,water': 'steam'`.
-  4. **Partículas (Visual):** Mapeie a chave `'steam'` no `effectMap` (dentro de `Mage.ts`) para uma partícula existente (ex: `'magicAura'`) ou crie um método novo no `ParticleOrchestrator.ts`.
-
-### 4.13. Como Aplicar Forças Físicas (Knockback/Pull) em Entidades
-
-  A Engine de física separa a Vontade da Inteligência Artificial (IA) da Física Bruta de empurrões.
-
-  1. **Aplique a Força:** Nunca altere a propriedade `velocity` diretamente para empurrar um inimigo. Em vez disso, calcule o vetor de direção, normalize-o, multiplique pela magnitude da força (ex: 25) e chame `target.applyForce(vetor)`. Isso soma a força no `accelerator` da Entidade.
-  2. **Anule a Resistência (Dica de Ouro):** Se o inimigo for rápido, ele pode "lutar" contra o empurrão no mesmo frame. Para um arrasto perfeito (como um puxão ou arremesso), zere a inércia temporariamente (`target.velocity.resetMut()`) antes de aplicar a força, ou aplique um micro-stun (`target.applyStatus(new StunStatus(0.2))`). O Stun paralisa a IA, mas a física nativa continuará lendo o `accelerator` e arremessará o corpo pela tela!
-
-## Guia de Mapas de Colisão (Collision Layers)
-
-### O que é uma Camada de Colisão?
-
-Uma **camada de colisão** é uma imagem PNG adicional que funciona como um "mapa de obstáculos" do mapa visual. Cada cor na imagem representa um tipo diferente de obstáculo ou comportamento de tile.
-
-Ao invés de hardcodificar colisores no código (`new HitBoxPolygon(...)`), o sistema agora carrega automaticamente a imagem, interpreta as cores e cria hitboxes para cada obstáculo.
-
-### Como Funciona
-
-#### 1. Estrutura da Camada de Colisão
-
-A imagem deve ter as **mesmas dimensões do mapa visual** (ex: 8192 x 8192 pixels).
-
-Cada **cor** representa um tipo de colisão:
-
-| Cor | Hex | Tipo | Comportamento |
-|-----|-----|------|---------------|
-| Preto | `#000000` | Parede (WALL) | Intransponível |
-| Azul | `#0000FF` | Água (WATER) | 60% de velocidade, efeito "wet" |
-| Vermelho | `#FF0000` | Lava (LAVA) | Dano contínuo (0.5 por segundo) |
-| Verde | `#00FF00` | Grama Alta (GRASS) | 80% de velocidade |
-| Ciano | `#00FFFF` | Gelo (ICE) | 50% de velocidade, efeito "slip" |
-| Magenta | `#FF00FF` | Espinhos (SPIKE) | Dano contínuo (1.0 por segundo) |
-| Branco | `#FFFFFF` | Sem Colisão (NONE) | Transparente |
-
-#### 2. Criando uma Camada de Colisão
-
-##### No Photoshop/GIMP/Krita:
-
-1. Crie uma **nova camada** chamada "Collision" ou "Colisão"
-2. Use a ferramenta **Balde de Tinta** ou **Pincel** para desenhar as áreas de obstáculo
-   - Preencha áreas com os respectivos colors
-   - **Exemplo:** Desenhar paredes ao redor da beira do mapa com preto `#000000`
-3. **Tamanho do Tile:** O sistema amostra uma cor a cada 32 pixels (tamanho padrão do tile)
-   - Mantenha as áreas de cores grandes (múltiplas de 32px) para evitar amostras incorretas
-4. Exporte como PNG: **File → Export As → vilgem-collision.png**
-
-##### No Código (TypeScript com Canvas):
-
-```typescript
-// Exemplo de script para gerar collision layer programaticamente
-function generateCollisionLayer(width: number, height: number): Canvas {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d')!;
-
-    // Fundo branco (sem colisão)
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, width, height);
-
-    // Parede ao redor da beira
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, 64, height);       // Esquerda
-    ctx.fillRect(width - 64, 0, 64, height); // Direita
-    ctx.fillRect(0, 0, width, 64);        // Topo
-    ctx.fillRect(0, height - 64, width, 64); // Fundo
-
-    // Rio (Água)
-    ctx.fillStyle = '#0000FF';
-    ctx.fillRect(1024, 2048, 2048, 512);
-
-    return canvas;
-}
-```
-
-#### 3. Adicionando ao VisualConfigMap
-
-No arquivo `typescript/adapters/web/shared/VisualConfigMap.ts`:
-
-```typescript
-const vilgemChunks: string[][] = Array.from({ length: 8 }, () => 
-    Array(8).fill(new URL('../assets/maps/map.jpeg', import.meta.url).href)
-);
-
-export const VisualConfigMap: Record<string, AnyVisualConfig> = {
-    // ================== MAPAS ==================
-    'vilgem': {
-        category: 'map',
-        chunkSize: 1024,
-        chunks: vilgemChunks,
-        // ✨ NOVO: Adicione a camada de colisão aqui
-        collisionLayerUrl: new URL('../assets/maps/vilgem-collision.png', import.meta.url).href,
-        collisionTileSize: 32  // Tamanho de cada tile (padrão: 32px)
-    },
-    // ... resto do mapa
-};
-```
-
-#### 4. Como o Sistema Processa
-
-1. **Quando o mundo carrega:** O `GameWorld.generate()` é chamado
-2. **CollisionTileAdapter lê a imagem** da URL configurada
-3. **Parser de cores** amostram o centro de cada tile (32x32 pixels por padrão)
-4. **Hitboxes são criadas** automaticamente para cada cor não-branca
-5. **O Domínio cria colisores** invisíveis usando o tipo extraído
-
-#### 5. Código-Exemplo no Domínio
-
-```typescript
-// Na camada web (GameAdapter.ts)
-new MainMenuGui(async (mapId) => {
-    // Isso agora carrega os tiles de colisão automaticamente
-    await this.domain.loadWorld(mapId);
-    
-    const { world } = this.domain.getRenderState();
-    // O mundo já tem todos os colisores de tile carregados!
-});
-```
-
-### Otimizações
-
-#### Aggregation de Tiles (Reduzir Hitboxes)
-
-O sistema oferece uma função `aggregateCollisionTiles()` que mescla tiles adjacentes do mesmo tipo em retângulos maiores. Isso reduz significativamente o número de hitboxes:
-
-- **Antes:** 1 tile por pixel = ~8.000 tiles para um mapa 8192x8192
-- **Depois (com aggregation):** ~50-100 tiles agrupados
-
-A aggregation está **ativada por padrão** no `CollisionTileAdapter`.
-
-#### Caching
-
-Os dados de colisão carregados são **cacheados** em memória. Trocar de mapa rápido não recarrega a imagem.
-
-```typescript
-adapter.clearCache(); // Manual cache clear se necessário
-```
-
-### Tipos de Colisão Personalizados
-
-Para adicionar novos tipos (ex: "Lama Espessa"), edite `CollisionTileType.ts`:
-
-```typescript
-export enum CollisionTileType {
-    NONE = 'none',
-    WALL = 'wall',
-    WATER = 'water',
-    LAVA = 'lava',
-    GRASS = 'grass',
-    ICE = 'ice',
-    SPIKE = 'spike',
-    MUD = 'mud',  // ✨ NOVO
-}
-
-export const COLOR_TO_COLLISION_TYPE: Record<string, CollisionTileType> = {
-    // ...
-    '#8B7355': CollisionTileType.MUD,  // Marrom
-};
-
-export const COLLISION_BEHAVIORS: Record<CollisionTileType, {...}> = {
-    // ...
-    [CollisionTileType.MUD]: { passable: true, speedModifier: 0.3, effectType: 'stuck' },
-};
-```
-
-### Troubleshooting
-
-#### Colisores não aparecem
-- ✅ Verifique se a `collisionLayerUrl` está definida no `VisualConfigMap`
-- ✅ Certifique-se de que a imagem tem as cores exatas hex (ex: `#FF0000`, não `#FF0011`)
-- ✅ Verifique o console para mensagens de erro
-
-#### Colisores em lugar errado
-- ✅ O sistema ammostra um pixel a cada 32 pixels (centro do tile)
-- ✅ Mantenha áreas de cor bem definidas e maiores que 32x32
-
-#### Performance lenta
-- ✅ Ative a aggregation (padrão)
-- ✅ Reduza a `collisionTileSize` se houver muitos pequenos tiles
-
+### 3.9. Fluxo de Diálogo com NPC (`dialogue`)
+
+  Este fluxo descreve como o jogador conversa com um NPC cognitivo, desde a aproximação física até a resposta gerada por IA.
+
+  ```mermaid
+  sequenceDiagram
+    participant P as Player
+    participant IE as InteractiveEntity
+    participant CNPC as CognitiveNPC
+    participant DG as DialogueGateway
+    participant LLM as Ollama (LLM)
+    participant PV as PraxisValidator
+    participant DA as DialogueAdapter
+    participant UI as DialogueGui
+
+    P->>IE: Colisão (interactionRadius)
+    IE->>UI: dispatch('npcInteractable', prompt)
+    P->>IE: Tecla "E" (onInteract)
+    IE->>CNPC: onInteract(player)
+    CNPC->>DG: startDialogue(npcId, context)
+    DG->>LLM: prompt(personalidade + crenças + input)
+    LLM-->>DG: resposta bruta
+    DG->>PV: validate(rawAction)
+    PV-->>DG: { valid, sanitizedAction }
+    DG->>CNPC: executeAction(sanitizedAction)
+    CNPC->>DA: dispatch('npcDialog', { text, options })
+    DA->>UI: renderDialogue(text, options)
+    UI-->>DA: playerChoice
+    DA->>DG: continueDialogue(choice)
+  ```
+
+  1.  **Aproximação (Colisão):** O `Player` entra no `interactionRadius` do NPC. O `InteractiveEntity` dispara `npcInteractable` para exibir o prompt "E" na UI.
+  2.  **Ativação:** O jogador pressiona "E". O `ActionManager` roteia para `onInteract(player)`.
+  3.  **Deliberação Cognitiva:** O `CognitiveNPC` monta prompt contextual (personalidade + crenças BDI + histórico) e o envia via `DialogueGateway` para o Ollama local.
+  4.  **Validação (PraxisValidator):** A resposta bruta do LLM é parseada e validada. Tokens perigosos são bloqueados.
+  5.  **Execução e Renderização:** A ação sanitizada é executada no NPC. O evento `npcDialog` é disparado, e o `DialogueAdapter` renderiza a resposta na `DialogueGui`.
+  6.  **Balão Flutuante:** Falas rápidas (não-interativas) usam o evento `npcSpoke`, que o `DialogueAdapter` renderiza como `FloatingChatGui` (balão overhead com vida de 2-8s).
+
+### 3.10. Fluxo de Inventário (`inventory`)
+
+  Este fluxo descreve a coleta, equipamento e uso de itens.
+
+  ```mermaid
+  flowchart LR
+    A[DroppedItem no Chão] -->|Colisão HitBox| B[player.backpack.add]
+    B --> C[dispatch 'itemCollected']
+    C --> D[CharacterMenuGui atualiza slots]
+    D -->|Clique Equipar| E[InventoryGateway.equipItem]
+    E --> F[Player.equipment.equip]
+    F --> G[dispatch 'equipmentChanged']
+    G --> H[VisualComposer recalcula layers]
+    D -->|Clique Usar| I[InventoryGateway.useItem]
+    I --> J[Consumable.use target]
+    J --> K[Effect.apply]
+  ```
+
+  1.  **Coleta:** Colisão Player→DroppedItem empurra o `Item` para `player.backpack`. Evento `itemCollected` dispara e o `DroppedItem` faz `despawn`.
+  2.  **Equipamento:** `InventoryGateway.equipItem(slotType, itemId)` valida slot anatômico e transfere da mochila para o slot. Evento `equipmentChanged` dispara recálculo do Paper Doll visual.
+  3.  **Uso:** `InventoryGateway.useItem(itemId)` executa `consumable.use(player)`, aplicando efeitos (heal, boost, etc.) e removendo da mochila.
+
+### 3.11. Fluxo de Habilidades (`skills`)
+
+  Este fluxo descreve o desbloqueio e uso de habilidades na Árvore e no Loadout.
+
+  ```mermaid
+  flowchart TD
+    A[Level Up] -->|dispatch 'levelUp'| B[Ganho de Skill Points]
+    B --> C[SkillTreeGui abre]
+    C -->|Clique no Nó| D[SkillTreeGateway.unlockSkill]
+    D --> E{Pré-requisitos OK?}
+    E -->|Sim| F[Skill.unlock - consome pontos]
+    E -->|Não| G[Rejeita]
+    F --> H[SkillTreeGateway.equipSkill]
+    H --> I[Player.activeLoadout atualiza]
+    I -->|Em combate, tecla 1-4| J[ActionManager.executeLoadoutSkill]
+    J --> K[Skill.activate - dispara spawn/efeito]
+  ```
+
+  1.  **Desbloqueio:** No Level Up, o jogador ganha Skill Points. Na `SkillTreeGui`, clica em um nó para desbloqueá-lo via `SkillTreeGateway.unlockSkill()`.
+  2.  **Validação Topológica:** O gateway verifica se pré-requisitos estão satisfeitos e se há pontos suficientes.
+  3.  **Equipamento:** Skill desbloqueada é equipada em um dos 4 slots do `activeLoadout` via Drag & Drop.
+  4.  **Execução:** Em combate, teclas 1-4 ativam o slot correspondente. O `ActionManager` roteia para `Skill.activate()`, que dispara eventos de spawn, efeitos ou buffs.
+
+### 3.12. Fluxo de Recompensas (`reward`)
+
+  Este fluxo descreve a geração de loot ao derrotar inimigos.
+
+  1.  **Gatilho:** O `RewardManager` escuta o evento `despawn` de entidades do tipo `Enemy`.
+  2.  **Geração:** O `RewardGenerator` calcula o loot baseado no tipo do inimigo, nível do jogador e atributo de sorte. Usa rolagens ponderadas e tiers de raridade.
+  3.  **Spawn:** Para cada item gerado, dispara `spawn` com tipo `droppedItem` nas coordenadas do inimigo morto.
+  4.  **Moedas:** `AddCoinsEffect` é aplicado diretamente ao `Player.coins` sem criar entidade no chão.
+
+### 3.13. Fluxo de Troca de Adaptador (`adapterSwitch`)
+
+  Este fluxo descreve a transição entre o Lobby 3D e o gameplay 2D.
+
+  ```mermaid
+  sequenceDiagram
+    participant Menu as MainMenuGui
+    participant AM as AdapterManager
+    participant L3D as Lobby3DAdapter
+    participant GA as GameAdapter
+    participant DF as DomainFacade
+
+    Menu->>DF: dispatch('switchToGameplay', mapId)
+    DF->>AM: onSwitchToGameplay
+    AM->>L3D: destroy()
+    L3D-->>AM: DOM limpo
+    AM->>GA: new GameAdapter(domain)
+    GA->>GA: initialize()
+    GA->>DF: loadWorld(mapId)
+    DF-->>GA: world gerado
+    GA->>GA: startGameLoop()
+  ```
+
+### 3.14. Fluxo de Telemetria (`telemetry`)
+
+  Coleta contínua e não-intrusiva de métricas a cada frame com profiling granular e Zero-GC.
+
+  1.  **Ativação In-Game via Tecla [F3]:** A telemetria e o profiling em tempo real são ligados/desligados ao pressionar **`[F3]`** (ou `toggleTelemetry()`). Enquanto o painel de telemetria estiver ativo, o jogo emite periodicamente no console do navegador e no terminal nativo do Tauri a análise de performance completa.
+  2.  **Separação Arquitetural Estrita (Domínio vs. Adapters):** O monitoramento isola as métricas entre a camada pura de **Domínio** (`Domain / *`) e a camada de **Adapters** (`Adapters / *`). Como o Domínio é naturalmente mais leve que o pipeline gráfico, avaliar o consumo de lógica apenas como `% do frame total` mascara gargalos graves no código de regras/física. Assim, cada arquivo recebe tanto a sua fatia global (`pct` / `% Tot`) quanto seu peso relativo estrito dentro de sua própria camada (`layerPct` / `% Dom` ou `% Adap`).
+  3.  **Profiling Dinâmico por Objetos Vivos (`ObjectElementManager`):** Rastreia em tempo real a execução de todas as entidades ativas do jogo (`Slime.ts`, `Goblin.ts`, `DynamicProjectile.ts`, `Derocar.ts`, `Molor.ts`, etc.) através da classe (`element.constructor.name`), acumulando tempo e quantidade de instâncias (`count`) sem alocações per-frame (Zero-GC).
+  4.  **Emissão no Terminal do Tauri (Duas Tabelas ANSI Distintas):** A cada 3 segundos com o `F3` ativado, o `WebWindowManager` despacha via IPC duas tabelas estruturadas independentes:
+      - `[ DOMÍNIO - Lógica, Física & Entidades ]` exibindo `#`, `Arquivo`, `Módulo`, `Qtd`, `Tempo`, `% Dom` e `% Tot`.
+      - `[ ADAPTADORES - Render, UI & Infra ]` exibindo `#`, `Arquivo`, `Módulo`, `Qtd`, `Tempo`, `% Adap` e `% Tot`.
+      O backend nativo Rust (`log_config.rs`) colore os cabeçalhos de Domínio em magenta e Adapters em ciano.
+  5.  **HUD In-Game (`TelemetryUI`):** O painel visual renderiza dois cards separados com barras de progresso dedicadas: um para **Top Domínio (Lógica & Entidades)** e outro para **Top Adaptadores (Render & UI)** com multiplicadores de instâncias (`[xN]`).
+  6.  **Buffer Circular & Exportação:** Métricas são armazenadas em um buffer fixo de 50 entradas. `saveTelemetryLog()` via `TauriIPC` salva no encerramento (`beforeunload`) os arquivos `logs/latest.log` e `logs/metrics.log` no disco (Tauri) ou dispara download Blob (web).
+
+### 3.15. Fluxo de Save/Load (`persistence`)
+
+  1.  **Save:** O `RepositoryAdapter` serializa o estado global (nível, XP, inventário, árvore de skills, moedas) via `saveProgress()`. Dados são criptografados com XOR cipher + Base64 e gravados em `localStorage` (web) ou filesystem nativo (Tauri).
+  2.  **Load:** `loadProgress()` descriptografa e valida integridade. Injeta o estado de volta no `DomainFacade`.
+  3.  **Export/Import:** `exportSave()` gera string criptografada para backup. `importSave()` valida e restaura.
+
+### Diagrama Geral de Comunicação entre Módulos
+
+  ```mermaid
+  flowchart TB
+    subgraph DOMÍNIO
+      DF[DomainFacade]
+      OEM[ObjectElementManager]
+      CM[CollisionManager]
+      P[Player]
+      E[Enemies]
+      NPC[CognitiveNPCs]
+      RM[RewardManager]
+      IG[InventoryGateway]
+      SG[SkillTreeGateway]
+      DG[DialogueGateway]
+      EB["EventBus (gameEvents)"]
+    end
+
+    subgraph ADAPTADORES
+      AM[AdapterManager]
+      GA[GameAdapter]
+      GEB[GameEventBinder]
+      SM[SceneManager]
+      UM[UIManager]
+      IM[InputManager]
+      IGW[InputGateway]
+      DA[DialogueAdapter]
+      TA[TelemetryAdapter]
+      RA[RepositoryAdapter]
+    end
+
+    subgraph EXTERNO
+      LLM[Ollama LLM]
+      BDI[Panteão BDI - Rust]
+      GPU[WebGPU / Canvas2D]
+      FS[Filesystem / localStorage]
+    end
+
+    IGW -->|ações semânticas| DF
+    DF -->|update + getRenderState| GA
+    GA -->|syncRenderables| SM
+    SM -->|draw| GPU
+    DF --> OEM
+    OEM -->|plainElements| CM
+    CM -->|Worker Async| CM
+    P -->|playerMoved| EB
+    EB -->|spawn, despawn, levelUp| OEM
+    EB -->|particle, spawnVisual| GEB
+    GEB --> SM
+    EB -->|npcSpoke, npcDialog| DA
+    E -->|morte| RM
+    RM -->|spawn droppedItem| EB
+    NPC -->|sendPerception| BDI
+    NPC -->|prompt| LLM
+    DG -->|PraxisValidator| NPC
+    IG --> DF
+    SG --> DF
+    TA -->|snapshot| FS
+    RA -->|save/load| FS
+  ```
+
+## 4. Guia do Desenvolvedor (Onde estão os arquivos?)
+
+  Para responder à principal dor do desenvolvedor: *"Para adicionar uma coisa, em quais arquivos eu tenho que ir?"*. A arquitetura **Data-Driven Centralizada** reduziu isso para **no máximo 3 ou 4 arquivos** bem específicos, sem espalhar lógica por dezenas de lugares.
+
+  Aqui está o mapa exato dos arquivos que você precisa tocar para expandir o jogo.
+
+  ### 4.1. Como Criar um Novo Inimigo (Ex: "Goblin")
+
+  Você só precisa tocar em **2 arquivos** (um no Domínio, um no Adaptador Web):
+
+  1. **A Lógica (Domínio):**
+     - **Crie o arquivo:** `typescript/domain/ObjectModule/Entities/Enemies/Goblin.ts`
+     - Estenda a classe `Enemy`.
+     - Use o decorator `@RegisterSpawner('goblin')` antes da classe para que a engine saiba instanciá-lo automaticamente sem if-elses.
+  2. **O Visual (Adaptador Web):**
+     - **Edite o arquivo:** `typescript/adapters/web/shared/VisualConfigMap.ts`
+     - Vá na categoria `'enemies'` (ou adicione uma nova chave na raiz do map para entidades genéricas) e adicione a chave `'goblin'`. Aponte a URL da imagem PNG e defina os frames das animações (`idle`, `walking`, etc.). O Adaptador Web fabricará a textura dinamicamente.
+
+  ### 4.2. Como Criar um Novo Item ou Equipamento (Armadura, Consumível, Arma)
+
+  Você precisa tocar em **2 a 3 arquivos**, dependendo se ele tem um efeito especial novo.
+
+  1. **A Lógica (Domínio):**
+     - **Crie o arquivo:** Ex: `typescript/domain/ObjectModule/Items/Armors/GoldenHelmet.ts` (ou em `Consumables/` ou `Weapons/`).
+     - Estenda a classe base adequada (`Helmet`, `Consumable`, `Weapon`).
+     - No `constructor()`, defina o atributo `iconId` único do item (ex: `15`). Esse ID é a "cola" entre o Domínio cego e a Renderização visual.
+  2. **O Efeito (Opcional - Domínio):**
+     - Se o item tiver um efeito novo (ex: Veneno), crie a lógica em: `typescript/domain/ObjectModule/Items/Effects/PoisonEffect.ts`.
+  3. **O Visual (Adaptador Web):**
+     - **Edite o arquivo:** `typescript/adapters/web/shared/VisualConfigMap.ts`
+     - Adicione a chave com o nome do item. É **crucial** que você defina a propriedade `iconId: 15` para bater com a lógica do Domínio. Defina os states `idle`, `walking` (se for equipamento que o player veste) ou apenas a sprite solta (se for item de chão).
+
+  ### 4.3. Como Criar uma Magia, Projétil ou Ataque Animado (Ex: Bola de Fogo ou Corte de Foice)
+
+  Você precisa tocar em **3 arquivos** (Lógica, Configuração Visual e Hitbox JSON).
+
+  1. **A Hitbox Poligonal (Editor Web):**
+     - **Não crie arquivos à mão.** Use a interface do jogo: abra o console e rode `toggleDebugMode()`, depois abra o **Hitbox Editor Tool**. Carregue o PNG da magia, desenhe a área de dano, e **exporte o arquivo JSON**.
+     - Salve o JSON em: `assets/hitboxes/nome_da_magia.json` (ou apenas copie o conteúdo JSON).
+  2. **A Lógica (Domínio):**
+     - **Crie o arquivo:** `typescript/domain/ObjectModule/Entities/projectiles/Fireball.ts` (ou em `MeleeWeapons/AxeSlash.ts`).
+     - Estenda `DynamicProjectile` ou `AnimatedMeleeAttack`.
+     - Cole a string JSON da hitbox diretamente dentro da classe, ou use o `HitboxParser` para deserializar. Use o decorator `@RegisterSpawner('fireball')`.
+  3. **O Visual (Adaptador Web):**
+     - **Edite o arquivo:** `typescript/adapters/web/shared/VisualConfigMap.ts`
+     - Adicione a entrada visual da magia (categoria `projectile`), apontando para a imagem png respectiva.
+
+  ### 4.4. Como Adicionar um Novo NPC Cognitivo (IA Conversacional via Panteão/Ollama)
+
+  Como os NPCs possuem Inteligência Artificial baseada no modelo Belief-Desire-Intention (BDI), você precisa configurar o modelo mental dele em um arquivo à parte.
+
+  Você precisa tocar em **3 arquivos**:
+
+  1. **A Lógica da Entidade (Domínio):**
+     - **Crie o arquivo:** `typescript/domain/ObjectModule/Entities/NPCs/Molin/Molin.ts`
+     - Estenda a classe `CognitiveNPC`. Configure no construtor a personalidade base e o `npcId` (ex: `'molin'`).
+  2. **A Mente BDI (Motor Panteão em AgentSpeak):**
+     - **Crie o arquivo:** `typescript/domain/ObjectModule/Entities/NPCs/Molin/molin.asl`
+     - Este é o arquivo de código AgentSpeak. Aqui você não escreve TypeScript, mas as crenças e planos do NPC. Ex: `+player_nearby : true <- greet.`.
+  3. **O Registro da Engine BDI:**
+     - **Edite o arquivo:** `typescript/domain/ObjectModule/Entities/NPCs/project.jcm`
+     - Este é o manifesto que diz ao motor Panteão Rust quais cérebros existem. Adicione uma linha: `agent molin : Molin/molin.asl`.
+
+  ### 4.5. Como Adicionar ou Modificar uma Nova Interface de Usuário (GUI)
+
+  As interfaces são dissociadas do Canvas do jogo. Ficam no adaptador web. Você precisará tocar em **3 arquivos coesos** em um mesmo diretório.
+
+  1. **A Estrutura Visual (Adaptador Web):**
+     - Vá para `typescript/adapters/web/GUIS/` e crie a pasta da sua UI, ex: `XpBarGui/`.
+     - **Crie 2 arquivos visuais:** `xpbar.html` e `xpbar.css`.
+  2. **A Lógica Reativa (Adaptador Web):**
+     - **Crie 1 arquivo lógico:** `XpBarGui.ts` na mesma pasta.
+     - Esta classe deve carregar o HTML/CSS, escutar o Event Bus do domínio (ex: `gameEvents.on('xpChanged', ...)`), e mutar os elementos DOM com as atualizações usando document.getElementById.
+  3. **Injeção da GUI:**
+     - **Edite o arquivo:** `typescript/adapters/web/components/UIManager.ts`.
+     - Instancie sua `XpBarGui` no construtor do UIManager. O jogo cuidará do resto.
+   ### 4.6. Taxonomia Semântica de Habilidades, Broches e Formas Geométricas (Design System de UI)
+
+   O jogo divide estritamente os poderes do jogador em **4 sets funcionais de habilidades**, além dos **atributos cumulativos** da árvore global. Cada categoria possui uma forma geométrica canônica e semântica expressa na interface gráfica:
+
+   | Categoria | Origem | Quantidade de Slots | Gatilho / Tecla | Formato Visual Canônico (SVG / CSS) |
+   |---|---|---|---|---|
+   | **Ativas da Classe** | Árvore de Classes | 1 a 4 slots | Teclas numéricas `[1]` a `[4]` | **Quadrado** com cantos levemente arredondados (`square-slot`) |
+   | **Ativas Primordiais / Essenciais** | Habilidade central da Classe (ex: Peixe do Pescador) | 1 slot dedicado | Tecla específica de ativação | **Estrela** de 4/8 pontas estilizada em SVG (`primordial-slot`) |
+   | **Broches Ativos** | Árvore Global | 1 a 6 slots | Teclas de atalho | **Círculo com espinhos em volta (Sol)** em SVG (`sun-brooch-slot`) |
+   | **Broches Passivos** | Árvore Global | 1 a 4 slots | Sem botão (Numerais Romanos `I` a `IV`) | **Triângulo Truncado** em SVG (`triangle-passive-slot`) |
+   | **Atributos Acumulativos** | Árvore Global | Infinitos (Escala contínua) | Passivo permanente | **Círculo / Orbe** em flex com scroll fluido (`cumulative-attr-orb`) |
+
+   **Diretrizes Arquiteturais e de Interface:**
+   - **Broches são Habilidades Globais:** Não existe aba ou lista separada de "Broches Relicários". Os broches *são* os broches ativos (1-6) e passivos (I-IV) equipados e vinculados à meta-progressão.
+   - **Escalabilidade Infinita de Atributos:** Os atributos cumulativos da árvore global podem crescer indefinidamente. A interface utiliza um container com rolagem suave (`overflow-y: auto`) e tags circulares compactas com tooltips detalhados, garantindo que novos nós de meta-progressão não quebrem o layout.
+   - **Consistência de Feedback Visual:** Cada formato geométrico reage ao estado de preenchimento (`.filled`) com gradientes radiais correspondentes à sua classe ou raridade, glow temático e tooltip completo.
+
+
+## 5. Arquitetura de Testes e Garantias de Engenharia
+
+  A suíte de testes é orientada por 4 pilares fundamentais e utiliza **Vitest** como framework de testes com ambiente `node` (e `jsdom` para testes de UI).
+
+  ### 5.1. Pilares de Garantia
+
+  1. **Determinismo & Reprodutibilidade:** Eliminação de entropia não controlada para viabilizar replays e save states consistentes. Hashing de estado SHA-256 após múltiplos frames de simulação garante zero flutuação numérica.
+  2. **Zero-Garbage Collection (Zero-GC):** Prevenção de stuttering por coleta de lixo. QuadTree recicla nós (`clear`), vetores usam operações `*Mut`, e testes auditam `heapUsed` durante 60 frames sob carga.
+  3. **Isolamento Hexagonal & Fitness Functions:** O Domínio é 100% puro e agnóstico de infraestrutura. Testes automatizados varrem ASTs para garantir fan-out zero para UI/Browser (`window`, `document`) e classes concretas.
+  4. **Fail-Fast & Segurança de IA:** Parsers (Hitbox, Spells, Ações) estouram no boot ao receberem schemas inválidos. O `PraxisValidator` bloqueia 100% dos payloads maliciosos ou alucinações geradas pelo Ollama.
+
+  ### 5.2. Categorias de Testes (96 arquivos)
+
+  | Categoria | Qtd | Foco |
+  |-----------|-----|------|
+  | **Arquitetura (Fitness Functions)** | 4 | Pureza hexagonal, fan-out zero, CI workflows |
+  | **Performance & Benchmarking** | 5 | Estresse de colisão, Memory Leak / Zero-GC, latência IPC, Render Thrashing |
+  | **Estabilidade & Determinismo** | 4 | Hashing criptográfico de estado, Chaos Monkey |
+  | **Integração** | 10 | Loop completo do jogo, Double Buffering, UI Ollama, parser PNG |
+  | **Unitários** | 73 | Matemática vetorial, QuadTree, Entidades, Classes, Projéteis, Status, Itens, Armas, Mapas |
+
+  ### 5.3. Scripts de Pipeline
+
+  ```bash
+  npm test              # tsc --noEmit + vitest run
+  npm run test:perf     # Apenas testes de performance
+  npm run test:stability # Apenas testes de estabilidade
+  npm run analyze       # Análise de código + detecção de dependências circulares (madge)
+  npm run pipeline      # Suite completa: analyze + test
+  ```
+
+## 6. Build e Tooling
+
+  | Ferramenta | Função |
+  |-----------|--------|
+  | **Vite** | Bundler e dev server |
+  | **TypeScript** (`esnext`, `strict: true`) | Tipagem estrita com `noUncheckedIndexedAccess`, `experimentalDecorators` |
+  | **Vitest** | Framework de testes com cobertura V8 |
+  | **Tauri** | Envelopamento desktop (Rust → .exe / .AppImage) |
+  | **madge** | Detecção de dependências circulares |
+  | **Three.js** | Renderização 3D para o Lobby |

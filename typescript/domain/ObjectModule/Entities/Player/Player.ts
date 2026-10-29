@@ -1,71 +1,239 @@
-//* import type World from "../../../World";
 import Vector2D from "../../../shared/Vector2D";
 import Entity from "../Entity";
 import Attributes from "../Attributes";
 import type { IEventManager } from "../../../eventDispacher/IGameEvents";
 import { HitBoxCircle } from "../../../hitBox/HitBoxCircle";
 import type ObjectElement from "../../ObjectElement";
-import type Item from "../../Items/Item";
-import type Weapon from "../../Items/Weapons/Weapon";
-import type Bag from "../../Items/Storage/Bag";
 import { type DamageInfo } from "../Entity";
-import Class from "./Classes/Class";
-import type { baseAttributes } from "../Attributes";
-import DefaultXPTable from "../DefaultXPTable";
-import Warrior from "./Classes/Warrior";
-import Mage from "./Classes/Mage";
-import Gunslinger from "./Classes/Gunslinger";
-import Necromancer from "./Classes/Necromancer";
-import Pescador from "./Classes/Pescador";
 import { BindAction } from "../../../eventDispacher/ActionBindings";
 
-import type Armor from "../../Items/Armors/Armor";
+import PlayerInventory from "./components/PlayerInventory";
+import PlayerEquipment from "./components/PlayerEquipment";
+import PlayerClassManager from "./components/PlayerClassManager";
+import BroochRegistry from "./components/BroochRegistry";
 
-export type playerStates = 'idle' | 'walking' | 'dead'
+import type { IPlayer } from "../../../ports/domain-contracts";
+import type { PlayerSaveState } from "../../../ports/ISaveRepository";
+import type Item from "../../Items/Item";
+import type Class from "./Classes/Class";
+import type { baseAttributes } from "../Attributes";
 
-const defaultXpTable = new DefaultXPTable();
+export type playerStates = 'idle' | 'walking' | 'dead' | 'roll' | 'dodge';
 
-export default class Player extends Entity {
-
+export default class Player extends Entity implements IPlayer {
   private movementSinceLastUpdate: boolean = false;
   private isDashing: boolean = false;
+  private dashTimeRemaining: number = 0;
 
-  public backpack: Item[] = [];
-  public coins: number = 0; // A carteira do jogador!
-  public equipedItens: Item[] = [];
-  public equipment: { 
-    mainHand?: Weapon | undefined;
-    secondHand?: Weapon | undefined;
-    helmet?: Armor | undefined;
-    chestplate?: Armor | undefined;
-    pants?: Armor | undefined;
-    boots?: Armor | undefined;
-    gloves?: Armor | undefined;
-    amulet?: Armor | undefined;
-    bag?: Bag | undefined;
-    leftHandRings: Armor[];
-    rightHandRings: Armor[];
-  } = { leftHandRings: [], rightHandRings: [] };
+  public inventory: PlayerInventory;
+  public equipmentManager: PlayerEquipment;
+  public classManager: PlayerClassManager;
+
+  public hasBeard: boolean = false; 
   private isLeftClickActiveThisFrame: boolean = false;
   private wasLeftClickActiveLastFrame: boolean = false;
   private attackCooldownTimer: number = 0;
-  public hasBeard: boolean = false; // Para validar a Regra de Negócio de Exceção Visual!
 
-  // --- Sistema de Classes e Skills ---
-  private _unlockedClasses: string[] = [];
-  private _activeClass: string | null = null;
-  private _classes: Class[] = [];
-  private _unlockedSkills: Set<string> = new Set();
-  // -----------------------------------
+  public facingDirection: Vector2D = new Vector2D(1, 0);
+
+  // Delegated Brooch State inspection (Zero-GC, no state kept on Player)
+  public get activeShieldCharges(): number { return BroochRegistry.getShieldCharges(); }
+  public get fortuneBuffTimer(): number { return BroochRegistry.getFortuneBuffTimer(); }
+  public get berserkTimer(): number { return BroochRegistry.getBerserkTimer(); }
+  public get shadowStealthTimer(): number { return BroochRegistry.getShadowStealthTimer(); }
+  public get dashSurgeTimer(): number { return BroochRegistry.getDashSurgeTimer(); }
+  public get phoenixUsedThisRun(): boolean { return BroochRegistry.isPhoenixUsed(); }
+  public get rerollChargesRemaining(): number { return BroochRegistry.getRerollCharges(); }
+
+  // Getters for IPlayer compatibility
+  public get backpack(): Item[] { return this.inventory.backpack; }
+  public get coins(): number { return this.inventory.coins; }
+  public set coins(val: number) { this.inventory.coins = val; }
   
-  /** Matriz de 4 posições contendo os IDs das habilidades ativas equipadas */
-  public activeLoadout: (string | null)[] = [null, null, null, null];
+  public get equipedItens(): Item[] { return this.equipmentManager.equipedItens; }
+  public get equipment() { return this.equipmentManager.equipment; }
 
-  public facingDirection: Vector2D = new Vector2D(1, 0); // Direção para onde o mago atira
+  public get activeLoadout(): (string | null)[] { return this.classManager.activeLoadout; }
+  public get passiveLoadout(): (string | null)[] { return this.classManager.passiveLoadout; }
+  public get globalActiveLoadout(): (string | null)[] { return this.classManager.globalActiveLoadout; }
+  public get maxBackpackSize(): number { return this.equipmentManager.maxBackpackSize; }
+  public get classes(): Class[] { return this.classManager.classes; }
+  public get activeClass(): string | null { return this.classManager.activeClass; }
+  public get unlockedClasses(): string[] { return this.classManager.unlockedClasses; }
+  public get unlockedSkills(): Set<string> { return this.classManager.unlockedSkills; }
 
-  /** Retorna a capacidade máxima dinâmica do inventário do jogador */
-  public get maxBackpackSize(): number {
-    return 24 + (this.equipment.bag?.capacityBonus || 0); // 24 slots base + Bônus da Bolsa equipada
+  public collectedWorldItems: Set<string> = new Set<string>();
+
+  public collectWorldItem(pickupId: string): void {
+    if (pickupId) {
+      this.collectedWorldItems.add(pickupId);
+    }
+  }
+
+  public hasCollectedWorldItem(pickupId: string): boolean {
+    return this.collectedWorldItems.has(pickupId);
+  }
+
+  // Component delegates
+  public equipItem(backpackIndex: number) { this.equipmentManager.equipItem(backpackIndex); }
+  public unequipItem(slot: string, index?: number) { this.equipmentManager.unequipItem(slot, index); }
+  public unequipBag(): boolean { return this.equipmentManager.unequipBag(); }
+  public equipToolInBelt(backpackIndex: number, beltSlotIndex?: number): boolean { return this.equipmentManager.equipToolInBelt(backpackIndex, beltSlotIndex); }
+  public unequipToolFromBelt(beltSlotIndex: number): boolean { return this.equipmentManager.unequipToolFromBelt(beltSlotIndex); }
+  public setActiveTool(beltSlotIndex: number): boolean { return this.equipmentManager.setActiveTool(beltSlotIndex); }
+  public getActiveTool() { return this.equipmentManager.getActiveTool(); }
+  public consumeItem(backpackIndex: number) { this.inventory.consumeItem(backpackIndex); }
+  public deleteItem(backpackIndex: number) { this.inventory.deleteItem(backpackIndex); }
+  public addItem(item: Item): boolean { return this.inventory.addItem(item); }
+  
+  public registerClass(classInstance: import("./Classes/Class").default, autoUnlock: boolean = false) { this.classManager.registerClass(classInstance, autoUnlock); }
+  public unlockClass(className: string) { this.classManager.unlockClass(className); }
+  public setActiveClass(className: string) { this.classManager.setActiveClass(className); }
+  public unlockSkill(skillId: string) { this.classManager.unlockSkill(skillId); }
+  public equipSkillInLoadout(skillId: string, slotIndex: number) { this.classManager.equipSkillInLoadout(skillId, slotIndex); }
+  public equipPassiveInLoadout(passiveId: string | null, slotIndex: number) { this.classManager.equipPassiveInLoadout(passiveId, slotIndex); }
+  public equipGlobalActiveBrooch(broochId: string | null, slotIndex: number) { this.classManager.equipGlobalActiveBrooch(broochId, slotIndex); }
+  public hasPassiveBrooch(broochId: string): boolean {
+    return this.classManager.broochManager.hasPassive(broochId);
+  }
+  public resetDashCooldown(): void {
+    this.isDashing = false;
+    this.accelerator.resetMut();
+  }
+  public resetRun(): void {
+    this.classManager.resetRun();
+  }
+  public executeActiveSkill(skillId: string, mouseCoordinates: {x: number, y: number}) { this.classManager.executeActiveSkill(skillId, mouseCoordinates); }
+  public executePrimordialSkill(mouseCoordinates: {x: number, y: number}) { this.classManager.executePrimordialSkill(mouseCoordinates); }
+  public executeActiveBrooch(broochId: string, mouseCoordinates: {x: number, y: number}) { this.classManager.executeActiveBrooch(broochId, mouseCoordinates); }
+  public setSkillCooldown(skillId: string, durationMs: number) { this.classManager.setSkillCooldown(skillId, durationMs); }
+  public isSkillOnCooldown(skillId: string): boolean { return this.classManager.isSkillOnCooldown(skillId); }
+  public getActiveCooldowns() { return this.classManager.getActiveCooldowns(); }
+  public gainXp(xpAmount: number) { this.classManager.gainXp(xpAmount); }
+
+  public serializeState(): PlayerSaveState {
+    const safeHp = this.attributes.hp <= 0 ? this.attributes.maxHp : this.attributes.hp;
+    return {
+      attributes: {
+        level: this.attributes.level,
+        currentXp: this.attributes.currentXp,
+        availablePoints: this.attributes.availablePoints,
+        maxHp: this.attributes.maxHp,
+        hp: safeHp,
+        mana: this.attributes.mana,
+        strength: this.attributes.strength,
+        constitution: this.attributes.constitution,
+        dexterity: this.attributes.dexterity,
+        intelligence: this.attributes.intelligence,
+        wisdom: this.attributes.wisdom,
+        charisma: this.attributes.charisma
+      },
+      coins: this.coins,
+      coordinates: { x: this.coordinates.x, y: this.coordinates.y },
+      backpack: this.inventory.serialize(),
+      equipment: this.equipmentManager.serialize(),
+      classes: this.classManager.serialize(),
+      collectedWorldItems: Array.from(this.collectedWorldItems)
+    };
+  }
+
+  public revive(): void {
+    this.state = 'idle';
+    this.movementSinceLastUpdate = false;
+    this.isDashing = false;
+    this.direction.resetMut();
+    this.velocity.resetMut();
+    this.accelerator.resetMut();
+    this.activeStatuses.clear();
+    this.activeStatusesList = [];
+    this.currentSpeedModifier = 1;
+    this.attackCooldownTimer = 0;
+    this.attributes.hp = this.attributes.maxHp;
+    BroochRegistry.resetAll();
+  }
+
+  public restoreState(state: any): void {
+    if (!state) return;
+
+    // Reseta estado motor e cinético para garantir que o jogador nunca nasça morto ou travado
+    this.state = 'idle';
+    this.movementSinceLastUpdate = false;
+    this.isDashing = false;
+    this.direction.resetMut();
+    this.velocity.resetMut();
+    this.accelerator.resetMut();
+    this.activeStatuses.clear();
+    this.activeStatusesList = [];
+    this.currentSpeedModifier = 1;
+    this.attackCooldownTimer = 0;
+    BroochRegistry.resetAll();
+
+    // 1. Atributos
+    if (state.attributes && typeof this.attributes.restoreState === 'function') {
+      this.attributes.restoreState(state.attributes);
+    } else if (state.level !== undefined && typeof this.attributes.restoreState === 'function') {
+      this.attributes.restoreState(state);
+    }
+
+    // Garante que o jogador nunca permaneça morto com 0 HP
+    if (this.attributes.hp <= 0) {
+      this.attributes.hp = this.attributes.maxHp;
+    }
+
+    // 2. Moedas
+    if (state.coins !== undefined) {
+      this.coins = state.coins;
+    }
+
+    // 3. Coordenadas
+    if (state.coordinates) {
+      this.coordinates.x = state.coordinates.x;
+      this.coordinates.y = state.coordinates.y;
+    }
+
+    // 4. Mochila
+    if (state.backpack && Array.isArray(state.backpack)) {
+      this.inventory.restore(state.backpack);
+    }
+
+    // 5. Equipamentos
+    if (state.equipment) {
+      this.equipmentManager.restore(state.equipment);
+    }
+
+    // 6. Classes e Árvore de Habilidades
+    if (state.classes) {
+      this.classManager.restore(state.classes);
+    } else {
+      if (Array.isArray(state.unlockedClasses)) {
+        state.unlockedClasses.forEach((c: string) => this.unlockClass(c));
+      }
+      if (state.activeClass) {
+        this.setActiveClass(state.activeClass);
+      }
+      if (Array.isArray(state.unlockedSkills)) {
+        state.unlockedSkills.forEach((s: string) => this.unlockSkill(s));
+      }
+      if (Array.isArray(state.activeLoadout)) {
+        state.activeLoadout.forEach((id: string, i: number) => {
+          if (id) {
+            this.unlockSkill(id);
+            this.equipSkillInLoadout(id, i);
+          }
+        });
+      }
+      if (Array.isArray(state.passiveLoadout)) {
+        state.passiveLoadout.forEach((id: string, i: number) => id && this.equipPassiveInLoadout(id, i));
+      }
+      if (Array.isArray(state.globalActiveLoadout)) {
+        state.globalActiveLoadout.forEach((id: string, i: number) => id && this.equipGlobalActiveBrooch(id, i));
+      }
+    }
+
+    // 7. Itens coletados no mundo
+    if (state.collectedWorldItems && Array.isArray(state.collectedWorldItems)) {
+      this.collectedWorldItems = new Set(state.collectedWorldItems);
+    }
   }
 
   constructor (
@@ -75,37 +243,37 @@ export default class Player extends Entity {
     eventManager: IEventManager,
     state: playerStates = 'idle'
   ){
-    const size = { width: 16, height: 16 }; //? jogador (16x16)
+    const size = { width: 16, height: 16 }; 
     super(id, coordinates, size, 'player', attributes, eventManager, state);
 
-    // Instancia as classes diretamente no domínio, servindo como o banco de dados das "regras"
-    this._classes = [
-      new Warrior(defaultXpTable, this, eventManager),
-      new Mage(defaultXpTable, this, eventManager),
-      new Gunslinger(defaultXpTable, this, eventManager),
-      new Necromancer(defaultXpTable, this, eventManager),
-      new Pescador(defaultXpTable, this, eventManager),
-    ];
+    this.inventory = new PlayerInventory(this, eventManager);
+    this.equipmentManager = new PlayerEquipment(this, eventManager);
+    this.classManager = new PlayerClassManager(this, eventManager);
 
     this.hitboxes = [ ...this.setHitboxes() ];
+
+    // [DECOUPLED] O Jogador escuta sozinho as intenções de UI de atributos
+    this.eventManager.on('attributeAction', (payload) => {
+        if (payload.action === 'allocate') {
+            this.allocateAttribute(payload.payload.attribute as any);
+        }
+    });
+
+    this.eventManager.on('rewardAction', (payload) => {
+// claimLocal is now handled entirely by PlayerClassManager.ts
+    });
   }
 
   private setHitboxes () :HitBoxCircle[]{
-
     return [new HitBoxCircle(
       { x: this.coordinates.x + this.size.width / 2, y: this.coordinates.y + this.size.height / 2 },
-      0,
-      7,
+      0, 7,
       (otherElement: ObjectElement) => {
-        // 1. Resolução Física (Obstáculos Sólidos)
         if (otherElement.objectId === 'environmentCollider') {
-            // console.log(`[Física Domínio] O Player sofreu atrito com: ${(otherElement as any).tileType}`);
             this.resolveEnvironmentCollision(otherElement, 7);
             return;
         }
 
-        // 2. Interação com Inimigos (Dano de Contato)
-        // Verificação estrita: garante que é uma função antes de chamar
         if (typeof (otherElement as any).onStrike === 'function'){
           const enemyAttack = (otherElement as any).onStrike();
           
@@ -115,10 +283,7 @@ export default class Player extends Entity {
               (this.coordinates.y + this.size.height / 2) - (otherElement.coordinates.y + otherElement.size.height / 2)
             );
             
-            // Proteção Anti-NaN: Se estiverem exatamente no mesmo pixel, força uma direção arbitrária
-            if (directionToPlayer.x === 0 && directionToPlayer.y === 0) {
-              directionToPlayer.x = 1;
-            }
+            if (directionToPlayer.x === 0 && directionToPlayer.y === 0) directionToPlayer.x = 1;
             
             directionToPlayer.normalizeMut();
             enemyAttack.execute(this, directionToPlayer);
@@ -128,7 +293,6 @@ export default class Player extends Entity {
     )]
   }
 
-  /** Avança o estado interno do jogador. Chamado a cada frame pelo DomainFacade. */
   public update(deltaTime: number): void {
     if (this.state === 'dead' || this.attributes.hp <= 0) {
       this.state = 'dead';
@@ -137,155 +301,198 @@ export default class Player extends Entity {
 
     this.updateStatuses(deltaTime);
 
-    if (this.attackCooldownTimer > 0) {
-      this.attackCooldownTimer -= deltaTime;
-    }
+    if (this.attackCooldownTimer > 0) this.attackCooldownTimer -= deltaTime;
 
-    this.move(deltaTime)
-    if (!this.movementSinceLastUpdate)  this.state = 'idle';
+    // Delegar ciclo de vida dos broches e habilidades de classe ativas (Zero-GC)
+    this.classManager.update(deltaTime);
+
+    this.move(deltaTime);
+    if (!this.movementSinceLastUpdate && this.dashTimeRemaining <= 0)  this.state = 'idle';
+    if (this.dashTimeRemaining <= 0 && (this.state === 'roll' || this.state === 'dodge')) {
+      this.rotation = 0;
+      this.state = (this.direction.x !== 0 || this.direction.y !== 0) ? 'walking' : 'idle';
+    }
     
     this.movementSinceLastUpdate = false;
-
     this.wasLeftClickActiveLastFrame = this.isLeftClickActiveThisFrame;
-    this.isLeftClickActiveThisFrame = false; // Reseta para a coleta do próximo frame
+    this.isLeftClickActiveThisFrame = false; 
     
     this.direction.resetMut()
   }
 
-  /**
-   * Sobrescreve o método takeDamage para adicionar uma lógica específica do jogador:
-   * disparar o evento 'playerDied' quando sua vida chega a zero.
-   */
+  public heal(amount: number): void { this.attributes.hp = Math.min(this.attributes.hp + amount, this.attributes.maxHp); }
+
+  public override applyStatus(status: any): void {
+    if (this.classManager.broochManager.onBeforeApplyStatus(status)) {
+      return;
+    }
+    super.applyStatus(status);
+  }
+  
   public override takeDamage(damageInfo: DamageInfo): number {
-    let totalDodge = this.attributes.dodge;
+    const broochResult = this.classManager.broochManager.onBeforeTakeDamage(damageInfo);
+    if (broochResult.absorbed) {
+      return 0;
+    }
+
+    let totalDodge = this.attributes.dodge + (broochResult.extraDodge || 0);
     if (this.activeStatuses.has('poison')) totalDodge -= 10;
+
     let totalDamageReduction = 0;
 
-    // Soma os bônus defensivos de todas as armaduras equipadas
     const armorSlots: (keyof Player['equipment'])[] = ['helmet', 'chestplate', 'pants', 'boots', 'gloves', 'amulet'];
     for (const slot of armorSlots) {
-      const item = this.equipment[slot] as Armor | undefined;
+      const item = this.equipment[slot] as any;
       if (item) {
         totalDodge += item.dodgePercent || 0;
         totalDamageReduction += item.damageReductionPercent || 0;
       }
     }
-    // Soma os bônus acumulativos dos Senhores dos Anéis (Os 10 Dedos)
+    
     for (const ring of [...this.equipment.leftHandRings, ...this.equipment.rightHandRings]) {
       totalDodge += ring.dodgePercent || 0;
       totalDamageReduction += ring.damageReductionPercent || 0;
     }
 
-    // 1. Verifica Esquiva (Dodge)
     if (Math.random() * 100 < totalDodge) {
       this.eventManager.dispatch('log', { channel: 'domain', message: 'Player esquivou do ataque!', params: [] });
-      return 0; // O jogador não toma nenhum dano!
+      return 0; 
     }
 
-    // 2. Redução Percentual de Dano (Capado a 90% para não ficar totalmente imortal)
-    totalDamageReduction = Math.min(90, totalDamageReduction);
-    const reducedDamage = damageInfo.totalDamage * (1 - (totalDamageReduction / 100));
+    if (broochResult.overrideDamageReduction !== undefined) {
+      totalDamageReduction = broochResult.overrideDamageReduction;
+    } else {
+      totalDamageReduction = Math.min(90, totalDamageReduction);
+    }
 
-    // Aplica o dano reduzido na entidade base (que também deduzirá a Defesa plana)
+    const reducedDamage = damageInfo.totalDamage * (1 - (totalDamageReduction / 100));
     const damageDealt = super.takeDamage({ ...damageInfo, totalDamage: reducedDamage });
 
+    if (broochResult.cancelKnockback) {
+      this.accelerator.resetMut();
+    }
+
     if (this.attributes.hp <= 0) {
+      if (broochResult.preventDeath) {
+        return damageDealt;
+      }
       this.eventManager.dispatch('playerDied', {});
     }
 
     return damageDealt;
   }
 
-  //? ----------- Main actions -----------
-
-
   private dashToDirection( direction:Vector2D ):void {
-  
     if (!this.isDashing){
+      const dashDir = (direction.x !== 0 || direction.y !== 0)
+        ? direction.clone().normalizeMut()
+        : (this.facingDirection.x !== 0 || this.facingDirection.y !== 0)
+          ? this.facingDirection.clone().normalizeMut()
+          : new Vector2D(1, 0);
 
-      this.accelerator.addMut(direction.clone().normalizeMut()).multiplyMut(3)
-      this.isDashing = true
-      
+      this.facingDirection.x = dashDir.x;
+      this.facingDirection.y = dashDir.y;
+
+      // Suporte aos 8 lados de rolagem: ângulo em radianos do vetor de deslocamento
+      this.rotation = Math.atan2(dashDir.y, dashDir.x);
+
+      this.accelerator.resetMut();
+      this.accelerator.addMut(dashDir).multiplyMut(3);
+      this.isDashing = true;
+      this.dashTimeRemaining = 0.30; // 300ms de duração física e animação do dash
+      this.state = 'roll';
+      this.movementSinceLastUpdate = true;
+
       setTimeout(() => {
-          this.accelerator.resetMut()
-      }, 150);
-      
-      setTimeout(() => {
-          this.isDashing = false
+        if (this.dashTimeRemaining > 0) {
+          this.dashTimeRemaining = 0;
+          this.accelerator.resetMut();
+          this.rotation = 0;
+          if (this.state === 'roll' || this.state === 'dodge') {
+            this.state = (this.direction.x !== 0 || this.direction.y !== 0) ? 'walking' : 'idle';
+          }
+        }
+      }, 300);
+
+      setTimeout(() => { 
+        this.isDashing = false; 
       }, 1000);
+
+      this.classManager.broochManager.onDash();
     }
   }
 
   public override move( deltaTime: number): void {
     if (this.state === 'dead' || this.attributes.hp <= 0) return;
 
-    if (this.direction.x !== 0 || this.direction.y !== 0 || this.accelerator.x !== 0 || this.accelerator.y !== 0) {
+    if (this.dashTimeRemaining > 0) {
+      this.dashTimeRemaining -= deltaTime;
+      if (this.dashTimeRemaining <= 0) {
+        this.dashTimeRemaining = 0;
+        this.accelerator.resetMut();
+        this.rotation = 0;
+        if (this.state === 'roll' || this.state === 'dodge') {
+          this.state = (this.direction.x !== 0 || this.direction.y !== 0) ? 'walking' : 'idle';
+        }
+      }
+    }
+
+    if (this.dashTimeRemaining > 0) {
+      this.state = 'roll';
+      this.movementSinceLastUpdate = true;
+    } else if (this.direction.x !== 0 || this.direction.y !== 0 || this.accelerator.x !== 0 || this.accelerator.y !== 0) {
       this.state = 'walking';
       this.movementSinceLastUpdate = true;
     }
 
     const displacement = this.attributes.speed * this.currentSpeedModifier * deltaTime;
-    this.currentSpeedModifier = 1; // Reseta
+    this.currentSpeedModifier = 1; 
     
-    // Guarda a última direção virada para usar na magia
     if (this.direction.x !== 0 || this.direction.y !== 0) {
-      this.facingDirection.x = this.direction.x;
-      this.facingDirection.y = this.direction.y;
-      this.facingDirection.normalizeMut();
+      if (this.dashTimeRemaining <= 0) {
+        this.facingDirection.x = this.direction.x;
+        this.facingDirection.y = this.direction.y;
+        this.facingDirection.normalizeMut();
+      }
     }
 
     this.velocity.x = this.direction.x;
     this.velocity.y = this.direction.y;
     this.velocity.normalizeMut().multiplyMut(displacement).addMut(this.accelerator);
-        
     
     this.updatePosition();
   }
 
-  //? ----------- On Input Handlers -----------
-
   @BindAction('up')
-  public onUpAction (): void {
-    this.direction.y -= 1
-  }
+  public onUpAction (): void { this.direction.y -= 1 }
   @BindAction('down')
-  public onDownAction (): void {
-    this.direction.y += 1
-  }
+  public onDownAction (): void { this.direction.y += 1 }
   @BindAction('left')
-  public onLeftAction (): void {
-    this.direction.x -= 1
-  }
+  public onLeftAction (): void { this.direction.x -= 1 }
   @BindAction('right')
-  public onRightAction (): void {
-    this.direction.x += 1
-  }
+  public onRightAction (): void { this.direction.x += 1 }
   
   @BindAction('shift')
-  public onShiftAction (): void {
-    this.dashToDirection(this.direction)
-  }
+  public onShiftAction (): void { this.dashToDirection(this.direction) }
 
   @BindAction('leftClick')
   public onLeftClickAction( mouseLastCoordinates: {x:number;y:number} ): void {
-    if (this.activeStatuses.has('stun') || this.activeStatuses.has('paralyze')) return; // Controle de Grupo o impede de atirar!
+    if (this.activeStatuses.has('stun') || this.activeStatuses.has('paralyze')) return; 
     this.isLeftClickActiveThisFrame = true;
 
-    if (this.activeClass === 'Mago') return; // Mago não atira com o mouse!
+    if (this.activeClass === 'Mago') return; 
 
     const weapon = this.equipment.mainHand;
-
     if (!weapon) {
       if (!this.wasLeftClickActiveLastFrame) this.eventManager.dispatch('log', { channel: 'domain', message: "Cannot shoot without a weapon", params: [] });
       return;
     }
 
-    if (weapon.weaponType === 'melee' && this.wasLeftClickActiveLastFrame) return; 
+    if ((weapon.weaponType === 'melee' || weapon.weaponType === 'scythe') && this.wasLeftClickActiveLastFrame) return; 
 
     if (this.attackCooldownTimer <= 0) {
         const direction = new Vector2D(mouseLastCoordinates.x - (this.coordinates.x + this.size.width / 2), mouseLastCoordinates.y - (this.coordinates.y + this.size.height / 2));
         weapon.attack(this, direction, this.eventManager);
-        
         this.attackCooldownTimer = weapon.attackSpeed > 0 ? weapon.attackSpeed : 0.7;
     }
   }
@@ -296,272 +503,24 @@ export default class Player extends Entity {
       mouseLastCoordinates.x - (this.coordinates.x + this.size.width / 2),
       mouseLastCoordinates.y - (this.coordinates.y + this.size.height / 2)
     )
-    
     this.dashToDirection(direction)
   }
 
-  //? ----------- Helpers -----------
-
-  /**
-   * Adiciona experiência ao jogador.
-   * @param xpAmount A quantidade de experiência a ser adicionada.
-   */
-  public gainXp(xpAmount: number): void {
-    const oldLevel = this.attributes.level;
-    const activeClass = this._classes.find(c => c.name === this._activeClass);
-    const xpTable = activeClass ? activeClass.xpTable : defaultXpTable;
-    
-    this.attributes.addXp(xpAmount, xpTable);
-    const newLevel = this.attributes.level;
-
-    for (let lvl = oldLevel + 1; lvl <= newLevel; lvl++) {
-        this.processLevelUp(lvl);
-    }
+  public swapWeapons(): void {
+    this.equipmentManager.swapWeapons();
   }
 
-  private processLevelUp(level: number): void {
-      const cx = this.coordinates.x + this.size.width / 2;
-      const cy = this.coordinates.y + this.size.height / 2;
-      this.eventManager.dispatch('levelUp', { newLevel: level, coordinates: { x: cx, y: cy } });
-      this.eventManager.dispatch('log', { channel: 'domain', message: `Player leveled up to ${level}!`, params: [] });
-
-      const activeClass = this._classes.find(c => c.name === this._activeClass);
-      const xpTable = activeClass ? activeClass.xpTable : defaultXpTable;
-      const rewards = xpTable.getRewardsForLevel(level);
-
-      for (const reward of rewards) {
-          switch (reward) {
-              case 'attribute_point':
-                  this.attributes.grantAvailablePoint();
-                  this.eventManager.dispatch('log', { channel: 'domain', message: `Gained an attribute point!`, params: [] });
-                  break;
-              case 'class_skill':
-                  if (activeClass) {
-                      const newSkill = activeClass.getSkillForLevel(level);
-                      if (newSkill) {
-                          // Agora o destrave é apenas notificado, o jogador deve abrir a Árvore e gastar o ponto lá.
-                          this.eventManager.dispatch('log', { channel: 'domain', message: `Nova habilidade liberada para compra: ${newSkill.name}!`, params: [] });
-                      }
-                  }
-                  break;
-          }
-      }
+  @BindAction('swapWeapons')
+  public onSwapWeaponsAction(): void {
+    this.swapWeapons();
   }
-  /** Retorna o estado atual do jogador. */
-  public getState(): 'idle' | 'walking' | 'dead' {
-    return this.state as playerStates;
-  }
+
+  public getState(): playerStates { return this.state as playerStates; }
 
   public allocateAttribute(attribute: keyof baseAttributes) {
     if(this.attributes.spendPoint(attribute)) {
       this.eventManager.dispatch('log', { channel: 'domain', message: `Allocated point to ${attribute}`, params: [] });
+      this.eventManager.dispatch('attributeAllocated', { attribute });
     }
   }
-
-  //? ----------- Inventory Management -----------
-
-  public equipItem(backpackIndex: number) {
-    const item = this.backpack[backpackIndex];
-    if (!item) return;
-
-    const category = item.category ? item.category.toLowerCase() : '';
-    
-    this.eventManager.dispatch('log', { channel: 'domain', message: `Tentando equipar [${item.name}]. Categoria detectada: '${category}'`, params: [] });
-
-    // Intercepta a tentativa de "equipar" consumíveis e redireciona para a função correta
-    if (category === 'potion' || category === 'food' || category === 'currency' || category === 'quest') {
-      this.consumeItem(backpackIndex);
-      return;
-    }
-
-    if (category === 'storage') {
-      const bag = item as Bag;
-      if (this.equipment.bag) this.backpack.push(this.equipment.bag); // Joga a bolsa velha de volta na mochila
-      this.equipment.bag = bag;
-      this.backpack.splice(backpackIndex, 1); // Remove a nova da mochila
-      this.eventManager.dispatch('log', { channel: 'domain', message: `Equipped ${bag.name} in slot [bag]`, params: [] });
-      return;
-    }
-
-    if (category === 'weapon') {
-      const weapon = item as Weapon;
-      if (this.equipment.mainHand) {
-        this.backpack.push(this.equipment.mainHand);
-      }
-      this.equipment.mainHand = weapon;
-      this.backpack.splice(backpackIndex, 1);
-      this.eventManager.dispatch('log', { channel: 'domain', message: `Equipped ${weapon.name}`, params: [] });
-
-      if (weapon.unlocksClass) {
-        this.unlockClass(weapon.unlocksClass);
-        this.setActiveClass(weapon.unlocksClass);
-      }
-    } else if (category === 'armor') {
-      const armor = item as any; // Cast flexível para absorver a ArmorType
-      let slot = armor.armorType ? (armor.armorType as string).toLowerCase() : ''; // Força minúsculo (corrige 'Helmet' para 'helmet')
-      
-      this.eventManager.dispatch('log', { channel: 'domain', message: `ArmorType (Slot) detectado: '${slot}'`, params: [] });
-
-      if (!slot) {
-        this.eventManager.dispatch('log', { channel: 'error', message: `Erro ao equipar: O item '${item.name}' não possui um 'armorType' definido.`, params: [] });
-        return;
-      }
-      
-      if (slot === 'ring') {
-        if (this.equipment.leftHandRings.length < 5) {
-          this.equipment.leftHandRings.push(armor);
-        } else if (this.equipment.rightHandRings.length < 5) {
-          this.equipment.rightHandRings.push(armor);
-        } else {
-          // Arranca o anel do mindinho da mão esquerda e coloca na mochila se todos os 10 estiverem cheios
-          const oldRing = this.equipment.leftHandRings.shift();
-          if (oldRing) this.backpack.push(oldRing);
-          this.equipment.leftHandRings.push(armor);
-        }
-        this.backpack.splice(backpackIndex, 1);
-        this.eventManager.dispatch('log', { channel: 'domain', message: `Equipped ${armor.name} in rings`, params: [] });
-        return;
-      }
-
-      if ((this.equipment as any)[slot]) {
-        this.backpack.push((this.equipment as any)[slot]); // Joga o antigo de volta na bolsa
-      }
-      (this.equipment as any)[slot] = armor;
-
-      this.backpack.splice(backpackIndex, 1);
-      this.eventManager.dispatch('log', { channel: 'domain', message: `Equipped ${armor.name} in slot [${slot}]`, params: [] });
-    } else {
-      this.eventManager.dispatch('log', { channel: 'error', message: `Erro ao equipar: Categoria '${item.category}' não reconhecida no item '${item.name}'.`, params: [] });
-    }
-  }
-
-  public unequipItem(slot: string, index?: number) {
-    if (slot === 'leftHandRings' && index !== undefined) {
-      const ring = this.equipment.leftHandRings.splice(index, 1)[0];
-      if (ring) this.backpack.push(ring);
-    } else if (slot === 'rightHandRings' && index !== undefined) {
-      const ring = this.equipment.rightHandRings.splice(index, 1)[0];
-      if (ring) this.backpack.push(ring);
-    } else if (slot === 'bag' && this.equipment.bag) {
-      // Regra de Ouro: Não dá pra desequipar uma mochila se o número de itens que você está carregando for maior que a mochila base (24)
-      if (this.backpack.length >= 24) {
-        this.eventManager.dispatch('log', { channel: 'error', message: `Mochila cheia demais para desequipar a bolsa!`, params: [] });
-        return;
-      }
-      this.backpack.push(this.equipment.bag);
-      this.equipment.bag = undefined;
-    } else if (slot === 'mainHand' && this.equipment.mainHand) {
-      this.backpack.push(this.equipment.mainHand);
-      this.equipment.mainHand = undefined;
-      this.eventManager.dispatch('log', { channel: 'domain', message: `Unequipped mainHand`, params: [] });
-    } else if (slot !== 'mainHand' && (this.equipment as any)[slot]) {
-      this.backpack.push((this.equipment as any)[slot]);
-      (this.equipment as any)[slot] = undefined;
-      this.eventManager.dispatch('log', { channel: 'domain', message: `Unequipped ${slot}`, params: [] });
-    }
-  }
-
-  public consumeItem(backpackIndex: number): void {
-    const item = this.backpack[backpackIndex];
-    if (!item) return;
-
-    if ('use' in item && typeof (item as any).use === 'function') {
-      (item as any).use(this); // Aplica todos os efeitos do consumível
-      
-      this.backpack.splice(backpackIndex, 1);
-      this.eventManager.dispatch('log', { channel: 'domain', message: `Consumed ${item.name}`, params: [] });
-      
-      // Efeito visual terapêutico genérico
-      const centerX = this.coordinates.x + this.size.width / 2;
-      const centerY = this.coordinates.y + this.size.height / 2;
-      this.eventManager.dispatch('particle', { effect: 'magicAura', x: centerX, y: centerY, color: '#32CD32' }); // Verde cura
-    } else {
-      this.eventManager.dispatch('log', { channel: 'error', message: `O item ${item.name} não é consumível.`, params: [] });
-    }
-  }
-
-  public deleteItem(backpackIndex: number): void {
-    const item = this.backpack[backpackIndex];
-    if (item) {
-      this.backpack.splice(backpackIndex, 1);
-      this.eventManager.dispatch('log', { channel: 'domain', message: `Deleted item: ${item.name}`, params: [] });
-    }
-  }
-
-  //? ----------- Class & Skill Management -----------
-
-  /** Desbloqueia permanentemente uma nova classe. Pode ser chamado quando pegar uma arma pela primeira vez. */
-  public unlockClass(className: string): void {
-    if (!this._unlockedClasses.includes(className)) {
-      this._unlockedClasses.push(className);
-      this.eventManager.dispatch('log', { channel: 'domain', message: `Class unlocked: ${className}`, params: [] });
-    }
-  }
-
-  /** Define a classe ativa atual. */
-  public setActiveClass(className: string): void {
-    if (this._unlockedClasses.includes(className)) {
-      const oldClassInstance = this._classes.find(c => c.name === this._activeClass);
-      this._activeClass = className;
-      const newClassInstance = this._classes.find(c => c.name === className);
-      this.eventManager.dispatch('classChanged', { oldClassInstance, newClassInstance });
-      this.eventManager.dispatch('log', { channel: 'domain', message: `Class changed to: ${className}`, params: [] });
-    }
-  }
-
-  public get classes(): Class[] { return this._classes; }
-  public get unlockedSkills(): Set<string> { return this._unlockedSkills; }
-  
-  public unlockSkill(skillId: string): void {
-    // Opcional: A regra de negócio se o jogador tem pontos de skill suficientes entra aqui!
-    this._unlockedSkills.add(skillId);
-    this.eventManager.dispatch('log', { channel: 'domain', message: `Skill unlocked: ${skillId}`, params: [] });
-
-    // Aplica o efeito imediatamente se for uma skill passiva
-    const activeClassInstance = this._classes.find(c => c.name === this._activeClass);
-    if (activeClassInstance) {
-      const skill = activeClassInstance.allSkills.find(s => s.id === skillId);
-      if (skill && skill.type === 'passive' && skill.effect) {
-        skill.effect.apply(this);
-      }
-    }
-  }
-
-  public equipSkillInLoadout(skillId: string, slotIndex: number): void {
-    if (slotIndex < 0 || slotIndex > 3) return;
-    if (!this._unlockedSkills.has(skillId)) {
-        this.eventManager.dispatch('log', { channel: 'error', message: `Não é possível equipar uma habilidade bloqueada: ${skillId}`, params: [] });
-        return;
-    }
-    
-    // Evita duplicatas removendo a skill do slot anterior se ela já estiver equipada
-    const existingIndex = this.activeLoadout.indexOf(skillId);
-    if (existingIndex !== -1) this.activeLoadout[existingIndex] = null;
-    
-    this.activeLoadout[slotIndex] = skillId;
-    this.eventManager.dispatch('log', { channel: 'domain', message: `Habilidade ${skillId} equipada no slot ${slotIndex + 1}`, params: [] });
-  }
-
-  public executeActiveSkill(skillId: string, mouseCoordinates: {x: number, y: number}): void {
-      const activeClassInstance = this._classes.find(c => c.name === this._activeClass);
-      
-      if (!activeClassInstance) return;
-
-      // Restrição de Multiclasse: Só executa a skill se ela pertencer à classe do item da mão!
-      const isFromActiveClass = activeClassInstance.allSkills.some(s => s.id === skillId);
-
-      if (!isFromActiveClass) {
-          this.eventManager.dispatch('log', { channel: 'error', message: `Multiclasse: A habilidade '${skillId}' não pertence à classe ativa (${this._activeClass}). Troque de arma para usá-la!`, params: [] });
-          return;
-      }
-
-      if (typeof (activeClassInstance as any).executeSkill === 'function') {
-          (activeClassInstance as any).executeSkill(skillId, mouseCoordinates);
-      } else {
-          this.eventManager.dispatch('log', { channel: 'error', message: `Skill ${skillId} falhou: A classe ${this._activeClass} não implementa executeSkill.`, params: [] });
-      }
-  }
-
-  public get activeClass(): string | null { return this._activeClass; }
-  public get unlockedClasses(): string[] { return this._unlockedClasses; }
 }

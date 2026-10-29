@@ -6,9 +6,11 @@ import Player from '../../domain/ObjectModule/Entities/Player/Player';
 import Attributes from '../../domain/ObjectModule/Entities/Attributes';
 import { SpawnRegistry } from '../../domain/ObjectModule/SpawnRegistry';
 import Slime from '../../domain/ObjectModule/Entities/Enemies/Slime';
+import { DynamicProjectile } from '../../domain/ObjectModule/Entities/projectiles/DynamicProjectile';
 import Vector2D from '../../domain/shared/Vector2D';
 import Mage from '../../domain/ObjectModule/Entities/Player/Classes/Mage';
 import type ObjectElement from '../../domain/ObjectModule/ObjectElement';
+import Entity from '../../domain/ObjectModule/Entities/Entity';
 
 // --- Fakes & Mocks ---
 class FakeCollisionWorker implements ICollisionService {
@@ -35,6 +37,7 @@ describe('Métrica 16: Telemetria de Balanceamento (Simulação Headless)', () =
     engineManager.setWorldBounds(1000, 1000);
 
     SpawnRegistry.strategies.set('slime', (id, payload, em) => new Slime(id, 1, 10, payload.coordinates, new Attributes(8, 1, 10, 10, 10, 10, 10, 10), em));
+    SpawnRegistry.strategies.set('dynamicSpell', (id, payload, em) => DynamicProjectile.createSpawn(id, payload, em));
 
     // 2. Setup do Player (Mago Nível 5)
     const playerAttributes = new Attributes(8, 5, 10, 10, 10, 20, 15, 10); // Nível 5, INT 20, WIS 15
@@ -44,7 +47,7 @@ describe('Métrica 16: Telemetria de Balanceamento (Simulação Headless)', () =
     const mageInstance = player.classes.find(c => c instanceof Mage) as Mage;
 
     // 3. Lógica do Robô de Controle
-    const takeDamageSpy = vi.spyOn(Slime.prototype, 'takeDamage');
+    const takeDamageSpy = vi.spyOn(Entity.prototype, 'takeDamage');
 
     const findNearestEnemy = () => {
       let nearest: ObjectElement | null = null;
@@ -70,6 +73,7 @@ describe('Métrica 16: Telemetria de Balanceamento (Simulação Headless)', () =
     const SPAWN_INTERVAL_TICKS = SPAWN_INTERVAL_SECONDS * SIMULATION_FPS;
 
     let ticksSurvived = 0;
+    
 
     for (let i = 0; i < TOTAL_TICKS; i++) {
       if (player.attributes.hp <= 0) break; // Break-fast: Impede que o robô continue atirando como fantasma
@@ -108,7 +112,8 @@ describe('Métrica 16: Telemetria de Balanceamento (Simulação Headless)', () =
               if (Math.hypot(b.coordinates.x - e.coordinates.x, b.coordinates.y - e.coordinates.y) < 30) collisions.push(b.id, e.id);
           }
       }
-      if (collisions.length > 0) (engineManager as any).pendingCollisions = new Int32Array(collisions);
+      if (collisions.length > 0) (engineManager as any).collisionManager.pendingCollisions = new Int32Array(collisions);
+      
 
       engineManager.updateAll(TICK_TIME, player);
       player.update(TICK_TIME);
@@ -121,7 +126,9 @@ describe('Métrica 16: Telemetria de Balanceamento (Simulação Headless)', () =
     }
 
     const dps = totalDamageDealt / (ticksSurvived / SIMULATION_FPS);
+    
 
+    
     expect(player.attributes.level).toBeGreaterThanOrEqual(6);
     expect(dps).toBeGreaterThan(4);
     expect(player.attributes.hp).toBeGreaterThan(0);

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+  <defs>
+    <linearGradient id="spd_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7efff5"/>
+      <stop offset="50%" stop-color="#18dcff"/>
+      <stop offset="100%" stop-color="#0984e3"/>
+    </linearGradient>
+    
+  </defs>
+  <g>
+    <!-- Bota de Viagem Épica -->
+    <path d="M18 10 L26 10 L26 22 L36 28 C38 30 38 34 35 36 L16 36 C13 36 12 33 13 30 L16 22 Z" fill="#2f3542" stroke="#7efff5" stroke-width="1.8" stroke-linejoin="round"/>
+    <!-- Sola com tração e reforço -->
+    <path d="M14 36 L36 36 C38 36 40 38 38 40 L14 40 Z" fill="url(#spd_grad)"/>
+    <!-- Asas de Vento no Calcanhar -->
+    <path d="M12 22 C6 18 4 10 10 6 C14 8 16 14 14 20 Z" fill="url(#spd_grad)" stroke="#ffffff" stroke-width="1"/>
+    <path d="M14 24 C8 24 6 18 10 14 C13 16 15 20 14 24 Z" fill="#ffffff" opacity="0.8"/>
+    <!-- Rastros de hipervelocidade / Vórtice -->
+    <path d="M26 16 H38 M28 20 H44 M34 24 H42" stroke="#7efff5" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>

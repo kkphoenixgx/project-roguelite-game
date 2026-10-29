@@ -1,0 +1,136 @@
+{
+  "hitboxes": [
+    {
+      "id": "border_north_1",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": -2080,
+          "y": -3104
+        },
+        {
+          "x": 3104,
+          "y": -3104
+        },
+        {
+          "x": 3104,
+          "y": -3072
+        },
+        {
+          "x": -2080,
+          "y": -3072
+        }
+      ],
+      "metadata": {
+        "tileType": "wall",
+        "passable": false,
+        "isMapBoundary": true,
+        "side": "north"
+      }
+    },
+    {
+      "id": "border_south_2",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": -2080,
+          "y": 3072
+        },
+        {
+          "x": 3104,
+          "y": 3072
+        },
+        {
+          "x": 3104,
+          "y": 3104
+        },
+        {
+          "x": -2080,
+          "y": 3104
+        }
+      ],
+      "metadata": {
+        "tileType": "wall",
+        "passable": false,
+        "isMapBoundary": true,
+        "side": "south"
+      }
+    },
+    {
+      "id": "border_west_3",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": -2080,
+          "y": -3104
+        },
+        {
+          "x": -2048,
+          "y": -3104
+        },
+        {
+          "x": -2048,
+          "y": 3104
+        },
+        {
+          "x": -2080,
+          "y": 3104
+        }
+      ],
+      "metadata": {
+        "tileType": "wall",
+        "passable": false,
+        "isMapBoundary": true,
+        "side": "west"
+      }
+    },
+    {
+      "id": "border_east_4",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 3072,
+          "y": -3104
+        },
+        {
+          "x": 3104,
+          "y": -3104
+        },
+        {
+          "x": 3104,
+          "y": 3104
+        },
+        {
+          "x": 3072,
+          "y": 3104
+        }
+      ],
+      "metadata": {
+        "tileType": "wall",
+        "passable": false,
+        "isMapBoundary": true,
+        "side": "east"
+      }
+    }
+  ]
+}

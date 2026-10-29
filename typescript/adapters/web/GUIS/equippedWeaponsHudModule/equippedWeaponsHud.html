@@ -1,0 +1,36 @@
+<div id="equipped-weapons-hud-container" class="ew-container" aria-label="Armas Equipadas">
+    <div class="ew-frame">
+        <!-- Slot 1 (Inicialmente Principal / Selecionado) -->
+        <div class="ew-slot ew-slot-primary is-selected" id="ew-primary-slot" data-slot-index="0" title="Arma Principal (Ativa)">
+            <div class="ew-card">
+                <div class="ew-fillet ew-fillet-top" aria-hidden="true"></div>
+                <div class="ew-icon-wrapper" id="ew-primary-wrapper">
+                    <div class="ew-pedestal" aria-hidden="true"></div>
+                    <img id="ew-primary-icon" class="ew-icon" alt="Arma Slot 1" />
+                    <div id="ew-primary-empty" class="ew-empty-placeholder" aria-hidden="true"></div>
+                </div>
+                <div class="ew-fillet ew-fillet-bottom" aria-hidden="true"></div>
+            </div>
+            <span class="ew-slot-label" id="ew-primary-name">Principal</span>
+        </div>
+
+        <!-- Slot 2 (Inicialmente Secundário / Reserva) -->
+        <div class="ew-slot ew-slot-secondary" id="ew-secondary-slot" data-slot-index="1" title="Arma Secundária (Reserva - Clique ou TAB para alternar)">
+            <div class="ew-card">
+                <div class="ew-fillet ew-fillet-top" aria-hidden="true"></div>
+                <div class="ew-icon-wrapper" id="ew-secondary-wrapper">
+                    <div class="ew-pedestal" aria-hidden="true"></div>
+                    <img id="ew-secondary-icon" class="ew-icon" alt="Arma Slot 2" />
+                    <div id="ew-secondary-empty" class="ew-empty-placeholder" aria-hidden="true"></div>
+                </div>
+                <div class="ew-fillet ew-fillet-bottom" aria-hidden="true"></div>
+            </div>
+            <span class="ew-slot-label" id="ew-secondary-name">Secundária</span>
+        </div>
+
+        <!-- Botão Discreto de Troca Rápida (TAB) -->
+        <div class="ew-swap-divider" id="ew-btn-swap" role="button" tabindex="0" title="Alternar Arma (Tecla TAB)">
+            <span class="ew-key-badge">TAB</span>
+        </div>
+    </div>
+</div>

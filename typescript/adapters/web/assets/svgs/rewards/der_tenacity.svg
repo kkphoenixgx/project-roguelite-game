@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+  <defs>
+    <linearGradient id="ten_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ced6e0"/>
+      <stop offset="60%" stop-color="#747d8c"/>
+      <stop offset="100%" stop-color="#2f3542"/>
+    </linearGradient>
+    
+  </defs>
+  <g>
+    <!-- Elo Esquerdo Partido -->
+    <path d="M8 20 C8 15 14 15 18 19 L16 23 C14 21 11 21 11 24 C11 27 14 27 16 25 L18 29 C14 33 8 33 8 28 Z" fill="url(#ten_grad)" stroke="#ffffff" stroke-width="1"/>
+    <!-- Elo Direito Partido -->
+    <path d="M40 28 C40 33 34 33 30 29 L32 25 C34 27 37 27 37 24 C37 21 34 21 32 23 L30 19 C34 15 40 15 40 20 Z" fill="url(#ten_grad)" stroke="#ffffff" stroke-width="1"/>
+    <!-- Impacto Central Explosivo (Quebra de Atordoamento/CC) -->
+    <polygon points="24,10 27,19 36,20 29,26 31,35 24,30 17,35 19,26 12,20 21,19" fill="#ff4757" stroke="#ffffff" stroke-width="1.2"/>
+    <circle cx="24" cy="24" r="3" fill="#ffffff"/>
+  </g>
+</svg>

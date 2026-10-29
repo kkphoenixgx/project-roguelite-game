@@ -1,0 +1,14 @@
+{
+  "hitboxes": [
+    {
+      "id": "house_arcane_tower_circle_1",
+      "type": "circle",
+      "coordinates": {
+        "x": 110,
+        "y": 274
+      },
+      "rotation": 0,
+      "radius": 68
+    }
+  ]
+}

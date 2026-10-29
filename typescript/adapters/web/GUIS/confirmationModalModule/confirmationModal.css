@@ -1,0 +1,206 @@
+/* ==============================================================================
+   CONFIRMATION & ALERT MODAL (GRIMDARK & ARCANE CODEX)
+   Componente de alto desempenho com aceleracao por GPU e zero repaint thrashing.
+   ============================================================================== */
+
+.cm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10005;
+    font-family: 'PixelArtFont', 'Minecraft', 'Cinzel', 'Courier New', monospace;
+    overflow: hidden;
+    contain: strict;
+    opacity: 0;
+    transition: opacity 0.15s ease-out;
+}
+
+.cm-overlay.is-open {
+    display: flex;
+    opacity: 1;
+}
+
+.cm-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 8, 18, 0.88);
+    pointer-events: auto;
+}
+
+.cm-dialog {
+    position: relative;
+    z-index: 2;
+    background: linear-gradient(180deg, #241b35 0%, #161024 100%);
+    border: 2px solid var(--accent-gold, #FFD700);
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
+    max-width: 480px;
+    width: 90%;
+    padding: 28px 24px 24px 24px;
+    text-align: center;
+    transform: translateZ(0);
+    contain: layout style;
+    animation: cmEntrance 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cmEntrance {
+    0% {
+        transform: scale(0.92) translateY(12px) translateZ(0);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) translateY(0) translateZ(0);
+        opacity: 1;
+    }
+}
+
+.cm-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.cm-icon-container {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cm-icon-container svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.cm-title {
+    color: var(--accent-gold, #FFD700);
+    font-size: 22px;
+    margin: 0;
+    text-shadow: 2px 2px 0px #000;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+.cm-body {
+    margin: 14px 0 24px 0;
+}
+
+.cm-message {
+    color: #f1c6aa;
+    font-size: 15px;
+    line-height: 1.5;
+    margin: 0;
+    text-shadow: 1px 1px 2px #000;
+    white-space: pre-line;
+    word-break: break-word;
+}
+
+.cm-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.cm-btn {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transform: translateZ(0);
+    transition: transform 0.12s ease-out, background 0.12s ease-out, border-color 0.12s ease-out;
+}
+
+.cm-btn-secondary {
+    background: rgba(36, 28, 52, 0.95);
+    border-color: #6d548f;
+    color: #c9b9de;
+}
+
+.cm-btn-secondary:hover {
+    transform: translateY(-2px) translateZ(0);
+    background: #413060;
+    border-color: #9b77cf;
+    color: #ffffff;
+}
+
+.cm-btn-secondary:active {
+    transform: translateY(0) translateZ(0);
+}
+
+.cm-btn-primary {
+    background: linear-gradient(180deg, #d4af37 0%, #aa841e 100%);
+    border-color: #ffe066;
+    color: #120d1c;
+}
+
+.cm-btn-primary:hover {
+    transform: translateY(-2px) translateZ(0);
+    background: linear-gradient(180deg, #f0ca4d 0%, #c49926 100%);
+}
+
+.cm-btn-primary:active {
+    transform: translateY(0) translateZ(0);
+}
+
+.cm-btn-danger {
+    background: linear-gradient(180deg, #c0392b 0%, #962d22 100%);
+    border-color: #e74c3c;
+    color: #ffffff;
+}
+
+.cm-btn-danger:hover {
+    transform: translateY(-2px) translateZ(0);
+    background: linear-gradient(180deg, #e74c3c 0%, #b83324 100%);
+}
+
+.cm-btn-danger:active {
+    transform: translateY(0) translateZ(0);
+}
+
+/* Variantes tematicas */
+.cm-dialog.variant-danger {
+    border-color: #e74c3c;
+}
+.cm-dialog.variant-danger .cm-title {
+    color: #ff6b6b;
+}
+
+.cm-dialog.variant-warning {
+    border-color: #f39c12;
+}
+.cm-dialog.variant-warning .cm-title {
+    color: #f1c40f;
+}
+
+.cm-dialog.variant-info {
+    border-color: #38bdf8;
+}
+.cm-dialog.variant-info .cm-title {
+    color: #38bdf8;
+}
+
+.cm-dialog.variant-success {
+    border-color: #2ecc71;
+}
+.cm-dialog.variant-success .cm-title {
+    color: #2ecc71;
+}

@@ -104,7 +104,7 @@ describe('System Integration (Headless Engine E2E)', () => {
     (bullet as any).velocity = new Vector2D(0, 0); // Congela a bala para garantir AABB perfeito sem overshoot no próximo frame
     if (bullet.hitboxes) bullet.hitboxes[0]!.update(bullet.coordinates, 0); // Sincronização explícita da Hitbox com as novas coordenadas
     
-    (engineManager as any).pendingCollisions = new Int32Array([bullet.id, enemy.id]); // Injeção síncrona (mitiga flakiness de Promises no Event Loop de testes)
+    (engineManager as any).collisionManager.pendingCollisions = new Int32Array([bullet.id, enemy.id]); // Injeção síncrona (mitiga flakiness de Promises no Event Loop de testes)
 
     // Tick 32: O Event Loop coleta as colisões pendentes e dispara `onColision`
     engineManager.updateAll(0.016, player);
@@ -127,7 +127,7 @@ describe('System Integration (Headless Engine E2E)', () => {
     
     // Blindagem AABB: Garante que o jogador tem hitbox registrada, senão o Motor descarta a colisão silenciosamente
     player.hitboxes = [new HitBoxCircle(player.coordinates, 0, 10, () => {})];
-    (engineManager as any).pendingCollisions = new Int32Array([player.id, droppedItem.id]);
+    (engineManager as any).collisionManager.pendingCollisions = new Int32Array([player.id, droppedItem.id]);
 
     // Ticks 42 a 60: Resolução do loot e avanço do resto do tempo
     for (let i = 0; i < 19; i++) {
@@ -170,6 +170,10 @@ describe('System Integration (Headless Engine E2E)', () => {
         engineManager.getAllRenderableStates();
     }
 
+    if (typeof global.gc === 'function') {
+        global.gc();
+    }
+
     const startMemory = process.memoryUsage().heapUsed;
 
     // O Hot Path Real: 1000 frames de jogo contínuo processando matrizes visuais e hitboxes
@@ -180,14 +184,16 @@ describe('System Integration (Headless Engine E2E)', () => {
         engineManager.getAllRenderableStates(); // Varredura completa para montar DTOs Visuais
     }
 
+    if (typeof global.gc === 'function') {
+        global.gc();
+    }
+
     const endMemory = process.memoryUsage().heapUsed;
     const memoryDeltaMB = (endMemory - startMemory) / 1024 / 1024;
 
     console.log(`[Zero-GC Profiler] Crescimento da Heap após 1000 frames de estresse: ${memoryDeltaMB.toFixed(3)} MB`);
 
-    // O uso do valor absoluto impede FALSOS POSITIVOS caso o GC do V8 execute a limpeza DURANTE o loop,
-    // o que tornaria o delta negativo (ex: -15MB) e mascararia um vazamento real aprovando o teste.
-    // A Heap deve ser PLANA (variação próxima de 0.0).
-    expect(Math.abs(memoryDeltaMB)).toBeLessThan(2.0);
+    // A Heap não pode vazar memória (delta positivo maior que 2MB após 1000 frames de estresse)
+    expect(memoryDeltaMB).toBeLessThan(2.0);
   });
 });

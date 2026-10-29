@@ -3,14 +3,16 @@ import type { ITool } from "./Tools/ITool";
 import { PolygonTool } from "./Tools/PolygonTool";
 import { SelectTool } from "./Tools/SelectTool";
 import { CircleTool } from "./Tools/CircleTool";
+import { RectangleTool } from "./Tools/RectangleTool";
+import { ConfirmationModal } from "../web/GUIS/confirmationModalModule/ConfirmationModalGui";
 
-class EditorApp {
+export class PolygonEditorApp {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     
     private spriteImage: HTMLImageElement | null = null;
     private hitboxes: HitboxModel[] = [];
-    public currentTool: 'select' | 'polygon' | 'circle' = 'select';
+    public currentTool: 'select' | 'rectangle' | 'polygon' | 'circle' = 'select';
 
     private panX: number = 0;
     private panY: number = 0;
@@ -21,6 +23,10 @@ class EditorApp {
 
     private tools: Record<string, ITool> = {};
     
+    private activeAssetId: string | null = null;
+    private assetTargetWidth: number = 0;
+    private assetTargetHeight: number = 0;
+
     constructor() {
         this.canvas = document.getElementById('editor-canvas') as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d')!;
@@ -32,6 +38,7 @@ class EditorApp {
         this.resize();
         window.addEventListener('resize', () => this.resize());
         
+        this.checkUrlParametersAndInitialize();
         this.render();
     }
 
@@ -79,12 +86,23 @@ class EditorApp {
         btnImport.addEventListener('click', () => fileImportInput.click());
         fileImportInput.addEventListener('change', (e) => this.importJSON(e));
 
+        const btnSaveCode = document.getElementById('btn-save-code');
+        btnSaveCode?.addEventListener('click', () => this.saveHitboxesToCode());
+
         const btnClear = document.getElementById('btn-clear')!;
         btnClear.addEventListener('click', () => {
             this.hitboxes = [];
             this.setupTools();
             this.saveState();
             this.render();
+        });
+
+        const btnDeleteSelected = document.getElementById('btn-delete-selected');
+        btnDeleteSelected?.addEventListener('click', () => {
+            const selectTool = this.tools['select'] as SelectTool;
+            if (selectTool && selectTool.deleteSelected()) {
+                this.render();
+            }
         });
 
         // ============================================
@@ -119,20 +137,33 @@ class EditorApp {
         btnToggleHelp.addEventListener('click', toggleHelp);
 
         // Gerenciamento de estado das ferramentas
-        const tools = ['select', 'polygon', 'circle'] as const;
+        const tools = ['select', 'rectangle', 'polygon', 'circle'] as const;
         tools.forEach(tool => {
-            const btn = document.getElementById(`btn-tool-${tool}`)!;
+            const btn = document.getElementById(`btn-tool-${tool}`);
+            if (!btn) return;
             btn.addEventListener('click', () => {
                 this.tools[this.currentTool]?.reset(); // Reseta a ferramenta anterior
-                tools.forEach(t => document.getElementById(`btn-tool-${t}`)!.classList.remove('active'));
+                tools.forEach(t => document.getElementById(`btn-tool-${t}`)?.classList.remove('active'));
                 btn.classList.add('active');
                 this.currentTool = tool;
+
+                const delBtn = document.getElementById('btn-delete-selected');
+                if (delBtn && tool !== 'select') {
+                    delBtn.style.display = 'none';
+                }
+
                 this.render();
             });
         });
     }
 
     private setupTools() {
+        const btnDeleteSelected = document.getElementById('btn-delete-selected');
+        this.tools['rectangle'] = new RectangleTool((hitbox) => {
+            this.hitboxes.push(hitbox);
+            this.saveState();
+            this.render();
+        });
         this.tools['polygon'] = new PolygonTool((hitbox) => {
             this.hitboxes.push(hitbox);
             this.saveState();
@@ -143,10 +174,19 @@ class EditorApp {
             this.saveState();
             this.render();
         });
-        this.tools['select'] = new SelectTool(this.hitboxes, () => {
-            this.saveState();
-            this.render();
-        });
+        this.tools['select'] = new SelectTool(
+            this.hitboxes,
+            () => {
+                this.saveState();
+                this.render();
+            },
+            (selected) => {
+                if (btnDeleteSelected) {
+                    btnDeleteSelected.style.display = (selected && this.currentTool === 'select') ? 'block' : 'none';
+                }
+                this.render();
+            }
+        );
     }
 
     private setupEvents() {
@@ -205,6 +245,36 @@ class EditorApp {
                 this.saveState();
                 this.render();
                 return;
+            }
+
+            // Atalho para Apagar Hitbox ou Vértice Selecionado (Delete ou Backspace)
+            if ((e.key === 'Delete' || e.key === 'Backspace') && !e.shiftKey) {
+                const selectTool = this.tools['select'] as SelectTool;
+                if (this.currentTool === 'select' && selectTool && (selectTool.selectedHitbox || selectTool.selectedVertex)) {
+                    e.preventDefault();
+                    if (selectTool.deleteSelected()) {
+                        this.render();
+                        return;
+                    }
+                }
+            }
+
+            // Atalhos rapidos para alternar ferramentas (R = Retangulo, P = Poligono, C = Circulo, S/V = Selecionar)
+            const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+            if (targetTag !== 'input' && targetTag !== 'textarea' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                if (e.key === 'r' || e.key === 'R') {
+                    document.getElementById('btn-tool-rectangle')?.click();
+                    return;
+                } else if (e.key === 'p' || e.key === 'P') {
+                    document.getElementById('btn-tool-polygon')?.click();
+                    return;
+                } else if (e.key === 'c' || e.key === 'C') {
+                    document.getElementById('btn-tool-circle')?.click();
+                    return;
+                } else if (e.key === 's' || e.key === 'S' || e.key === 'v' || e.key === 'V') {
+                    document.getElementById('btn-tool-select')?.click();
+                    return;
+                }
             }
 
             this.tools[this.currentTool]?.onKeyDown(e);
@@ -314,9 +384,9 @@ class EditorApp {
                     this.setupTools();
                     this.saveState();
                     this.render();
-                    alert('Hitboxes importadas com sucesso!');
-                } else { alert('Formato de JSON inválido.'); }
-            } catch (err) { alert('Erro ao ler o arquivo JSON.'); }
+                    ConfirmationModal.alert('Hitboxes importadas com sucesso!');
+                } else { ConfirmationModal.alert('Formato de JSON inválido.'); }
+            } catch (err) { ConfirmationModal.alert('Erro ao ler o arquivo JSON.'); }
             target.value = ''; // Reseta para permitir re-importação do mesmo arquivo
         };
         reader.readAsText(file);
@@ -372,6 +442,125 @@ class EditorApp {
         // 2. Deixa a Ferramenta atual desenhar seus overlays
         this.tools[this.currentTool]?.draw(this.ctx, this.panX, this.panY, this.zoom);
     }
+
+    /**
+     * Verifica se o editor foi aberto com parâmetros de query string (ex: via double click no Assets Editor).
+     */
+    public async checkUrlParametersAndInitialize(): Promise<void> {
+        if (typeof window === 'undefined' || !window.location || !window.location.search) return;
+
+        const params = new URLSearchParams(window.location.search);
+        const assetId = params.get('assetId');
+        const imageSrc = params.get('imageSrc');
+        const width = params.get('width');
+        const height = params.get('height');
+
+        if (assetId) {
+            this.activeAssetId = assetId;
+            if (width) this.assetTargetWidth = parseInt(width, 10);
+            if (height) this.assetTargetHeight = parseInt(height, 10);
+
+            // Atualiza UI com o banner do asset e botão de salvar alteração
+            const banner = document.getElementById('active-asset-banner');
+            const assetNameEl = document.getElementById('active-asset-id');
+            const btnSaveCode = document.getElementById('btn-save-code');
+
+            if (banner) banner.style.display = 'flex';
+            if (assetNameEl) assetNameEl.textContent = assetId;
+            if (btnSaveCode) btnSaveCode.style.display = 'block';
+
+            // Carrega imagem se fornecida
+            if (imageSrc) {
+                this.loadAssetImageFromUrl(imageSrc);
+            }
+
+            // Carrega hitboxes existentes via API
+            await this.loadHitboxesFromApi(assetId);
+        }
+    }
+
+    /**
+     * Carrega a imagem do asset a partir de uma URL ou data URL.
+     */
+    public loadAssetImageFromUrl(url: string): void {
+        const img = new Image();
+        img.onload = () => {
+            this.spriteImage = img;
+            const container = document.getElementById('canvas-container');
+            if (container) {
+                this.panX = (container.clientWidth - img.width) / 2;
+                this.panY = (container.clientHeight - img.height) / 2;
+                this.zoom = 1;
+                this.updateCanvasTransform();
+            }
+            this.render();
+        };
+        img.src = url;
+    }
+
+    /**
+     * Busca as hitboxes existentes do asset via API do Vite /api/assets-adapter?target=hitboxes.
+     */
+    public async loadHitboxesFromApi(assetId: string): Promise<void> {
+        try {
+            const cleanAssetId = assetId.replace(/_clean$|_anim$/, '');
+            const response = await fetch(`/api/assets-adapter?target=hitboxes&assetId=${encodeURIComponent(cleanAssetId)}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && Array.isArray(data.hitboxes)) {
+                    this.hitboxes = data.hitboxes;
+                    this.setupTools();
+                    this.saveState();
+                    this.render();
+                }
+            }
+        } catch (err) {
+            // Em testes ou ambientes offline, mantém as hitboxes atuais
+        }
+    }
+
+    /**
+     * Salva as alterações de hitboxes diretamente no código via POST /api/assets-adapter?target=hitboxes.
+     */
+    public async saveHitboxesToCode(): Promise<boolean> {
+        if (!this.activeAssetId) {
+            await ConfirmationModal.alert('Nenhum asset ativo selecionado para salvar no código.');
+            return false;
+        }
+
+        try {
+            const cleanAssetId = this.activeAssetId.replace(/_clean$|_anim$/, '');
+            const baseWidth = this.spriteImage?.width || this.assetTargetWidth || 64;
+            const baseHeight = this.spriteImage?.height || this.assetTargetHeight || 64;
+
+            const payload = {
+                assetId: cleanAssetId,
+                hitboxes: this.hitboxes,
+                baseWidth,
+                baseHeight
+            };
+
+            const response = await fetch('/api/assets-adapter?target=hitboxes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                const resData = await response.json();
+                if (resData.success) {
+                    await ConfirmationModal.alert(`Hitbox de "${cleanAssetId}" salva no código com sucesso! (${this.hitboxes.length} forma(s))`);
+                    return true;
+                }
+            }
+            await ConfirmationModal.alert('Falha ao salvar hitbox no código.');
+            return false;
+        } catch (err: any) {
+            await ConfirmationModal.alert(`Erro de conexão ao salvar hitbox: ${err.message}`);
+            return false;
+        }
+    }
 }
 
-window.onload = () => new EditorApp();
+window.onload = () => new PolygonEditorApp();
+export default PolygonEditorApp;

@@ -1,0 +1,63 @@
+flowchart LR
+
+subgraph 0["typescript"]
+subgraph 1["domain"]
+subgraph 2["ObjectModule"]
+subgraph 3["Maps"]
+4["PortalLink.ts"]
+end
+7["objectType.type.ts"]
+I["ObjectElement.ts"]
+K["SpawnRegistry.ts"]
+end
+subgraph 5["eventDispacher"]
+6["IGameEvents.ts"]
+A["actions.type.ts"]
+end
+subgraph 8["ports"]
+9["domain-contracts.ts"]
+B["ILLMConfigPort.ts"]
+end
+subgraph C["shared"]
+D["Vector2D.ts"]
+end
+subgraph E["hitBox"]
+F["HitBox.ts"]
+G["HitboxParser.ts"]
+H["HitBoxCircle.ts"]
+J["HitBoxPolygon.ts"]
+end
+end
+end
+4-->6
+4-->F
+4-->G
+4-->J
+4-->I
+4-->7
+4-->K
+6-->7
+6-->9
+6-->9
+6-->D
+9-->A
+9-->7
+9-->B
+9-->B
+F-->9
+G-->F
+G-->H
+G-->J
+H-->I
+H-->9
+H-->D
+H-->F
+I-->6
+I-->F
+I-->9
+I-->7
+J-->I
+J-->9
+J-->F
+K-->6
+K-->I

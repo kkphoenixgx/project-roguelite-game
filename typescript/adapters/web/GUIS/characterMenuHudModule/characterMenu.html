@@ -6,96 +6,13 @@
     </div>
     <div class="menu-content">
         <div id="tab-content-inv" class="tab-content" style="display: none;">
-            <div class="inventory-layout">
-                <div class="paper-doll-panel">
-                    <h3>Equipamentos</h3>
-                    <div class="paperdoll">
-                        <!-- Coluna Esquerda -->
-                        <div class="pd-col">
-                            <div class="equip-slot" id="eq-amulet">📿</div>
-                            <div class="equip-slot" id="eq-main">⚔️</div>
-                            <div class="equip-slot ring-container" id="eq-leftRings">
-                                💍
-                                <div class="ring-popover">
-                                    <div class="ring-sub-slot" data-slot="leftHandRings" data-index="0"></div>
-                                    <div class="ring-sub-slot" data-slot="leftHandRings" data-index="1"></div>
-                                    <div class="ring-sub-slot" data-slot="leftHandRings" data-index="2"></div>
-                                    <div class="ring-sub-slot" data-slot="leftHandRings" data-index="3"></div>
-                                    <div class="ring-sub-slot" data-slot="leftHandRings" data-index="4"></div>
-                                </div>
-                            </div>
-                            <div class="equip-slot" id="eq-gloves">🧤</div>
-                        </div>
-                        <!-- Centro (Corpo) -->
-                        <div class="pd-col pd-center">
-                            <div class="equip-slot" id="eq-head">🪖</div>
-                            <div class="equip-slot" id="eq-chest">👕</div>
-                            <div class="equip-slot" id="eq-pants">👖</div>
-                            <div class="equip-slot" id="eq-boots">🥾</div>
-                        </div>
-                        <!-- Coluna Direita -->
-                        <div class="pd-col">
-                            <div class="equip-slot" id="eq-bag">🎒</div>
-                            <div class="equip-slot" id="eq-off">🛡️</div>
-                            <div class="equip-slot ring-container" id="eq-rightRings">
-                                💍
-                                <div class="ring-popover">
-                                    <div class="ring-sub-slot" data-slot="rightHandRings" data-index="0"></div>
-                                    <div class="ring-sub-slot" data-slot="rightHandRings" data-index="1"></div>
-                                    <div class="ring-sub-slot" data-slot="rightHandRings" data-index="2"></div>
-                                    <div class="ring-sub-slot" data-slot="rightHandRings" data-index="3"></div>
-                                    <div class="ring-sub-slot" data-slot="rightHandRings" data-index="4"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="backpack-panel">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 5px;">
-                        <h3 style="margin: 0;">Bolsa</h3>
-                        <div style="background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); padding: 4px 12px; border-radius: 20px; font-weight: bold; color: #FFD700; display: flex; gap: 6px; align-items: center; box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);" title="Moedas de Ouro">
-                            <span>💰</span>
-                            <span id="player-coins-text">0</span>
-                        </div>
-                    </div>
-                    <div class="backpack-grid">
-                        <!-- Gerado dinamicamente pelo TS de acordo com o tamanho da mochila -->
-                    </div>
-                </div>
-            </div>
+            <!-- INJECT_BAG_TAB -->
         </div>
         <div id="tab-content-status" class="tab-content">
-            <div class="attributes-header">
-                <h2>Status</h2>
-                <div style="font-size: 14px; margin-top: 5px; color: #aaa;">Pontos Disponíveis: <span id="attr-points" style="color: #FFD700;">0</span></div>
-            </div>
-            <div class="attributes-body">
-                <div class="attr-row"><span class="attr-label">Força:</span> <div><span id="attr-str" class="attr-value">0</span> <button class="attr-add-btn" data-attr="strength">+</button></div></div>
-                <div class="attr-row"><span class="attr-label">Destreza:</span> <div><span id="attr-dex" class="attr-value">0</span> <button class="attr-add-btn" data-attr="dexterity">+</button></div></div>
-                <div class="attr-row"><span class="attr-label">Inteligência:</span> <div><span id="attr-int" class="attr-value">0</span> <button class="attr-add-btn" data-attr="intelligence">+</button></div></div>
-                <div class="attr-row"><span class="attr-label">Constituição:</span> <div><span id="attr-con" class="attr-value">0</span> <button class="attr-add-btn" data-attr="constitution">+</button></div></div>
-                <div class="attr-row"><span class="attr-label">Sabedoria:</span> <div><span id="attr-wis" class="attr-value">0</span> <button class="attr-add-btn" data-attr="wisdom">+</button></div></div>
-                <div class="attr-row"><span class="attr-label">Carisma:</span> <div><span id="attr-cha" class="attr-value">0</span> <button class="attr-add-btn" data-attr="charisma">+</button></div></div>
-            </div>
+            <!-- INJECT_STATS_TAB -->
         </div>
         <div id="tab-content-skill" class="tab-content" style="display: none;">
-                <div class="skill-equip-panel">
-                    <h3>Gerenciamento</h3>
-                    <div class="equip-section">
-                        <h4>Ativas</h4>
-                        <div class="equip-slots">
-                            <div class="skill-slot active-slot filled"><span class="skill-lvl">Lv 1</span></div>
-                            <div class="skill-slot active-slot locked">🔒</div>
-                        </div>
-                    </div>
-                    <div class="equip-section">
-                        <h4>Passivas</h4>
-                        <div class="equip-slots">
-                            <div class="skill-slot passive-slot empty"></div>
-                            <div class="skill-slot passive-slot locked"><div>🔒</div></div>
-                        </div>
-                    </div>
-                </div>
+            <!-- INJECT_SKILLS_TAB -->
         </div>
     </div>
 </div>

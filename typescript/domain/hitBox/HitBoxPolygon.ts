@@ -1,4 +1,5 @@
-import { HitBox, type HitboxDebugShape } from './HitBox';
+import { HitBox } from './HitBox';
+import type { HitboxDebugShape } from '../ports/domain-contracts';
 import type ObjectElement from '../ObjectModule/ObjectElement';
 
 export default class HitBoxPolygon extends HitBox {
@@ -15,7 +16,7 @@ export default class HitBoxPolygon extends HitBox {
         rotation: number,
         points: {x: number, y: number}[],
         pivot: {x: number, y: number},
-        onColision: (otherElement: ObjectElement) => void
+        onColision: (otherElement: any) => void
     ) {
         super(coordinates, rotation, onColision);
         this.points = points;
@@ -26,10 +27,12 @@ export default class HitBoxPolygon extends HitBox {
 
     public getRotatedPoints(): {x: number, y: number}[] {
         // Memoization rigorosa para evitar realocações (Zero-GC)
-        if (this.rotation === this.lastRot) {
+        if (this.rotation === this.lastRot && this.coordinates.x === this.lastX && this.coordinates.y === this.lastY) {
             return this.rotatedPoints;
         }
         this.lastRot = this.rotation;
+        this.lastX = this.coordinates.x;
+        this.lastY = this.coordinates.y;
 
         const cos = Math.cos(this.rotation);
         const sin = Math.sin(this.rotation);

@@ -12,7 +12,22 @@
         </div>
         <!-- Viewport da Árvore (Centro - Pan & Zoom) -->
         <div class="skill-tree-viewport">
-            <div class="skill-tree-canvas"></div>
+            <div class="skill-tree-canvas">
+                <svg class="skill-tree-svg-layer" viewBox="0 0 960 1050" preserveAspectRatio="none"></svg>
+                <div class="skill-tree-nodes-layer"></div>
+            </div>
+            <!-- Painel Flutuante de Detalhes da Habilidade (Glassmorphism Fantasy) -->
+            <div id="st-skill-details-panel" class="st-details-panel">
+                <div class="st-details-header">
+                    <h3 id="st-skill-name">HABILIDADE</h3>
+                    <span id="st-skill-type">TIPO</span>
+                </div>
+                <p id="st-skill-desc">Descrição detalhada do poder e efeitos.</p>
+                <div class="st-details-footer">
+                    <span id="st-skill-tier">TIER 1</span>
+                    <span id="st-skill-hint" class="st-hint-locked">Bloqueado</span>
+                </div>
+            </div>
         </div>
         <!-- Elementos Flutuantes (Direita) -->
         <div class="floating-points">

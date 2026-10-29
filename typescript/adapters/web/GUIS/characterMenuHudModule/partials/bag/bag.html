@@ -1,0 +1,68 @@
+<div class="inventory-layout">
+    <div class="paper-doll-panel">
+        <h3>Equipamentos</h3>
+        
+        <div class="paperdoll">
+            <!-- Coluna Esquerda -->
+            <div class="pd-col">
+                <div class="equip-slot ring-container" id="eq-leftRings">
+                    <div class="ring-popover">
+                        <div class="ring-sub-slot" data-slot="leftHandRings" data-index="0"></div>
+                        <div class="ring-sub-slot" data-slot="leftHandRings" data-index="1"></div>
+                        <div class="ring-sub-slot" data-slot="leftHandRings" data-index="2"></div>
+                        <div class="ring-sub-slot" data-slot="leftHandRings" data-index="3"></div>
+                        <div class="ring-sub-slot" data-slot="leftHandRings" data-index="4"></div>
+                    </div>
+                </div>
+                <div class="equip-slot weapon" id="eq-main"></div>
+                <div class="equip-slot" id="eq-gloves"></div>
+                <div class="equip-slot bottom-slots" id="eq-amulet"></div>
+            </div>
+            
+            <!-- Centro (Corpo) -->
+            <div class="pd-col pd-center">
+                <div class="equip-slot" id="eq-head"></div>
+                <div class="equip-slot chesplate" id="eq-chest"></div>
+                <div class="equip-slot pants" id="eq-pants"></div>
+                <div class="equip-slot boots" id="eq-boots"></div>
+            </div>
+            
+            <!-- Coluna Direita -->
+            <div class="pd-col">
+                <div class="equip-slot ring-container" id="eq-rightRings">
+                    <div class="ring-popover">
+                        <div class="ring-sub-slot" data-slot="rightHandRings" data-index="0"></div>
+                        <div class="ring-sub-slot" data-slot="rightHandRings" data-index="1"></div>
+                        <div class="ring-sub-slot" data-slot="rightHandRings" data-index="2"></div>
+                        <div class="ring-sub-slot" data-slot="rightHandRings" data-index="3"></div>
+                        <div class="ring-sub-slot" data-slot="rightHandRings" data-index="4"></div>
+                    </div>
+                </div>
+                <div class="equip-slot weapon" id="eq-off"></div>
+                <div class="equip-slot belt-container" id="eq-belt" data-slot="belt" title="Cinto de Utilidades">
+                    <div class="belt-icon-holder"></div>
+                    <!-- Popover dinâmico de ferramentas do Cinto (gerado via belt.capacity) -->
+                    <div class="belt-tools-popover" id="belt-tools-subslots"></div>
+                </div>
+                <div class="equip-slot bottom-slots" id="eq-bag"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="backpack-panel">
+        
+        <div class="backpack-header">
+            <h3 style="margin: 0;">Bolsa</h3>
+
+            <div class="coin-case" title="Moedas de Ouro">
+                <img class="coin-icon" src="../../../../assets/itens/coin.png"/>
+                
+                <span id="player-coins-text">0</span>
+            </div>
+
+        </div>
+
+        <!-- Dynamic -->
+        <div class="backpack-grid"></div>
+    </div>
+</div>

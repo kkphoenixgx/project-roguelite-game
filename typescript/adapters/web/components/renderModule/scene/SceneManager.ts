@@ -41,6 +41,19 @@ export default class SceneManager {
     }
   }
 
+  public get isDebugModeActive(): boolean {
+    return this.isDebugMode;
+  }
+
+  /** Limpa todos os efeitos visuais transitórios e partículas ativas da cena. */
+  public clearTransientVisuals(): void {
+    for (const id of this.transientVisuals.keys()) {
+      if (this.debugRenderables.has(id)) this.debugRenderables.delete(id);
+    }
+    this.transientVisuals.clear();
+    this.particleOrchestrator.clear();
+  }
+
   public updateAnimations(deltaTime: number, mouseWorldPos?: {x: number, y: number}): void {
     this.particleOrchestrator.updateAnimations(deltaTime);
 

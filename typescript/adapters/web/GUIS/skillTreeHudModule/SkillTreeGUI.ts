@@ -2,7 +2,7 @@ import { logger } from "../../shared/Logger";
 import html from './skillTree.html?raw';
 import css from './skillTree.css?raw';
 import type { EntityRenderableState } from "../../../../domain/ports/domain-contracts";
-import { VisualConfigMap, type ItemVisualConfig } from "../../shared/VisualConfigMap";
+import { VisualConfigMap, ElementalEffectIcons, SkillIcons, type ItemVisualConfig } from "../../shared/VisualConfigMap";
 
 /** @class SkillTreeGui Controla a interface da árvore de habilidades isolada. */
 export default class SkillTreeGui {
@@ -10,8 +10,18 @@ export default class SkillTreeGui {
     private isVisible: boolean = false;
     private lastTreeHash: string = '';
     private lastLoadoutHash: string = '';
-    private togglePauseCallback: () => void;
-    
+    private lastClassesHash: string = '';
+    private lastStructureKey: string = '';
+
+    private pointsEl: HTMLElement | null = null;
+    private headerEl: HTMLElement | null = null;
+    private svgLayer: SVGSVGElement | null = null;
+    private nodesLayer: HTMLElement | null = null;
+    private loadoutSlots!: NodeListOf<HTMLElement>;
+
+    private nodeElements = new Map<string, HTMLButtonElement>();
+    private pathElements = new Map<string, { path: SVGPathElement; parentId: string }>();
+        
     // Variáveis de estado do Pan & Zoom
     private isDragging: boolean = false;
     private startX: number = 0;
@@ -22,6 +32,7 @@ export default class SkillTreeGui {
 
     private draggedSkillId: string | null = null;
     private customDragGhost: HTMLElement | null = null;
+    private hoverTimer: any = null;
 
     constructor(
         private readonly togglePauseCallback: () => void, private skillActionCallback: (action: 'unlock' | 'changeClass' | 'equip', payload: any) => void) {
@@ -43,12 +54,35 @@ export default class SkillTreeGui {
         // Garante que a árvore de skills fique por cima de outras UIs como o HUD da janela
         this.container.style.zIndex = '1000';
         document.body.appendChild(this.container);
+
+        this.pointsEl = this.container.querySelector('#st-available-points');
+        this.headerEl = this.container.querySelector('.skill-header') as HTMLElement;
+        this.svgLayer = this.container.querySelector('.skill-tree-svg-layer') as SVGSVGElement;
+        this.nodesLayer = this.container.querySelector('.skill-tree-nodes-layer') as HTMLElement;
+        this.loadoutSlots = this.container.querySelectorAll('.loadout-slot') as NodeListOf<HTMLElement>;
     }
     
     private setupViewportEvents(): void {
         const viewport = this.container.querySelector('.skill-tree-viewport') as HTMLElement;
         const canvas = this.container.querySelector('.skill-tree-canvas') as HTMLElement;
         if (!viewport || !canvas) return;
+
+        const updateCanvasTransform = () => {
+            canvas.style.transform = `translate3d(${this.translateX.toFixed(2)}px, ${this.translateY.toFixed(2)}px, 0px) scale(${this.scale.toFixed(3)})`;
+        };
+
+        let rafId: number | null = null;
+        const requestFrame = typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
+            ? window.requestAnimationFrame.bind(window)
+            : (cb: FrameRequestCallback) => setTimeout(cb, 16) as unknown as number;
+
+        const scheduleTransform = () => {
+            if (rafId !== null) return;
+            rafId = requestFrame(() => {
+                rafId = null;
+                updateCanvasTransform();
+            });
+        };
 
         viewport.addEventListener('mousedown', (e) => {
             // Impede que a movimentação do mapa (Pan) roube o Drag & Drop da habilidade
@@ -79,7 +113,7 @@ export default class SkillTreeGui {
             if (!this.isDragging) return;
             this.translateX = e.clientX - this.startX;
             this.translateY = e.clientY - this.startY;
-            canvas.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
+            scheduleTransform();
         });
 
         window.addEventListener('mouseup', (e) => {
@@ -104,15 +138,16 @@ export default class SkillTreeGui {
                 
                 this.draggedSkillId = null;
             }
-            this.isDragging = false; 
+            this.isDragging = false;
+            updateCanvasTransform();
         });
 
         viewport.addEventListener('wheel', (e) => {
             e.preventDefault();
             this.scale += e.deltaY * -0.001;
             this.scale = Math.min(Math.max(0.4, this.scale), 2.5); // Limita o Zoom entre 0.4x e 2.5x
-            canvas.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
-        });
+            scheduleTransform();
+        }, { passive: false });
         
         // Lógica do botão de abrir/fechar o painel lateral
         const toggleBtn = this.container.querySelector('#st-toggle-loadout') as HTMLElement;
@@ -137,11 +172,20 @@ export default class SkillTreeGui {
         // Centraliza a visão na primeira vez que abre (olhando mais para a base da árvore)
         if (this.isVisible) {
             const canvas = this.container.querySelector('.skill-tree-canvas') as HTMLElement;
-            // Deslocamos mais o Y para que o foco inicial não fique tão no topo.
-            this.translateX = 0; 
-            this.translateY = -300; 
-            this.scale = 0.8;
-            if (canvas) canvas.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
+            const viewport = this.container.querySelector('.skill-tree-viewport') as HTMLElement;
+            if (canvas && viewport) {
+                const viewportWidth = viewport.clientWidth;
+                const viewportHeight = viewport.clientHeight;
+                const canvasWidth = 960;
+                const canvasHeight = 1050;
+                
+                this.scale = 0.85;
+                // Centraliza no eixo X
+                this.translateX = (viewportWidth - (canvasWidth * this.scale)) / 2; 
+                // Coloca a visão centralizada verticalmente
+                this.translateY = Math.max(10, (viewportHeight - (canvasHeight * this.scale)) / 2); 
+                canvas.style.transform = `translate3d(${this.translateX.toFixed(2)}px, ${this.translateY.toFixed(2)}px, 0px) scale(${this.scale.toFixed(3)})`;
+            }
         }
         
         this.togglePauseCallback();
@@ -152,10 +196,13 @@ export default class SkillTreeGui {
     public update(data: EntityRenderableState): void {
         if (!this.isVisible || !data.classes) return;
         
-        // 1. Atualiza os pontos disponíveis independentemente de Hash complexo
-        const pointsEl = this.container.querySelector('#st-available-points');
+        // 1. Atualiza os pontos disponíveis apenas se alterou
+        const pointsEl = this.pointsEl;
         if (pointsEl && data.attributes) {
-            pointsEl.textContent = data.attributes.availablePoints.toString();
+            const ptsStr = (data.attributes.availablePoints ?? 0).toString();
+            if (pointsEl.textContent !== ptsStr) {
+                pointsEl.textContent = ptsStr;
+            }
         }
 
         // 2. Renderização dos Painéis de Loadout e Eventos de Soltar (Drop)
@@ -166,8 +213,8 @@ export default class SkillTreeGui {
         if (this.lastLoadoutHash !== loadoutHash) {
             this.lastLoadoutHash = loadoutHash;
 
-            const loadoutSlots = this.container.querySelectorAll('.loadout-slot');
-            const slotRequirements = [1, 5, 10, 15]; // Níveis estritos para liberar cada slot (reduzidos para facilitar progressão inicial)
+            const loadoutSlots = this.loadoutSlots;
+            const slotRequirements = [1, 5, 10, 15];
 
             if (loadoutSlots.length > 0 && data.activeLoadout) {
                 loadoutSlots.forEach((slotEl, index) => {
@@ -181,7 +228,6 @@ export default class SkillTreeGui {
                         const reqSpan = el.querySelector('.slot-req');
                         if (reqSpan) reqSpan.remove();
                         
-                        // Drag and Drop (mantém eventos HTML5 limpos para não dar conflito, mas a lógica agora é manual)
                         el.ondragover = null; 
                         el.ondrop = null;
                         el.ondragenter = null;
@@ -219,7 +265,18 @@ export default class SkillTreeGui {
                                 el.title = `${skillInfo.name}\n(Bloqueada: Requer arma apropriada)`;
                             }
                             
-                            img.textContent = skillInfo.name.charAt(0).toUpperCase();
+                            const skillIconUrl = (SkillIcons as any)[equippedId]?.icon40Url || (ElementalEffectIcons as any)[equippedId]?.icon32Url;
+                            if (skillIconUrl) {
+                                const iconEl = document.createElement('img');
+                                iconEl.src = skillIconUrl;
+                                iconEl.style.width = '100%';
+                                iconEl.style.height = '100%';
+                                iconEl.style.objectFit = 'contain';
+                                iconEl.style.pointerEvents = 'none';
+                                img.appendChild(iconEl);
+                            } else {
+                                img.textContent = skillInfo.name.charAt(0).toUpperCase();
+                            }
                             el.appendChild(img);
                         }
                     }
@@ -228,160 +285,540 @@ export default class SkillTreeGui {
         }
 
         // 3. Atualiza a árvore visual (Pesada) - Uso estrito do Hash aqui!
-        const treeHash = JSON.stringify(data.classes) + JSON.stringify(data.skillTree);
+        const activeClass = data.classes.find(c => c.isActive);
+        const hasPoints = (data.attributes?.availablePoints ?? 0) > 0 ? 1 : 0;
+        let skillsStateSignature = '';
+        if (data.skillTree) {
+            for (let i = 0; i < data.skillTree.length; i++) {
+                const s = data.skillTree[i]!;
+                skillsStateSignature += `${s.id}:${s.unlocked ? 1 : 0}:${s.canUnlock ? 1 : 0}:${s.isBranchBlocked ? 1 : 0},`;
+            }
+        }
+        const treeHash = `${activeClass?.name || ''}|${hasPoints}|${skillsStateSignature}`;
         if (this.lastTreeHash === treeHash) return; 
         this.lastTreeHash = treeHash;
 
-        const header = this.container.querySelector('.skill-header') as HTMLElement;
+        const header = this.headerEl;
         const classes = data.classes;
         if (header && classes && classes.length > 0) {
-            header.innerHTML = '';
-            
-            const activeIndex = classes.findIndex(c => c.isActive);
-            if (activeIndex !== -1) {
-                const len = classes.length;
-                const prevIndex = (activeIndex - 1 + len) % len;
-                const nextIndex = (activeIndex + 1) % len;
+            const classesHash = classes.map(c => `${c.name}:${c.isActive ? 1 : 0}:${c.isUnlocked ? 1 : 0}`).join('|');
+            if (this.lastClassesHash !== classesHash) {
+                this.lastClassesHash = classesHash;
+                header.innerHTML = '';
+                
+                const activeIndex = classes.findIndex(c => c.isActive);
+                if (activeIndex !== -1) {
+                    const len = classes.length;
+                    const prevIndex = (activeIndex - 1 + len) % len;
+                    const nextIndex = (activeIndex + 1) % len;
 
-                const classWeaponMap: Record<string, string> = { 'Mago': 'staff', 'Guerreiro': 'simple-sword', 'Necromante': 'scythe', 'Gunslinger': 'gun', 'Pescador': 'fishing-rod' };
+                    const classWeaponMap: Record<string, string> = { 'Mago': 'staff', 'Guerreiro': 'simple-sword', 'Necromante': 'scythe', 'Gunslinger': 'gun', 'Pescador': 'fishing-rod' };
 
-                const createIconBtn = (cls: any, role: 'prev' | 'active' | 'next') => {
-                    const className = cls?.name || '';
-                    const configKey = classWeaponMap[className];
-                    const config = configKey ? VisualConfigMap[configKey] as ItemVisualConfig | undefined : undefined;
-                    const imgUrl = config?.uiIconUrl || '';
+                    const createIconBtn = (cls: any, role: 'prev' | 'active' | 'next') => {
+                        const className = cls?.name || '';
+                        const configKey = classWeaponMap[className];
+                        const config = configKey ? VisualConfigMap[configKey] as ItemVisualConfig | undefined : undefined;
+                        const imgUrl = config?.uiIconUrl || '';
 
-                    const btn = document.createElement('button');
-                    btn.className = `class-icon ${role === 'active' ? 'active' : 'secondary'} ${cls?.isUnlocked ? 'unlocked' : 'locked'}`;
-                    btn.title = className;
-                    if (role !== 'active') btn.onclick = () => this.skillActionCallback('changeClass', { className: className });
+                        const btn = document.createElement('button');
+                        btn.className = `class-icon ${role === 'active' ? 'active' : 'secondary'} ${cls?.isUnlocked ? 'unlocked' : 'locked'}`;
+                        btn.title = className;
+                        if (role !== 'active') btn.onclick = () => this.skillActionCallback('changeClass', { className: className });
+                        
+                        if (imgUrl) {
+                            const img = document.createElement('img');
+                            img.src = imgUrl;
+                            btn.appendChild(img);
+                        } else {
+                            btn.textContent = '?';
+                        }
+                        return btn;
+                    };
+
+                    const prevClass = classes[prevIndex];
+                    const activeClassItem = classes[activeIndex];
+                    const nextClass = classes[nextIndex];
                     
-                    if (imgUrl) {
-                        const img = document.createElement('img');
-                        img.src = imgUrl;
-                        btn.appendChild(img);
-                    } else {
-                        btn.textContent = '?';
+                    if (len > 1) header.appendChild(createIconBtn(prevClass, 'prev'));
+                    
+                    if (len > 1) {
+                        const btnPrev = document.createElement('button');
+                        btnPrev.className = 'nav-btn'; btnPrev.innerHTML = '&lt;';
+                        if (prevClass) {
+                            btnPrev.onclick = () => this.skillActionCallback('changeClass', { className: prevClass.name });
+                        }
+                        header.appendChild(btnPrev);
                     }
-                    return btn;
-                };
 
-                const prevClass = classes[prevIndex];
-                const activeClass = classes[activeIndex];
-                const nextClass = classes[nextIndex];
-                
-                if (len > 1) header.appendChild(createIconBtn(prevClass, 'prev'));
-                
-                if (len > 1) {
-                    const btnPrev = document.createElement('button');
-                    btnPrev.className = 'nav-btn'; btnPrev.innerHTML = '&lt;';
-                    if (prevClass) {
-                        btnPrev.onclick = () => this.skillActionCallback('changeClass', { className: prevClass.name });
+                    header.appendChild(createIconBtn(activeClassItem, 'active'));
+
+                    if (len > 1) {
+                        const btnNext = document.createElement('button');
+                        btnNext.className = 'nav-btn'; btnNext.innerHTML = '&gt;';
+                        if (nextClass) {
+                            btnNext.onclick = () => this.skillActionCallback('changeClass', { className: nextClass.name });
+                        }
+                        header.appendChild(btnNext);
                     }
-                    header.appendChild(btnPrev);
+
+                    if (len > 1) header.appendChild(createIconBtn(nextClass, 'next'));
                 }
-
-                header.appendChild(createIconBtn(activeClass, 'active'));
-
-                if (len > 1) {
-                    const btnNext = document.createElement('button');
-                    btnNext.className = 'nav-btn'; btnNext.innerHTML = '&gt;';
-                    if (nextClass) {
-                        btnNext.onclick = () => this.skillActionCallback('changeClass', { className: nextClass.name });
-                    }
-                    header.appendChild(btnNext);
-                }
-
-                if (len > 1) header.appendChild(createIconBtn(nextClass, 'next'));
             }
         }
 
-        const treeArea = this.container.querySelector('.skill-tree-canvas') as HTMLElement;
-        if (treeArea && data.skillTree && data.skillTree.length > 0) {
-            // Se estiver arrastando a árvore (pan) ou arrastando uma skill (drag \u0026 drop), não recria o DOM
-            // para evitar que o navegador cancele os eventos de mouse
-            if (!this.isDragging && !this.draggedSkillId) {
-                treeArea.innerHTML = '';
-                const maxTier = Math.max(0, ...data.skillTree.map(s => s.tier));
+        this.renderTreeArea(data);
+    }
 
-            for (let tier = maxTier; tier >= 1; tier--) {
-                const skillsInTier = data.skillTree.filter(s => s.tier === tier);
-                if (skillsInTier.length === 0) continue;
+    private updateNodeElementState(btn: HTMLButtonElement, skill: any, hasAvailablePoints: boolean): void {
+        let stateClass = 'locked';
+        if (skill.unlocked) {
+            stateClass = 'unlocked';
+        } else if (skill.isBranchBlocked) {
+            stateClass = 'locked branch-blocked';
+        } else if (skill.canUnlock && hasAvailablePoints) {
+            stateClass = 'can-unlock';
+        }
 
-                const tierDiv = document.createElement('div');
-                tierDiv.className = 'skill-tier';
+        const targetClassName = `skill-node ${stateClass}`;
+        if (btn.className !== targetClassName) {
+            btn.className = targetClassName;
+        }
 
-                const label = document.createElement('div');
-                label.className = 'tier-label';
-                label.textContent = `T${tier}`;
-                tierDiv.appendChild(label);
+        const existingCheck = btn.querySelector('.skill-check-badge');
+        const existingIndicator = btn.querySelector('.skill-unlock-indicator');
 
-                const nodesDiv = document.createElement('div');
-                nodesDiv.className = 'skill-nodes';
+        if (skill.unlocked) {
+            if (existingIndicator) existingIndicator.remove();
+            if (!existingCheck) {
+                const check = document.createElement('span');
+                check.className = 'skill-check-badge';
+                check.textContent = '✓';
+                btn.appendChild(check);
+            }
+        } else if (stateClass === 'can-unlock') {
+            if (existingCheck) existingCheck.remove();
+            if (!existingIndicator) {
+                const indicator = document.createElement('span');
+                indicator.className = 'skill-unlock-indicator';
+                indicator.textContent = '▲';
+                btn.appendChild(indicator);
+            }
+        } else {
+            if (existingCheck) existingCheck.remove();
+            if (existingIndicator) existingIndicator.remove();
+        }
 
-                skillsInTier.forEach(skill => {
-                    const btn = document.createElement('button');
+        // Apenas habilidades liberáveis podem ser clicadas para desbloquear
+        if (stateClass === 'can-unlock') {
+            btn.onclick = () => this.skillActionCallback('unlock', { skillId: skill.id });
+        } else {
+            btn.onclick = null;
+        }
 
-                    // Define a forma do nó com base no tipo de habilidade
-                    let shapeClass = 'node-active'; // Padrão: Retângulo
-                    if (skill.type === 'passive') shapeClass = 'node-passive'; // Triângulo
-                    if (skill.type === 'rare') shapeClass = 'node-rare';       // Losango
-                    if (skill.type === 'essential') shapeClass = 'node-essential'; // Estrela
-                    if (skill.type === 'attribute') shapeClass = 'node-attribute'; // Círculo
-                    
-                    // Define o estado visual (trancado, liberável, liberado)
-                    let stateClass = 'locked';
-                    if (skill.unlocked) {
-                        stateClass = 'unlocked';
-                    } else if (skill.canUnlock && data.attributes && data.attributes.availablePoints > 0) {
-                        stateClass = 'can-unlock';
+        // Apenas habilidades ativas/essenciais/raras e já desbloqueadas podem ser arrastadas
+        if (stateClass === 'unlocked' && (skill.type === 'active' || skill.type === 'essential' || skill.type === 'rare')) {
+            btn.onmousedown = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.draggedSkillId = skill.id;
+
+                this.customDragGhost = btn.cloneNode(true) as HTMLElement;
+                this.customDragGhost.style.position = 'fixed';
+                this.customDragGhost.style.pointerEvents = 'none';
+                this.customDragGhost.style.zIndex = '999999';
+                this.customDragGhost.style.left = `${e.clientX - 30}px`;
+                this.customDragGhost.style.top = `${e.clientY - 30}px`;
+                this.customDragGhost.style.transform = 'none';
+                this.customDragGhost.style.filter = 'drop-shadow(0 0 16px #00ffff)';
+                document.body.appendChild(this.customDragGhost);
+            };
+            btn.style.cursor = 'grab';
+        } else {
+            btn.onmousedown = null;
+            btn.style.cursor = '';
+        }
+
+        (btn as any).__currentSkill = skill;
+        (btn as any).__currentStateClass = stateClass;
+    }
+
+    private renderTreeArea(data: EntityRenderableState): void {
+        const svgLayer = this.svgLayer;
+        const nodesLayer = this.nodesLayer;
+        if (!svgLayer || !nodesLayer) return;
+
+        if (this.isDragging || this.draggedSkillId) return;
+
+        this.hideNodeDetails();
+
+        if (!data.skillTree || data.skillTree.length === 0) {
+            this.lastStructureKey = '';
+            this.nodeElements.clear();
+            this.pathElements.clear();
+            svgLayer.innerHTML = '';
+            nodesLayer.innerHTML = '<p style="color: #666; position: absolute; left: 400px; top: 300px;">Nenhuma classe selecionada</p>';
+            return;
+        }
+
+        const activeClass = data.classes?.find(c => c.isActive);
+        const structureKey = `${activeClass?.name || ''}|${data.skillTree.map(s => s.id).join(',')}`;
+        const skillsMap = new Map<string, any>(data.skillTree.map(s => [s.id, s]));
+        const hasAvailablePoints = !!(data.attributes && data.attributes.availablePoints > 0);
+
+        // Se a estrutura (classe e IDs de nós) não mudou e os elementos estão montados, atualiza in-place (Zero DOM Destruction!)
+        if (this.lastStructureKey === structureKey && this.nodeElements.size === data.skillTree.length) {
+            for (let i = 0; i < data.skillTree.length; i++) {
+                const skill = data.skillTree[i]!;
+                const btn = this.nodeElements.get(skill.id);
+                if (btn) {
+                    this.updateNodeElementState(btn, skill, hasAvailablePoints);
+                }
+                const pathInfo = this.pathElements.get(skill.id);
+                if (pathInfo) {
+                    const isParentUnlocked = skillsMap.get(pathInfo.parentId)?.unlocked ?? false;
+                    const isUnlocked = skill.unlocked && isParentUnlocked;
+                    const canUnlock = skill.canUnlock && !skill.unlocked;
+                    let statusClass = 'path-locked';
+                    if (isUnlocked) statusClass = 'path-unlocked';
+                    else if (canUnlock) statusClass = 'path-available';
+                    const targetClass = `skill-connection-path ${statusClass}`;
+                    if (pathInfo.path.getAttribute('class') !== targetClass) {
+                        pathInfo.path.setAttribute('class', targetClass);
                     }
-
-                    btn.className = `skill-node ${shapeClass} ${stateClass}`;
-                    btn.title = `${skill.name}\n\n${skill.description}`; // Tooltip com Descrição
-
-                    // Apenas habilidades liberáveis podem ser clicadas para desbloquear
-                    if (stateClass === 'can-unlock') {
-                        btn.onclick = () => this.skillActionCallback('unlock', { skillId: skill.id });
-                    }
-
-                    // Apenas habilidades ativas/essenciais e já desbloqueadas podem ser arrastadas
-                    if (stateClass === 'unlocked' && (skill.type === 'active' || skill.type === 'essential')) {
-                        btn.onmousedown = (e) => {
-                            e.preventDefault(); // Impede seleção de texto e comportamentos nativos
-                            e.stopPropagation(); // Impede o Pan do canvas
-                            
-                            this.draggedSkillId = skill.id;
-                            
-                            // Cria um fantasma manual livre do DOM restrito
-                            this.customDragGhost = btn.cloneNode(true) as HTMLElement;
-                            this.customDragGhost.style.position = 'fixed';
-                            this.customDragGhost.style.pointerEvents = 'none'; // Vital para o elementFromPoint funcionar no mouseup!
-                            this.customDragGhost.style.zIndex = '999999';
-                            this.customDragGhost.style.left = `${e.clientX - 24}px`;
-                            this.customDragGhost.style.top = `${e.clientY - 24}px`;
-                            this.customDragGhost.style.transform = 'none'; 
-                            this.customDragGhost.style.boxShadow = '0 0 20px #00ffff';
-                            document.body.appendChild(this.customDragGhost);
-                        };
-                        btn.style.cursor = 'grab';
-                    }
-
-                    nodesDiv.appendChild(btn);
-                });
-                tierDiv.appendChild(nodesDiv);
-                treeArea.appendChild(tierDiv);
-
-                if (tier > 1) { // A linha agora é desenhada "abaixo" de cada tier, indo até o tier 1.
-                    const line = document.createElement('div');
-                    // A linha brilha se qualquer skill do tier ATUAL (o mais alto sendo processado) estiver desbloqueada
-                    const hasUnlocked = skillsInTier.some(s => s.unlocked);
-                    line.className = `skill-path-line ${hasUnlocked ? 'unlocked' : ''}`;
-                    line.style.visibility = hasUnlocked ? 'visible' : 'hidden'; 
-                    treeArea.appendChild(line);
                 }
             }
-            } // Fechamento do if (!this.isDragging && !this.draggedSkillId)
-        } else if (treeArea) { treeArea.innerHTML = '<p style="color: #666;">Nenhuma classe selecionada</p>'; }
+            return;
+        }
+
+        this.lastStructureKey = structureKey;
+        this.nodeElements.clear();
+        this.pathElements.clear();
+        svgLayer.innerHTML = '';
+        nodesLayer.innerHTML = '';
+
+        const layout = this.computeTreeLayout(data.skillTree, activeClass?.name);
+
+        // 1. Linhas Guias de Tier Horizontais (Fundo)
+        const tierGuides = [
+            { label: 'T4 / ÁPICE', y: 120 },
+            { label: 'T3', y: 380 },
+            { label: 'T2', y: 640 },
+            { label: 'T1 - FUNDAÇÃO', y: 850 }
+        ];
+
+        tierGuides.forEach(g => {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', '60');
+            line.setAttribute('y1', g.y.toString());
+            line.setAttribute('x2', '900');
+            line.setAttribute('y2', g.y.toString());
+            line.setAttribute('stroke', 'rgba(90, 74, 56, 0.22)');
+            line.setAttribute('stroke-width', '1.5');
+            line.setAttribute('stroke-dasharray', '6,8');
+            svgLayer.appendChild(line);
+
+            const label = document.createElement('div');
+            label.className = 'tier-guide-label';
+            label.style.top = `${g.y}px`;
+            label.textContent = g.label;
+            nodesLayer.appendChild(label);
+        });
+
+        // 2. Cabeçalhos dos Ramos Independentes
+        if (layout.branches?.titleA && layout.branches.xA !== undefined) {
+            const headerA = document.createElement('div');
+            headerA.className = 'branch-header';
+            headerA.style.left = `${layout.branches.xA}px`;
+            headerA.style.top = '40px';
+            headerA.textContent = layout.branches.titleA;
+            nodesLayer.appendChild(headerA);
+        }
+        if (layout.branches?.titleB && layout.branches.xB !== undefined) {
+            const headerB = document.createElement('div');
+            headerB.className = 'branch-header';
+            headerB.style.left = `${layout.branches.xB}px`;
+            headerB.style.top = '40px';
+            headerB.textContent = layout.branches.titleB;
+            nodesLayer.appendChild(headerB);
+        }
+
+        // 3. Conexões Bézier Cúbicas SVG
+        data.skillTree.forEach(skill => {
+            const parentId = skill.dependencies?.[0] || skill.requiredSkillId;
+            if (parentId && layout.positions.has(parentId) && layout.positions.has(skill.id)) {
+                const posParent = layout.positions.get(parentId)!;
+                const posChild = layout.positions.get(skill.id)!;
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const isParentUnlocked = skillsMap.get(parentId)?.unlocked ?? false;
+                const isUnlocked = skill.unlocked && isParentUnlocked;
+                const canUnlock = skill.canUnlock && !skill.unlocked;
+
+                let statusClass = 'path-locked';
+                if (isUnlocked) statusClass = 'path-unlocked';
+                else if (canUnlock) statusClass = 'path-available';
+
+                path.setAttribute('class', `skill-connection-path ${statusClass}`);
+
+                const deltaY = Math.abs(posParent.y - posChild.y);
+                let d = '';
+                if (Math.abs(posParent.x - posChild.x) < 5) {
+                    d = `M ${posParent.x} ${posParent.y} L ${posChild.x} ${posChild.y}`;
+                } else {
+                    const ctrlY = posParent.y - (deltaY * 0.5);
+                    d = `M ${posParent.x} ${posParent.y} C ${posParent.x} ${ctrlY}, ${posChild.x} ${ctrlY}, ${posChild.x} ${posChild.y}`;
+                }
+
+                path.setAttribute('d', d);
+                svgLayer.appendChild(path);
+                this.pathElements.set(skill.id, { path, parentId });
+            }
+        });
+
+        // 4. Renderização dos Nós da Árvore
+        data.skillTree.forEach(skill => {
+            const pos = layout.positions.get(skill.id);
+            if (!pos) return;
+
+            const btn = document.createElement('button');
+            btn.style.left = `calc(${pos.x}px - 30px)`;
+            btn.style.top = `calc(${pos.y}px - 30px)`;
+
+            const skillIcon = (SkillIcons as any)[skill.id]?.icon80Url 
+                || (SkillIcons as any)[skill.id]?.icon40Url 
+                || (ElementalEffectIcons as any)[skill.id]?.icon32Url;
+
+            if (skillIcon) {
+                const iconImg = document.createElement('img');
+                iconImg.src = skillIcon;
+                iconImg.className = 'skill-icon-img';
+                iconImg.alt = skill.name;
+                btn.appendChild(iconImg);
+            } else {
+                btn.textContent = skill.name.charAt(0).toUpperCase();
+            }
+
+            this.updateNodeElementState(btn, skill, hasAvailablePoints);
+
+            // Floating details tooltip
+            btn.addEventListener('mouseenter', (e) => {
+                const currentSkill = (btn as any).__currentSkill || skill;
+                const currentStateClass = (btn as any).__currentStateClass || 'locked';
+                this.showNodeDetails(currentSkill, currentStateClass, e.clientX, e.clientY);
+            });
+            btn.addEventListener('mouseleave', () => {
+                this.hideNodeDetails();
+            });
+
+            nodesLayer.appendChild(btn);
+            this.nodeElements.set(skill.id, btn);
+        });
+    }
+
+    private computeTreeLayout(skills: any[], activeClassName?: string): { 
+        positions: Map<string, { x: number, y: number }>;
+        branches?: { titleA?: string; xA?: number; titleB?: string; xB?: number };
+    } {
+        const positions = new Map<string, { x: number, y: number }>();
+        if (!skills || skills.length === 0) return { positions };
+
+        const skillsMap = new Map<string, any>(skills.map(s => [s.id, s]));
+        const childrenMap = new Map<string, string[]>();
+        const parentMap = new Map<string, string>();
+
+        skills.forEach(s => childrenMap.set(s.id, []));
+
+        skills.forEach(s => {
+            const parentId = s.dependencies?.[0] || s.requiredSkillId;
+            if (parentId && skillsMap.has(parentId)) {
+                childrenMap.get(parentId)!.push(s.id);
+                parentMap.set(s.id, parentId);
+            }
+        });
+
+        // Raiz (nó que não tem parentId presente na lista de habilidades)
+        const roots = skills.filter(s => !parentMap.has(s.id));
+        const rootId = roots[0]?.id;
+
+        // Rastreia o tronco base (Stem) até o primeiro ponto de bifurcação
+        const stem: string[] = [];
+        let forkNodeId: string | null = null;
+        let currId: string | null = rootId;
+
+        while (currId) {
+            stem.push(currId);
+            const children = childrenMap.get(currId) || [];
+            if (children.length > 1) {
+                forkNodeId = currId;
+                break;
+            } else if (children.length === 1) {
+                currId = children[0]!;
+            } else {
+                break;
+            }
+        }
+
+        const centerX = 480;
+
+        // Se houver bifurcação em 2 ramos independentes
+        if (forkNodeId && (childrenMap.get(forkNodeId)?.length || 0) >= 2) {
+            const forkChildren = childrenMap.get(forkNodeId)!;
+            const branchAChild = forkChildren[0]!;
+            const branchBChild = forkChildren[1]!;
+
+            const collectBranch = (startId: string): string[] => {
+                const list: string[] = [];
+                let nId: string | null = startId;
+                while (nId) {
+                    list.push(nId);
+                    const nextKids: string[] = childrenMap.get(nId) || [];
+                    nId = nextKids.length > 0 ? (nextKids[0] as string) : null;
+                }
+                return list;
+            };
+
+            const branchA = collectBranch(branchAChild);
+            const branchB = collectBranch(branchBChild);
+
+            // Posiciona os nós da base (Stem)
+            if (stem.length === 1) {
+                positions.set(stem[0]!, { x: centerX, y: 840 });
+            } else if (stem.length >= 2) {
+                const stemStartY = 920;
+                const stemForkY = 780;
+                stem.forEach((sId, idx) => {
+                    const y = stemStartY - (idx * (stemStartY - stemForkY) / (stem.length - 1));
+                    positions.set(sId, { x: centerX, y });
+                });
+            }
+
+            // Posiciona Ramo A (Esquerda) e Ramo B (Direita)
+            const leftX = 260;
+            const rightX = 700;
+            const branchStartY = 640;
+            const branchTopY = 120;
+
+            const layoutBranch = (branchNodes: string[], x: number) => {
+                const count = branchNodes.length;
+                if (count === 1) {
+                    positions.set(branchNodes[0]!, { x, y: 400 });
+                    return;
+                }
+                const stepY = (branchStartY - branchTopY) / Math.max(1, count - 1);
+                branchNodes.forEach((sId, idx) => {
+                    const y = branchStartY - (idx * stepY);
+                    positions.set(sId, { x, y });
+                });
+            };
+
+            layoutBranch(branchA, leftX);
+            layoutBranch(branchB, rightX);
+
+            let titleA = 'ESPECIALIZAÇÃO I';
+            let titleB = 'ESPECIALIZAÇÃO II';
+            if (activeClassName === 'Guerreiro') {
+                titleA = 'RAMO: O COLOSSO';
+                titleB = 'RAMO: O TITÃ';
+            } else if (activeClassName === 'Necromante') {
+                titleA = 'RAMO: SENHOR DOS OSSOS';
+                titleB = 'RAMO: ESPECTRO ABISSAL';
+            }
+
+            return {
+                positions,
+                branches: { titleA, xA: leftX, titleB, xB: rightX }
+            };
+        }
+
+        // Caso Linear sem ramificações (Mago, Gunslinger, Pescador)
+        const allOrdered: string[] = [];
+        let traceId: string | null = rootId;
+        while (traceId) {
+            allOrdered.push(traceId);
+            const kids = childrenMap.get(traceId) || [];
+            traceId = kids.length > 0 ? kids[0]! : null;
+        }
+        skills.forEach(s => {
+            if (!allOrdered.includes(s.id)) allOrdered.push(s.id);
+        });
+
+        const total = allOrdered.length;
+        const startY = 880;
+        const endY = 140;
+        const step = total > 1 ? (startY - endY) / (total - 1) : 0;
+
+        allOrdered.forEach((sId, idx) => {
+            const y = total > 1 ? startY - (idx * step) : 500;
+            positions.set(sId, { x: centerX, y });
+        });
+
+        return { positions };
+    }
+
+    private showNodeDetails(skill: any, stateClass: string, clientX: number, clientY: number): void {
+        const panel = this.container.querySelector('#st-skill-details-panel') as HTMLElement;
+        if (!panel) return;
+
+        const nameEl = panel.querySelector('#st-skill-name');
+        const typeEl = panel.querySelector('#st-skill-type');
+        const descEl = panel.querySelector('#st-skill-desc');
+        const tierEl = panel.querySelector('#st-skill-tier');
+        const hintEl = panel.querySelector('#st-skill-hint');
+
+        const typeNames: Record<string, string> = {
+            'active': 'Habilidade Ativa (Slot)',
+            'passive': 'Habilidade Passiva',
+            'essential': 'Habilidade Essencial de Classe',
+            'rare': 'Especialização / Rara',
+            'attribute': 'Incremento de Atributo'
+        };
+
+        if (nameEl) nameEl.textContent = skill.name;
+        if (typeEl) typeEl.textContent = typeNames[skill.type] || skill.type.toUpperCase();
+        if (descEl) descEl.textContent = skill.description || 'Nenhuma descrição disponível.';
+        if (tierEl) tierEl.textContent = `TIER ${skill.tier || 1}`;
+
+        if (hintEl) {
+            hintEl.className = '';
+            if (stateClass === 'unlocked') {
+                hintEl.className = 'st-hint-unlocked';
+                hintEl.textContent = '✓ Desbloqueado';
+            } else if (skill.isBranchBlocked || stateClass.includes('branch-blocked')) {
+                hintEl.className = 'st-hint-locked';
+                hintEl.textContent = 'Bloqueado (Ramo Concorrente Escolhido)';
+            } else if (stateClass === 'can-unlock') {
+                hintEl.className = 'st-hint-available';
+                hintEl.textContent = 'Clique para Desbloquear';
+            } else {
+                hintEl.className = 'st-hint-locked';
+                hintEl.textContent = 'Bloqueado (Requer Pré-Requisito)';
+            }
+        }
+
+        const viewport = this.container.querySelector('.skill-tree-viewport') as HTMLElement;
+        const vpRect = viewport?.getBoundingClientRect() || { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+
+        let left = clientX - vpRect.left + 24;
+        let top = clientY - vpRect.top + 24;
+
+        if (left + 320 > vpRect.width) {
+            left = clientX - vpRect.left - 330;
+        }
+        if (top + 180 > vpRect.height) {
+            top = clientY - vpRect.top - 180;
+        }
+
+        panel.style.left = `${Math.max(10, left)}px`;
+        panel.style.top = `${Math.max(10, top)}px`;
+        panel.style.display = 'block';
+        panel.style.opacity = '1';
+    }
+
+    private hideNodeDetails(): void {
+        const panel = this.container.querySelector('#st-skill-details-panel') as HTMLElement;
+        if (panel) {
+            panel.style.opacity = '0';
+            panel.style.display = 'none';
+        }
     }
 }

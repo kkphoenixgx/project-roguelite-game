@@ -1,0 +1,91 @@
+            <div class="skills-manager-layout">
+                <!-- Seção 1: Habilidades da Classe -->
+                <div class="skill-category-card">
+                    <div class="category-header">
+                        <div class="header-titles">
+                            <span class="cat-title">Habilidades de Classe</span>
+                            <span class="cat-subtitle">Árvore da Classe Ativa</span>
+                        </div>
+                    </div>
+                    <div class="category-slots-row">
+                        <!-- Ativas da Classe (1 a 4 - Quadrados) -->
+                        <div class="slots-subgroup">
+                            <div class="subgroup-label">
+                                <span class="subgroup-badge class-active-badge">Ativas de Classe</span>
+                                <span class="subgroup-hint">Teclas [1] - [4]</span>
+                            </div>
+                            <div class="equip-slots" id="class-active-slots">
+                                <!-- 4 slots quadrados preenchidos pelo TS -->
+                            </div>
+                        </div>
+
+                        <!-- Ativa Primordial / Essencial (Estrela) -->
+                        <div class="slots-subgroup primordial-subgroup">
+                            <div class="subgroup-label">
+                                <span class="subgroup-badge primordial-badge">Primordial</span>
+                                <span class="subgroup-hint" id="primordial-key-hint">Teclas Especiais</span>
+                            </div>
+                            <div class="equip-slots" id="primordial-slot-container">
+                                <!-- Slots estrela preenchidos dinamicamente pelo TS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção 2: Broches da Árvore Global -->
+                <div class="skill-category-card">
+                    <div class="category-header">
+                        <div class="header-titles">
+                            <span class="cat-title" style="color: #FFD700;">Broches (Árvore Global)</span>
+                            <span class="cat-subtitle">Poderes Herdados da Meta-Progressão</span>
+                        </div>
+                    </div>
+                    <div class="category-slots-row">
+                        <!-- Broches Ativos (4 slots - Teclas 5 a 8) -->
+                        <div class="slots-subgroup">
+                            <div class="subgroup-label">
+                                <span class="subgroup-badge active-brooch-badge">Broches Ativos</span>
+                                <span class="subgroup-hint">Teclas [5] - [8]</span>
+                            </div>
+                            <div class="equip-slots" id="global-active-brooch-slots">
+                                <!-- 4 slots sol com espinhos preenchidos pelo TS -->
+                            </div>
+                        </div>
+
+                        <!-- Broches Passivos (I a IV - Triângulos Truncados sem botão) -->
+                        <div class="slots-subgroup">
+                            <div class="subgroup-label">
+                                <span class="subgroup-badge passive-brooch-badge">Broches Passivos</span>
+                                <span class="subgroup-hint">Passivas [I] - [IV]</span>
+                            </div>
+                            <div class="equip-slots" id="global-passive-brooch-slots">
+                                <!-- 4 slots triângulo truncado preenchidos pelo TS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Broches Desbloqueados para Equipar -->
+                    <div class="brooches-available-section">
+                        <div class="subgroup-label">
+                            <span class="subgroup-badge" style="background: rgba(255, 215, 0, 0.12); color: #FFD700; border: 1px solid rgba(255, 215, 0, 0.35);">Broches Desbloqueados</span>
+                            <span class="subgroup-hint">Loadout fixo da jornada (Alterações fora da run)</span>
+                        </div>
+                        <div id="global-available-brooches-list" class="available-brooches-grid">
+                            <!-- Preenchido pelo TS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção 3: Atributos Acumulativos da Árvore Global (Círculos com Escala Infinita) -->
+                <div class="skill-category-card cumulative-card">
+                    <div class="category-header">
+                        <div class="header-titles">
+                            <span class="cat-title" style="color: #4CAF50;">Atributos Acumulativos</span>
+                            <span class="cat-subtitle">Bônus permanentes da árvore global (Escala infinita)</span>
+                        </div>
+                    </div>
+                    <div id="meta-cumulative-attributes" class="cumulative-attributes-scroll">
+                        <!-- Círculos de atributos gerados dinamicamente com scroll infinito -->
+                    </div>
+                </div>
+            </div>

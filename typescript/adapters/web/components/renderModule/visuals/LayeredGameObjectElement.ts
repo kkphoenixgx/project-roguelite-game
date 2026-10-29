@@ -2,20 +2,28 @@ import GameObjectElement, { type GameObjectConstructorParams, type SpriteConfig 
 import VisualComposer from "./VisualComposer";
 import type { EntityRenderableState } from "../../../../../domain/ports/domain-contracts";
 import { logger } from "../../../shared/Logger";
+import { isGamePaused } from "../../Game";
 
 export default class LayeredGameObjectElement extends GameObjectElement {
     protected allConfigs: Map<string, SpriteConfig>;
     protected imageCache: Map<string, HTMLImageElement>;
     
-    protected composedLayers: { config: SpriteConfig, image: HTMLImageElement, zIndex: number }[] = [];
+    protected composedLayers: { config: SpriteConfig, image: HTMLImageElement, zIndex: number, type?: string }[] = [];
     private lastCompositionHash: string = '';
 
     constructor(params: GameObjectConstructorParams) {
         super(params.initialState, undefined, document.createElement('img'));
         this.allConfigs = params.configs;
         this.imageCache = params.imageCache;
-        this.lastCompositionHash = `${params.initialState.state || 'idle'}-${params.initialState.equipment ? Object.values(params.initialState.equipment).map((e: any) => e?.iconId).join('-') : ''}-${params.initialState.hasBeard}`;
+        this.lastCompositionHash = LayeredGameObjectElement.computeCompositionHash(params.initialState);
         this.recompose(params.initialState);
+    }
+
+    private static computeCompositionHash(state: EntityRenderableState): string {
+        const equipHash = state.equipment ? Object.values(state.equipment).map((e: any) => e?.iconId).join('-') : '';
+        const activeBroochHash = Array.isArray(state.globalActiveLoadout) ? state.globalActiveLoadout.join(',') : '';
+        const passiveBroochHash = Array.isArray(state.passiveLoadout) ? state.passiveLoadout.join(',') : '';
+        return `${state.state || 'idle'}-${equipHash}-${state.hasBeard}-${activeBroochHash}-${passiveBroochHash}`;
     }
 
     protected recompose(state: EntityRenderableState) {
@@ -25,16 +33,17 @@ export default class LayeredGameObjectElement extends GameObjectElement {
         this.composedLayers = composed.map(c => {
             const image = this.imageCache.get(c.config.imageSrc);
             if (!image) logger.log('error', `Imagem de equipamento faltando no cache: ${c.config.imageSrc}`);
-            return { config: c.config, image: image!, zIndex: c.zIndex };
+            return { config: c.config, image: image!, zIndex: c.zIndex, type: c.type };
         }).filter(c => c.image !== undefined);
     }
 
     public override updateState(newState: EntityRenderableState): void {
         super.updateState(newState);
-        const equipHash = newState.equipment ? Object.values(newState.equipment).map((e: any) => e?.iconId).join('-') : '';
-        const stateHash = `${newState.state || 'idle'}-${equipHash}-${newState.hasBeard}`;
+        const stateHash = LayeredGameObjectElement.computeCompositionHash(newState);
         if (this.lastCompositionHash !== stateHash) {
             this.lastCompositionHash = stateHash;
+            this.currentFrame = 0;
+            this.frameCounter = 0;
             this.recompose(newState);
         }
     }
@@ -80,8 +89,14 @@ export default class LayeredGameObjectElement extends GameObjectElement {
         ctx.rotate(this.rotation + (baseConfig.rotationOffset || 0));
         ctx.translate(-pivotX, -pivotY);
 
-        this.updateAnimation();
+        if (!isGamePaused()) {
+            this.updateAnimation();
+        }
         ctx.imageSmoothingEnabled = false;
+
+        const scale = (this.visualScale !== undefined && this.visualScale > 0) ? this.visualScale : 1;
+        const drawOffsetX = ((this.size.width * scale) - this.size.width) / 2;
+        const drawOffsetY = (this.size.height * scale) - this.size.height;
 
         for (const layer of this.composedLayers) {
             const layerFrame = this.currentFrame % layer.config.frameCount;
@@ -89,22 +104,40 @@ export default class LayeredGameObjectElement extends GameObjectElement {
             const sourceX = (layerFrame % columns) * layer.config.frameWidth;
             const sourceY = Math.floor(layerFrame / columns) * layer.config.frameHeight;
             
-            // Descobre a proporção real caso a HitBox (this.size) não seja 32x32
+            // Descobre a proporção real caso a HitBox (this.size) não seja 32x32 e aplica visualScale
             const baseFrameWidth = this.composedLayers[0]!.config.frameWidth;
             const baseFrameHeight = this.composedLayers[0]!.config.frameHeight;
-            const scaleX = this.size.width / baseFrameWidth;
-            const scaleY = this.size.height / baseFrameHeight;
+            const scaleX = (this.size.width / baseFrameWidth) * scale;
+            const scaleY = (this.size.height / baseFrameHeight) * scale;
 
             const rawOffset = layer.config.renderOffset;
             const currentOffset = (Array.isArray(rawOffset) ? rawOffset[this.currentFrame % rawOffset.length] : rawOffset) || { x: 0, y: 0 };
 
-            const destX = this.coordinates.x + currentOffset.x * scaleX;
-            const destY = this.coordinates.y + currentOffset.y * scaleY;
-            const destWidth = layer.config.frameWidth * scaleX;
-            const destHeight = layer.config.frameHeight * scaleY;
+            const logicalWidth = layer.config.renderSize?.width ?? layer.config.frameWidth;
+            const logicalHeight = layer.config.renderSize?.height ?? layer.config.frameHeight;
+
+            // Ancoragem bottom-center preservada
+            const destX = (this.coordinates.x - drawOffsetX) + currentOffset.x * scaleX;
+            const destY = (this.coordinates.y - drawOffsetY) + currentOffset.y * scaleY;
+            const destWidth = logicalWidth * scaleX;
+            const destHeight = logicalHeight * scaleY;
 
             ctx.drawImage(layer.image, sourceX, sourceY, layer.config.frameWidth, layer.config.frameHeight, destX, destY, destWidth, destHeight);
         }
+
+        // Aplicação do visualTint via blend mode Canvas 2D (source-atop com 35-45% opacidade, sem alocação de GC)
+        if (this.visualTint) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'source-atop';
+            ctx.fillStyle = this.visualTint;
+            ctx.globalAlpha = 0.4;
+            ctx.fillRect(this.coordinates.x - drawOffsetX, this.coordinates.y - drawOffsetY, this.size.width * scale, this.size.height * scale);
+            ctx.restore();
+        }
+
+        // Aura Elemental (Ar ou Luz)
+        this.drawElementalAura(ctx, pivotX, pivotY, this.size.width * scale, this.size.height * scale);
+
         ctx.restore();
     }
 }

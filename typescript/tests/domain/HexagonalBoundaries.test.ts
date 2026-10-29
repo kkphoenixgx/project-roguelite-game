@@ -14,7 +14,7 @@ function getAllFiles(dirPath: string, arrayOfFiles: string[] = []) {
         const fullPath = path.join(dirPath, file);
         if (fs.statSync(fullPath).isDirectory()) {
             getAllFiles(fullPath, arrayOfFiles);
-        } else if (fullPath.endsWith('.ts') && !fullPath.includes('.test.ts') && !fullPath.includes('LocalStorageAdapter.ts')) {
+        } else if (fullPath.endsWith('.ts') && !fullPath.includes('.test.ts')) {
             arrayOfFiles.push(fullPath);
         }
     });

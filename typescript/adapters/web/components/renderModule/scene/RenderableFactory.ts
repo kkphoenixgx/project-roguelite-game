@@ -19,6 +19,11 @@ export class RenderableFactory {
 
   /** Fase de Update (Sincronização): Cria uma nova instância de um objeto `IRenderable` com base no DTO de estado fornecido pelo domínio. @param state O DTO de estado da entidade a ser criada. @returns Uma instância de `IRenderable` (ex: `Sprite`) ou `null` se nenhuma configuração for encontrada. */
   public create(state: EntityRenderableState): IRenderable | null {
+    // Entidades puramente lógicas/colisionadoras sem representação visual direta
+    if (state.entityTypeId === 'environmentCollider' || state.entityTypeId === 'portalLink' || state.entityTypeId === 'portalLinkRequest') {
+      return null;
+    }
+
     let creationStrategy = this.creationStrategies.get(state.entityTypeId);
 
     // Se não houver Override registrado (Decorators), usa a Criação Genérica Automática (Data-Driven)!
@@ -36,7 +41,12 @@ export class RenderableFactory {
         }
 
         const config = this.spriteConfigs.get(configKey);
-        const image = this.imageCache.get(config?.imageSrc || '');
+        let image = this.imageCache.get(config?.imageSrc || '');
+        if (!image && config?.imageSrc) {
+          image = new Image();
+          image.src = config.imageSrc;
+          this.imageCache.set(config.imageSrc, image);
+        }
         
         return new GameObjectElement(params.initialState, config, image);
       };

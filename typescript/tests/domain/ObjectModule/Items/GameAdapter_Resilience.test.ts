@@ -8,14 +8,22 @@ class FakeLogger implements ILogger {
 }
 
 class FakeDomainFacade implements IGameDomain {
+    public unlockedGlobalNodes: string[] = [];
+    public globalNodesMap: Record<string, any> = {};
+    public globalMetaSummary = { stats: [], brooches: [] };
+    generateLocalRewards = vi.fn().mockReturnValue([]);
     update = vi.fn();
     loadWorld = vi.fn();
+    transitionWorld = vi.fn();
     handlePlayerInteractions = vi.fn();
     getRenderState = vi.fn();
     manageInventory = vi.fn();
     manageSkillTree = vi.fn();
     allocateAttribute = vi.fn();
     sendDialogue = vi.fn();
+    getAvailableWorlds = vi.fn().mockReturnValue([]);
+    notifyPauseState = vi.fn();
+    updateLLMPreset = vi.fn();
 }
 
 // Emulação da blindagem do Adapter baseada no Requisito 5 de Orquestração

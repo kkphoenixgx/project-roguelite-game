@@ -1,7 +1,11 @@
-import Item, { type ItemCategory, type ItemRarity } from "../Item";
+import Storage from "./Storage";
+import type Item from "../Item";
+import { type ItemRarity } from "../Item";
 import type Effect from "../Effects/Effect";
 
-export default abstract class Bag extends Item {
+export default abstract class Bag extends Storage {
+    public storedItems: Item[] = [];
+
     constructor(
         public capacityBonus: number,
         name: string,
@@ -12,7 +16,36 @@ export default abstract class Bag extends Item {
         price: number,
         effects: Effect[] = []
     ) {
-        // A categoria genérica 'storage' notifica o player que este é um item de expansão
-        super(name, description, itemId, rarity, 'storage', iconId, price, false, 1, 100, effects, 1, {}, false, true);
+        super(name, description, itemId, rarity, iconId, price, effects, 'storage');
+    }
+
+    /**
+     * Guarda itens no interior da bolsa quando ela é desequipada ou armazenada.
+     */
+    public storeItems(items: Item[]): void {
+        this.storedItems.push(...items);
+    }
+
+    /**
+     * Retira e descarrega todos os itens guardados dentro da bolsa para o inventário expandido do jogador.
+     */
+    public retrieveItems(): Item[] {
+        const items = [...this.storedItems];
+        this.storedItems = [];
+        return items;
+    }
+
+    /**
+     * Quantidade de itens atualmente guardados no interior da bolsa.
+     */
+    public get itemCount(): number {
+        return this.storedItems.length;
+    }
+
+    /**
+     * Capacidade máxima de itens adicionais que a bolsa concede / armazena.
+     */
+    public get capacity(): number {
+        return this.capacityBonus;
     }
 }

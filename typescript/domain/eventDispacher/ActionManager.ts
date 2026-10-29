@@ -8,6 +8,7 @@ export default class ActionManager {
 
   public mouseLastCoordinates:{x:number,y:number} = {x:0,y:0} 
   private activeHandlers: Map<action, Function> = new Map();
+  private activePortals: Map<number, { x: number, y: number }> = new Map();
 
   constructor(private player: Player, private logger: ILogger, private eventManager: IEventManager){
     this.eventManager.on('log', ({ channel, message, params }) => {
@@ -19,6 +20,23 @@ export default class ActionManager {
     // Escuta a troca de classes para reconstruir a árvore de inputs
     this.eventManager.on('classChanged', () => {
         this.rebuildBindings();
+    });
+
+    // Rastreia portais interativos ativos para simetria de interação euclidiana
+    this.eventManager.on('portalPromptShow', (payload: { portalId: number; coordinates: { x: number; y: number } }) => {
+        this.activePortals.set(payload.portalId, payload.coordinates);
+    });
+
+    this.eventManager.on('portalPromptHide', (payload: { portalId: number }) => {
+        this.activePortals.delete(payload.portalId);
+    });
+
+    this.eventManager.on('mapTransitionRequested', () => {
+        this.activePortals.clear();
+    });
+
+    this.eventManager.on('mapTransitionCompleted', () => {
+        this.activePortals.clear();
     });
   }
 
@@ -50,10 +68,10 @@ export default class ActionManager {
                   this.logger.log('actions', `[ActionManager] SUCESSO: Ação '${actionName}' roubada pela Classe ${className}`);
               });
           } else {
-              this.logger.log('error', `[ActionManager] FALHA: Nenhum atalho achado para '${className}'. Chaves disponíveis: ${Array.from(ClassActionBindings.keys()).join(', ')}`);
+              this.logger.log('actions', `[ActionManager] Nenhum atalho específico por anotação para '${className}'. Roteamento dinâmico via loadout ativo.`);
           }
       } else {
-          this.logger.log('error', `[ActionManager] FALHA: Instância da Classe Ativa '${this.player.activeClass}' NÃO existe dentro de player.classes!`);
+          this.logger.log('actions', `[ActionManager] Nenhuma classe ativa definida ou em transição ('${this.player.activeClass}').`);
       }
   }
 
@@ -64,14 +82,50 @@ export default class ActionManager {
         if (handler) {
             handler(this.mouseLastCoordinates, action);
         } else {
-            // Roteamento Dinâmico para o Loadout (Deck Building) - Teclas 1, 2, 3 e 4
-            const loadoutMatch = action.match(/^slot_([1-4])$/);
+            // Roteamento Dinâmico para o Loadout (Deck Building) - Teclas 1 a 4 (Classe) e 5 a 8 (Broches Ativos)
+            const loadoutMatch = action.match(/^(?:slot_|spell_)([1-8])$/);
             if (loadoutMatch) {
-                const slotIndex = parseInt(loadoutMatch[1] as string) - 1;
-                const skillId = this.player.activeLoadout[slotIndex];
-                if (skillId) {
-                    this.player.executeActiveSkill(skillId, this.mouseLastCoordinates);
+                const slotNum = parseInt(loadoutMatch[1] as string);
+                if (slotNum <= 4) {
+                    const slotIndex = slotNum - 1;
+                    const skillId = this.player.activeLoadout[slotIndex];
+                    if (skillId) {
+                        this.player.executeActiveSkill(skillId, this.mouseLastCoordinates);
+                    }
+                } else {
+                    const broochSlotIndex = slotNum - 5;
+                    const broochId = this.player.globalActiveLoadout?.[broochSlotIndex];
+                    if (broochId) {
+                        if (typeof this.player.executeActiveBrooch === 'function') {
+                            this.player.executeActiveBrooch(broochId, this.mouseLastCoordinates);
+                        }
+                    }
                 }
+            } else if (action === 'spell_f') {
+                // Se a classe não sequestrou o spell_f diretamente, aciona a habilidade primordial genérica
+                if (typeof this.player.executePrimordialSkill === 'function') {
+                    this.player.executePrimordialSkill(this.mouseLastCoordinates);
+                }
+            } else if (action === 'interact') {
+                let closestPortalId: number | undefined = undefined;
+                if (this.activePortals.size > 0 && this.player?.coordinates) {
+                    let minDistanceSq = Infinity;
+                    const px = this.player.coordinates.x;
+                    const py = this.player.coordinates.y;
+
+                    this.activePortals.forEach((coords, id) => {
+                        const dx = coords.x - px;
+                        const dy = coords.y - py;
+                        const distSq = dx * dx + dy * dy;
+                        if (distSq < minDistanceSq) {
+                            minDistanceSq = distSq;
+                            closestPortalId = id;
+                        }
+                    });
+                }
+
+                // Notifica portais interativos e gatilhos de interação no mapa com simetria de ID
+                this.eventManager.dispatch('portalInteract', closestPortalId !== undefined ? { portalId: closestPortalId } : {});
             } else {
                 this.eventManager.dispatch('log', { channel: 'actions', message: `(ActionManager) event not managed: ${action}`, params: [] });
             }

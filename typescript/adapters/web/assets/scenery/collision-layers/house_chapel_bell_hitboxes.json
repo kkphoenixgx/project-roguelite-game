@@ -1,0 +1,58 @@
+{
+  "hitboxes": [
+    {
+      "id": "house_chapel_bell_poly_1",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 44,
+          "y": 311
+        },
+        {
+          "x": 222,
+          "y": 311
+        },
+        {
+          "x": 222,
+          "y": 185
+        },
+        {
+          "x": 44,
+          "y": 185
+        }
+      ]
+    },
+    {
+      "id": "house_chapel_bell_poly_2",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 212,
+          "y": 260
+        },
+        {
+          "x": 253,
+          "y": 260
+        },
+        {
+          "x": 253,
+          "y": 198
+        },
+        {
+          "x": 212,
+          "y": 198
+        }
+      ]
+    }
+  ]
+}

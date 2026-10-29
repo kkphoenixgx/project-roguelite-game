@@ -47,7 +47,13 @@ export default abstract class AnimatedMeleeAttack extends ObjectElement {
         this.rotation = Math.atan2(this.direction.y, this.direction.x) + (config.rotationOffset || 0);
 
         const onCollide = (other: ObjectElement) => {
-            if (other.id !== this.attacker.id && !this.enemiesHit.has(other.id) && 'takeDamage' in other) {
+            const isFriendly = other.id === this.attacker.id || 
+                other.objectId === 'player' || 
+                other.objectId === 'spawn-leviatã' || 
+                other.objectId === 'spawn-leviata' || 
+                other.objectId === 'fishPet';
+
+            if (!isFriendly && !this.enemiesHit.has(other.id) && 'takeDamage' in other) {
                 this.enemiesHit.add(other.id);
                 this.attackObj.execute(other, this.direction);
             }

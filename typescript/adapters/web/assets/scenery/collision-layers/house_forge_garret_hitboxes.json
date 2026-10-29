@@ -1,0 +1,58 @@
+{
+  "hitboxes": [
+    {
+      "id": "house_forge_garret_poly_1",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 103,
+          "y": 280
+        },
+        {
+          "x": 267,
+          "y": 280
+        },
+        {
+          "x": 267,
+          "y": 157
+        },
+        {
+          "x": 103,
+          "y": 157
+        }
+      ]
+    },
+    {
+      "id": "house_forge_garret_poly_2",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 14,
+          "y": 287
+        },
+        {
+          "x": 103,
+          "y": 287
+        },
+        {
+          "x": 103,
+          "y": 192
+        },
+        {
+          "x": 14,
+          "y": 192
+        }
+      ]
+    }
+  ]
+}

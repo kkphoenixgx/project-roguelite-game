@@ -8,15 +8,23 @@
 </head>
 <body>
     <div id="toolbar">
-        <h2>Hitbox Editor</h2>
+        <div id="active-asset-banner" class="active-asset-banner" style="display: none;">
+            <span class="asset-banner-label">Asset:</span>
+            <span id="active-asset-id" class="asset-banner-id"></span>
+        </div>
+        <div class="tool-group">
+            <button id="btn-save-code" class="action-btn" style="background-color: #1e7e34; border-color: #28a745; font-size: 15px; font-weight: bold; padding: 12px; display: none;">💾 Salvar Alteração</button>
+        </div>
         <div class="tool-group">
             <button id="btn-load-image">📂 Carregar Sprite</button>
             <input type="file" id="file-input" accept="image/png, image/jpeg" style="display: none;">
         </div>
         <div class="tool-group">
-            <button id="btn-tool-select" class="active">🖱️ Selecionar</button>
-            <button id="btn-tool-polygon">⬠ Criar Polígono</button>
-            <button id="btn-tool-circle">⭕ Criar Círculo</button>
+            <button id="btn-tool-select" class="active">🖱️ Selecionar (S/V)</button>
+            <button id="btn-tool-rectangle">▭ Criar Retângulo (R)</button>
+            <button id="btn-tool-polygon">⬠ Criar Polígono (P)</button>
+            <button id="btn-tool-circle">⭕ Criar Círculo (C)</button>
+            <button id="btn-delete-selected" class="action-btn" style="background-color: #c82333; border-color: #bd2130; margin-top: 6px; display: none;">🗑️ Apagar Hitbox (Del)</button>
         </div>
         <div class="tool-group">
             <button id="btn-export" class="action-btn">💾 Exportar JSON</button>
@@ -36,10 +44,13 @@
             <button id="btn-toggle-help">▲</button>
         </div>
         <ul id="controls-help-body">
-            <li><b>🖱️ Esq:</b> Adicionar Ponto / Selecionar</li>
-            <li><b>🖱️ Dir:</b> Desfazer / Apagar</li>
-            <li><b>⌨️ Enter:</b> Finalizar Polígono</li>
-            <li><b>⌨️ Esc:</b> Cancelar</li>
+            <li><b>⌨️ R / P / C / S:</b> Alternar Ferramenta (Retângulo, Polígono, Círculo, Seleção)</li>
+            <li><b>▭ Retângulo:</b> Arrastar ou 2 cliques (Segure <b>Shift</b> para quadrado 1:1)</li>
+            <li><b>🖱️ Esq:</b> Selecionar / Mover Hitbox ou Ponto</li>
+            <li><b>🖱️ Dir:</b> Apagar Hitbox / Ponto / Cancelar</li>
+            <li><b>⌨️ Delete / Backspace:</b> Apagar Hitbox Selecionada</li>
+            <li><b>⌨️ Enter:</b> Finalizar Polígono ou Retângulo</li>
+            <li><b>⌨️ Esc:</b> Cancelar / Desmarcar</li>
             <li><b>🖱️ Scroll:</b> Mover Verticalmente</li>
             <li><b>Shift + Scroll:</b> Mover Horizontalmente</li>
             <li><b>Ctrl + Scroll:</b> Zoom (Focado no Mouse)</li>

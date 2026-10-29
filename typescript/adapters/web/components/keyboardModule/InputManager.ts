@@ -33,7 +33,12 @@ export type GameAction =
   | 'slot_1'
   | 'slot_2'
   | 'slot_3'
-  | 'slot_4';
+  | 'slot_4'
+  | 'slot_5'
+  | 'slot_6'
+  | 'slot_7'
+  | 'slot_8'
+  | 'swap_weapon';
 
 /**  @class InputManager Gerencia todos os inputs do usuário, mapeando eventos brutos de teclado para ações de jogo específicas. Esta classe centraliza a lógica de input, permitindo bindings complexos, combos e remapeamento de teclas. */
 export class InputManager {
@@ -41,7 +46,7 @@ export class InputManager {
   private justPressedKeys: Set<string> = new Set();
   private keyMap: Map<string, GameAction> = new Map();
   private actionMap: Map<GameAction, string[]> = new Map();
-  private preventUnload: boolean = true;
+  private preventUnload: boolean = false;
   public mouseLastCoordinates: { x: number, y: number } = { x: 0, y: 0 }
   public clickActions: Set<action> = new Set(["leftClick", "scrollClick", "rightClick"])
 
@@ -111,6 +116,10 @@ export class InputManager {
     if (!this.actionMap.has('slot_2')) this.setKeyForAction('slot_2', '2');
     if (!this.actionMap.has('slot_3')) this.setKeyForAction('slot_3', '3');
     if (!this.actionMap.has('slot_4')) this.setKeyForAction('slot_4', '4');
+    if (!this.actionMap.has('slot_5')) this.setKeyForAction('slot_5', '5');
+    if (!this.actionMap.has('slot_6')) this.setKeyForAction('slot_6', '6');
+    if (!this.actionMap.has('slot_7')) this.setKeyForAction('slot_7', '7');
+    if (!this.actionMap.has('slot_8')) this.setKeyForAction('slot_8', '8');
   }
 
   /** Anexa os listeners de evento de teclado à janela do navegador. @private */
@@ -148,10 +157,8 @@ export class InputManager {
   }
 
   private handleBeforeUnload(e: BeforeUnloadEvent): void {
-    if (this.preventUnload) {
-      e.preventDefault();
-      e.returnValue = ''; // Exigido pelo Chrome para exibir o pop-up de confirmação.
-    }
+    // Zero modais nativos: confirmações de saída são gerenciadas exclusivamente pelo ConfirmationModal
+    // e interceptadores de janela do Tauri, impedindo que o navegador/webview gere diálogos nativos.
   }
 
   private handleClick(e: MouseEvent) {

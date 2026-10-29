@@ -6,7 +6,10 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    font-family: 'Minecraft', 'Courier New', Courier, monospace;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
 .status-bar-container {
@@ -98,4 +101,54 @@
 
 .status-icon:hover::after {
     opacity: 1;
+}
+
+/* Buff Circular Timer HUD */
+.buff-circular-container {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+}
+
+.buff-circular-ring {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    padding: 2px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+    transition: background 0.1s linear;
+}
+
+.buff-inner-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(15, 15, 25, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.buff-countdown-text {
+    position: absolute;
+    bottom: -6px;
+    right: -4px;
+    background: rgba(0, 0, 0, 0.85);
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: bold;
+    padding: 1px 3px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    pointer-events: none;
+    line-height: 1;
 }

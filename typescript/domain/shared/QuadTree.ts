@@ -62,16 +62,16 @@ export default class Quadtree<T> {
     const verticalMidpoint = this.bounds.x + (this.bounds.width / 2);
     const horizontalMidpoint = this.bounds.y + (this.bounds.height / 2);
 
-    const topQuadrant = (element.y < horizontalMidpoint && element.y + element.height < horizontalMidpoint);
-    const bottomQuadrant = (element.y > horizontalMidpoint);
+    const topQuadrant = (element.y < horizontalMidpoint && element.y + element.height <= horizontalMidpoint);
+    const bottomQuadrant = (element.y >= horizontalMidpoint);
 
-    if (element.x < verticalMidpoint && element.x + element.width < verticalMidpoint) {
+    if (element.x < verticalMidpoint && element.x + element.width <= verticalMidpoint) {
       if (topQuadrant) {
         index = 1;
       } else if (bottomQuadrant) {
         index = 2;
       }
-    } else if (element.x > verticalMidpoint) {
+    } else if (element.x >= verticalMidpoint) {
       if (topQuadrant) {
         index = 0;
       } else if (bottomQuadrant) {
@@ -142,19 +142,10 @@ export default class Quadtree<T> {
     }
 
     if (this.nodes.length > 0) {
-      const index = this.getIndex(area);
-
-      if (index !== -1) {
-        const node = this.nodes[index];
-        if (node) {
+      for (let i = 0; i < this.nodes.length; i++) {
+        const node = this.nodes[i];
+        if (node && node.intersects(area)) {
           node.retrieve(area, found);
-        }
-      } else {
-        for (let i = 0; i < this.nodes.length; i++) {
-          const node = this.nodes[i];
-          if (node && node.intersects(area)) {
-            node.retrieve(area, found);
-          }
         }
       }
     }

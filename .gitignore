@@ -12,6 +12,8 @@ node_modules/
 dist/
 dist-ssr/
 .vite/
+pnpm-lock.yaml
+pnpm-workspace.yaml
 
 # Ambiente
 .env
@@ -45,3 +47,15 @@ log/
 JaCaMo/npcs-athena/doc/athena/
 *.class
 *.jar
+
+typescript/domain/ObjectModule/Entities/.project.mas2j
+typescript/domain/ObjectModule/Entities/talaria.asl
+
+# Stryker Mutator (Testes de Mutação)
+.stryker-tmp/
+reports/
+stryker.log
+
+# Storybook
+
+storybook-static/

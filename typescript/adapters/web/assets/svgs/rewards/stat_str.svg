@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+  <defs>
+    <linearGradient id="arm_red_grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7a0000"/>
+      <stop offset="35%" stop-color="#c0392b"/>
+      <stop offset="70%" stop-color="#e74c3c"/>
+      <stop offset="100%" stop-color="#ff7675"/>
+    </linearGradient>
+    <filter id="arm_glow">
+      <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#ff4757" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+  <g filter="url(#arm_glow)">
+    <!-- Base: Deltoide (Ombro Musculoso) -->
+    <path d="M 6 34 C 6 26, 12 24, 16 24 C 20 24, 22 28, 20 34 C 16 38, 10 38, 6 34 Z" fill="url(#arm_red_grad)" stroke="#ffffff" stroke-width="1.8"/>
+    <!-- Tríceps e Braço Inferior com Cotovelo Definido -->
+    <path d="M 14 30 C 20 33, 26 36, 32 36 C 36 36, 38 33, 37 30 L 32 24 L 18 24 Z" fill="url(#arm_red_grad)" stroke="#ffffff" stroke-width="1.8"/>
+    <!-- Bíceps Volumoso Contratado -->
+    <path d="M 16 24 C 16 15, 26 14, 29 20 C 28 24, 25 26, 20 25 Z" fill="url(#arm_red_grad)" stroke="#ffffff" stroke-width="1.8"/>
+    <!-- Antebraço Erguido em Ângulo Firme -->
+    <path d="M 37 30 C 39 24, 38 18, 34 14 L 27 18 L 30 26 Z" fill="url(#arm_red_grad)" stroke="#ffffff" stroke-width="1.8"/>
+    <!-- Punho Fechado Cerrado (Clássico Power Fist) -->
+    <path d="M 34 14 C 36 10, 34 6, 29 6 C 25 6, 23 10, 27 16 Z" fill="url(#arm_red_grad)" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round"/>
+    <!-- Dobra dos Dedos Cerrados -->
+    <path d="M 28 8 C 31 9, 32 11, 31 13" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M 26 11 C 29 12, 30 14, 29 15" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Veia Rúnica Dourada no Bíceps -->
+    <path d="M 20 20 Q 23 22, 26 18" fill="none" stroke="#fffa65" stroke-width="2" stroke-linecap="round"/>
+    <!-- Faíscas de Força Explosiva -->
+    <path d="M 21 4 L 20 1 M 31 3 L 34 1 M 41 8 L 45 6" stroke="#fffa65" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>

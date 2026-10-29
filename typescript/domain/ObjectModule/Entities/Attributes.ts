@@ -212,7 +212,16 @@ export default class Attributes {
   public get insight(): number { return (this.wisdom / 10) + this._bonusInsight; }
   public get insightDescription(): string { return "Increases the amount of experience points gained." }
 
+  /** Porcentagem do dano causado convertida em cura. @returns percentage value */
+  public get lifesteal(): number { return this._bonusLifesteal; }
+  public get lifestealDescription(): string { return "Cura o atacante em uma porcentagem do dano causado." }
 
+  /** Multiplicador do tamanho e área de ataques e projéteis. */
+  public get areaMultiplier(): number { return 1 + (this._bonusArea / 100); }
+  public get areaMultiplierDescription(): string { return "Aumenta o tamanho e área de efeito dos ataques e projéteis." }
+
+
+  public addBonusMaxHp(value: number) { this._maxHp += value; this._hp += value; }
   public set hp(value: number) { this._hp = Math.max(0, Math.min(this._maxHp, value)); }
   public set mana(value: number) { this._mana = Math.max(0, Math.min(this.maxMana, value)); }
   public set speed(value: number) { this._bonusSpeed += value; }
@@ -251,4 +260,35 @@ export default class Attributes {
   public get wisdom(): number { return this._wisdom; }
   public set wisdom(value: number) { this._wisdom = value; }
 
+  public restoreState(state: {
+    level: number;
+    currentXp?: number;
+    availablePoints?: number;
+    maxHp?: number;
+    hp?: number;
+    mana?: number;
+    strength: number;
+    constitution: number;
+    dexterity: number;
+    intelligence: number;
+    wisdom: number;
+    charisma: number;
+  }): void {
+    this._level = state.level;
+    this._currentXp = state.currentXp ?? 0;
+    this._availablePoints = state.availablePoints ?? 0;
+    this._strength = state.strength;
+    this._constitution = state.constitution;
+    this._dexterity = state.dexterity;
+    this._intelligence = state.intelligence;
+    this._wisdom = state.wisdom;
+    this._charisma = state.charisma;
+    if (state.maxHp !== undefined) this._maxHp = state.maxHp;
+    if (state.hp !== undefined) {
+      this._hp = state.hp <= 0 ? this._maxHp : Math.min(this._maxHp, state.hp);
+    } else {
+      this._hp = this._maxHp;
+    }
+    if (state.mana !== undefined) this._mana = Math.min(this.maxMana, state.mana);
+  }
 }

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+  <defs>
+    <linearGradient id="lfs_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4d4d"/>
+      <stop offset="50%" stop-color="#c0392b"/>
+      <stop offset="100%" stop-color="#4a0000"/>
+    </linearGradient>
+    
+  </defs>
+  <g>
+    <!-- Duas Presas Vampíricas Afiadas -->
+    <path d="M14 8 C14 16 17 26 20 30 C18 24 16 16 16 8 Z" fill="#f1f2f6" stroke="#c0392b" stroke-width="1.2"/>
+    <path d="M34 8 C34 16 31 26 28 30 C30 24 32 16 32 8 Z" fill="#f1f2f6" stroke="#c0392b" stroke-width="1.2"/>
+    <!-- Gota de Sangue Viva / Absorção de Alma -->
+    <path d="M24 16 C24 16 16 26 16 33 C16 38 20 42 24 42 C28 42 32 38 32 33 C32 26 24 16 24 16 Z" fill="url(#lfs_grad)" stroke="#ffffff" stroke-width="1.2"/>
+    <!-- Reflexo na gota de sangue -->
+    <path d="M20 32 C20 30 22 28 24 28" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Espirros de essência vital -->
+    <circle cx="12" cy="38" r="1.5" fill="#ff4d4d"/>
+    <circle cx="36" cy="38" r="1.5" fill="#ff4d4d"/>
+  </g>
+</svg>

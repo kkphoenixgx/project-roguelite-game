@@ -4,10 +4,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="/global.css">
+    <script>
+      window.addEventListener('error', function(e) {
+        console.error('[Early Window Error]', e.error || e.message);
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        console.error('[Early Unhandled Rejection]', e.reason);
+      });
+    </script>
     <script src="/typescript/adapters/web/index.ts" defer type="module"></script>
       
-    <link rel="icon" type="image/png" href="x">
-    <title>x</title>
+    <link rel="icon" type="image/png" href="/game-icon.png">
+    <title>Alvorada de Vilgem</title>
   </head>
   <body>
 

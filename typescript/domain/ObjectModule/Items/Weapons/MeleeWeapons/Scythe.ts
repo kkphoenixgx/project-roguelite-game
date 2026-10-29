@@ -8,12 +8,17 @@ import "./ScytheSlash"; // Força o Vite a ler o arquivo e registrar a fábrica 
 export default class Scythe extends MeleeWeapon {
     constructor() {
         super(
-            20, 0.5, 'Foice da Morte', 'Ceifa a alma dos inimigos em área rotacional.', 3, 'rare', 3, 100, 100, [], 1, {}, false, true, 'Necromante'
+            25, 0.8, 'Foice das Almas', 'Uma arma macabra que drena a força vital dos inimigos.', 3, 'rare', 3, 150, 100, [], 1, {}, false, true, 'Necromante'
         );
-        // Esses valores não serão usados pelo ScytheSlash (ele usa o tamanho real do sprite),
-        // mas são mantidos aqui para a interface original da MeleeWeapon.
         this.attackRange = 80;
         this.attackAngle = 180;
+        this.weaponType = 'scythe';
+
+        // A Mágica do Roubo de Vida (Vampirismo Zero-GC)!
+        this.onHitActions.push((attacker, _target, damageDealt) => {
+            const healAmount = damageDealt * 0.15; // 15% de roubo de vida
+            attacker.attributes.hp += healAmount;
+        });
     }
 
     public override attack(attacker: Entity, direction: Vector2D, eventManager: IEventManager): void {
@@ -26,7 +31,7 @@ export default class Scythe extends MeleeWeapon {
             coordinates: { x: attacker.coordinates.x, y: attacker.coordinates.y },
             direction: direction,
             attack: weaponAttack,
-            attacker: attacker // Passamos a entidade de forma limpa e pública no payload
+            attacker: attacker
         });
     }
 }

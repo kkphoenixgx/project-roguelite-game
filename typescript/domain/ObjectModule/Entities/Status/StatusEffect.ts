@@ -1,4 +1,5 @@
 import type Entity from "../Entity";
+import type { StatusCategory } from "../../../ports/domain-contracts";
 
 export default abstract class StatusEffect {
     public elapsed: number = 0;
@@ -8,7 +9,9 @@ export default abstract class StatusEffect {
         public id: string, 
         public description: string,
         public duration: number, 
-        public tickInterval: number = 0
+        public tickInterval: number = 0,
+        public category: StatusCategory = 'magical',
+        public tier: number = 1
     ) {}
 
     public apply(target: Entity): void {

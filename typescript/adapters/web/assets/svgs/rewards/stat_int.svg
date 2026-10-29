@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+  <defs>
+    <linearGradient id="int_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#70a1ff"/>
+      <stop offset="50%" stop-color="#1e90ff"/>
+      <stop offset="100%" stop-color="#3742fa"/>
+    </linearGradient>
+    
+  </defs>
+  <g>
+    <!-- Páginas do Tomo Arcano Aberto -->
+    <path d="M24 38 C18 35 10 36 6 38 V14 C11 12 18 13 24 16 C30 13 37 12 42 14 V38 C38 36 30 35 24 38 Z" fill="#2f3542" stroke="#70a1ff" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M24 16 V38" stroke="#70a1ff" stroke-width="1.5"/>
+    <path d="M10 18 C15 16 20 17 22 19 M10 24 C15 22 20 23 22 25 M10 30 C15 28 20 29 22 31" stroke="#5352ed" stroke-width="1" stroke-linecap="round"/>
+    <path d="M38 18 C33 16 28 17 26 19 M38 24 C33 22 28 23 26 25 M38 30 C33 28 28 29 26 31" stroke="#5352ed" stroke-width="1" stroke-linecap="round"/>
+    <!-- Orbe de Mana / Olho Místico Flutuante -->
+    <circle cx="24" cy="11" r="6" fill="url(#int_grad)" stroke="#ffffff" stroke-width="1.2"/>
+    <path d="M21 11 Q24 7 27 11 Q24 15 21 11 Z" fill="#ffffff"/>
+    <circle cx="24" cy="11" r="2" fill="#000000"/>
+    <!-- Faíscas arcanas -->
+    <path d="M15 7 L17 9 M33 7 L31 9 M24 2 V4" stroke="#70a1ff" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+</svg>

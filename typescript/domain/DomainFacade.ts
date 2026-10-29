@@ -1,16 +1,34 @@
 /** @file Implementa a fachada do domínio, o único ponto de entrada para a lógica de negócio do jogo. */
 import type { ILogger } from "./ports/ILogger";
-import type { IGameDomain, RenderableState, WorldState } from "./ports/domain-contracts";
+import { type ITelemetryPort, NullTelemetryPort } from "./ports/ITelemetryPort";
+import type { IGameDomain, RenderableState, WorldState, CustomLLMPresetDTO, ChunkCoordDTO, WorldBoundsDTO } from "./ports/domain-contracts";
+import type { PlayerSaveState, ISaveRepository } from "./ports/ISaveRepository";
+import { type ILLMConfigPort, NullLLMConfigPort } from "./ports/ILLMConfigPort";
+import { AutoSaveService } from "./services/AutoSaveService";
 
 import Player from "./ObjectModule/Entities/Player/Player";
 import ObjectElementManager from "./ObjectModule/ObjectElementManager";
 import GameWorld from "./ObjectModule/GameWorld";
 import VilgemWorld from "./ObjectModule/Maps/VilgemWorld";
+import AlunWorld from "./ObjectModule/Maps/AlunWorld";
+import CemiiWorld from "./ObjectModule/Maps/CemiiWorld";
+import { IntermapRegistry } from "./ObjectModule/Maps/IntermapConfig";
+import IntermapWorld from "./ObjectModule/Maps/IntermapWorld";
 import Attributes from "./ObjectModule/Entities/Attributes";
+import BroochRegistry from "./ObjectModule/Entities/Player/components/BroochRegistry";
 import type { action } from "./eventDispacher/actions.type";
 import ActionManager from "./eventDispacher/ActionManager";
 import type { IEventManager } from "./eventDispacher/IGameEvents";
 import type { ICollisionService } from "./ports/ICollisionService";
+import DialogueGateway from "./DialogueGateway";
+import InventoryGateway from "./facadeComponents/InventoryGateway";
+import SkillTreeGateway from "./facadeComponents/SkillTreeGateway";
+import DomainRenderState from "./facadeComponents/DomainRenderState";
+import DomainMCPAdapter from "./facadeComponents/DomainMCPAdapter";
+import MetaProgressionManager from "./facadeComponents/MetaProgressionManager";
+import ToolActionGateway from "./facadeComponents/ToolActionGateway";
+import { generateRandomLocalRewards } from "./facadeComponents/LocalRewardGenerator";
+import { TauriPanteaoBridge } from "./facadeComponents/TauriPanteaoBridge";
 
 /** Define a estrutura de dados para a configuração inicial do domínio. */
 interface DomainConfig {
@@ -21,33 +39,120 @@ interface DomainConfig {
 /** @class DomainFacade @implements {IGameDomain} Atua como o guardião e orquestrador da camada de domínio, implementando a porta `IGameDomain` para proteger a integridade das entidades internas e expor apenas operações de alto nível. */
 export default class DomainFacade implements IGameDomain {
   private world!: GameWorld; /** @private A instância do `GameWorld` que representa o ambiente do jogo. */
-  private player!: Player; /** @private A instância do `Player` que representa o jogador. */
+  public player!: Player; /** A instância do `Player` que representa o jogador. */
   private objectManager!: ObjectElementManager; /** @private O gerenciador de todas as outras entidades dinâmicas (inimigos, itens, etc.). */
+  private dialogueGateway!: DialogueGateway;
   private config: DomainConfig; /** @private A configuração inicial do domínio. */
   private logger: ILogger; /** @private A instância do logger, injetada via construtor. */
 
   private actionManager!: ActionManager;
-  private cachedRenderState = {
-    world: { width: 0, height: 0, mapId: 'vilgem' },
-    renderables: [] as any[]
-  };
-  private cachedPlayerState: any = null;
-  private viewedClass: string | null = null;
+  private inventoryGateway!: InventoryGateway;
+  private skillTreeGateway!: SkillTreeGateway;
+  private toolActionGateway!: ToolActionGateway;
+  private renderStateBuilder!: DomainRenderState;
+  private mcpAdapter!: DomainMCPAdapter;
+  public metaProgressionManager!: MetaProgressionManager;
+  public autoSaveService!: AutoSaveService;
+  public viewedClass: string | null = null;
+  /** Rastreia as coordenadas seguras de retorno por mapa de origem quando o jogador entra em um InnerMap compartilhado */
+  private lastEnteredPortalReturnByMap: Map<string, { x: number; y: number }> = new Map();
 
-  /** @constructor @param config O objeto de configuração com os dados iniciais para a criação das entidades do jogo. @param logger Uma instância de um logger que implementa a interface `ILogger`. @param collisionTileService Uma instância de um serviço para carregar dados de colisão de tiles do mapa. */
   constructor(
     config: DomainConfig, 
     logger: ILogger, 
     private eventManager: IEventManager, 
-    private collisionService: ICollisionService
+    private collisionService: ICollisionService,
+    private telemetryPort: ITelemetryPort = NullTelemetryPort,
+    private llmConfigPort: ILLMConfigPort = NullLLMConfigPort,
+    private saveRepository: ISaveRepository = {
+      saveProgress: async () => {},
+      loadProgress: async () => null
+    }
   ) {
     this.config = config;
     this.logger = logger;
     this.logger.log('init', 'DomainFacade instantiated.');
 
-    this.objectManager = new ObjectElementManager(this.eventManager, this.collisionService);
-  }
+    this.objectManager = new ObjectElementManager(this.eventManager, this.collisionService, this.telemetryPort);
+    this.dialogueGateway = new DialogueGateway(this.objectManager, this.logger);
+    this.renderStateBuilder = new DomainRenderState(this.logger, () => this.viewedClass);
+    this.metaProgressionManager = new MetaProgressionManager(this.logger, this.eventManager);
+    
+    this.initPlayer();
 
+    // Listeners para a Meta-Progressão e Fim de Run
+    this.eventManager.on('featAchieved', (payload) => {
+        this.metaProgressionManager.recordFeat(payload.name, payload.essenceReward);
+    });
+
+    this.eventManager.on('playerDied', () => {
+        if (this.player) {
+            this.metaProgressionManager.calculateAndClaimRunReward(this.player.attributes.level);
+            this.resetRunState();
+        }
+    });
+
+    this.autoSaveService = new AutoSaveService(
+      this.eventManager,
+      this.saveRepository,
+      this.logger,
+      () => {
+        if (!this.player) return null;
+        const playerState = this.player.serializeState();
+        if (!playerState) return null;
+        return {
+          playerState,
+          metaProgressionState: this.metaProgressionManager.getGlobalState(),
+          mapId: (this.world as any)?.mapId || 'vilgem',
+          characterName: 'Aventureiro',
+          world: (this.world as any)?.mapId || 'vilgem',
+          globalMetaSummary: this.metaProgressionManager.getAggregatedMetaStats()
+        };
+      }
+    );
+
+    this.eventManager.on('mapTransitionRequested', (payload: any) => {
+        const currentWorldId = (this.world as any)?.mapId || 'vilgem';
+        if (this.player && !IntermapRegistry.has(currentWorldId) && IntermapRegistry.has(payload.targetMapId)) {
+          // Quando o jogador entra em um InnerMap a partir de um mundo raiz (ex: Vilgem -> interior_black_default),
+          // registra a coordenada segura em frente à porta que ele acabou de usar para que a saída do InnerMap
+          // devolva o jogador na frente da mesma casa ( a menos que o portal de saída aponte para um destino customizado diferente do default).
+          const entities = this.objectManager.getEntities();
+          let entrancePortal: any = null;
+          let minDist = Infinity;
+          for (const el of entities) {
+            if ((el.objectId === 'portalLink' || el.objectId === 'portalLinkRequest') && (el as any).targetMapId === payload.targetMapId) {
+              const d = Math.hypot(el.coordinates.x - this.player.coordinates.x, el.coordinates.y - this.player.coordinates.y);
+              if (d < minDist) {
+                minDist = d;
+                entrancePortal = el;
+              }
+            }
+          }
+          if (entrancePortal) {
+            const returnX = Math.round(entrancePortal.coordinates.x);
+            const returnY = Math.round(entrancePortal.coordinates.y + Math.max(48, (entrancePortal.size?.height ?? 48) + 12));
+            this.lastEnteredPortalReturnByMap.set(currentWorldId, { x: returnX, y: returnY });
+          }
+        }
+
+        // Permite que adaptadores externos (ex: GameAdapter) orquestrem a transição com collisionData e assets.
+        // Se após um microtask nenhuma transição foi iniciada pelo adaptador, o domínio executa o fallback autônomo (ex: em testes headless).
+        queueMicrotask(() => {
+          if (payload?.handledByAdapter) {
+            return;
+          }
+          if (!this.activeTransitionPromise) {
+            this.transitionWorld(payload.targetMapId, payload.targetCoordinates).catch(err => {
+              this.logger.log('error', 'Falha na transição de mapa:', err);
+            });
+          }
+        });
+    });
+
+    // Register the IPC listener for BDI events coming from Rust/Panteão
+    TauriPanteaoBridge.setupIpcListeners(this.logger, this.eventManager, this.objectManager, (p) => this.updateLLMPreset(p), this.config);
+  }
 
   /** Fase de Update (Lógica): Avança o estado de todas as entidades do domínio. Chamado a cada frame pelo Adapter. @param deltaTime O tempo em segundos decorrido desde o último frame. */
   public update(deltaTime: number): void {
@@ -57,6 +162,7 @@ export default class DomainFacade implements IGameDomain {
 
     this.logger.log('update-cycles', 'Update cycle started (deltaTime:)', clampedDeltaTime);
 
+    const tPlayer = typeof performance !== 'undefined' ? performance.now() : 0;
     this.player.update(clampedDeltaTime);
     
     // Regeneração passiva do Jogador (Apenas se estiver vivo)
@@ -67,34 +173,214 @@ export default class DomainFacade implements IGameDomain {
     if (attrs.mana < attrs.maxMana) {
         attrs.mana = Math.min(attrs.maxMana, attrs.mana + (attrs.wisdom * 0.5) * clampedDeltaTime);
     }
+    if (tPlayer > 0) {
+        this.telemetryPort.recordFileTiming?.('Player.ts', 'Domain / Player', performance.now() - tPlayer, 1);
+    }
 
+    const tObj = typeof performance !== 'undefined' ? performance.now() : 0;
     this.objectManager.updateAll(clampedDeltaTime, this.player);
+    if (tObj > 0) {
+        this.telemetryPort.recordFileTiming?.('ObjectElementManager.ts', 'Domain / ObjectModule', performance.now() - tObj, 1);
+    }
   }
 
   /** Fase de Inicialização: Cria as instâncias das entidades de domínio e orquestra a montagem do cenário. */
+  private warmUpLLM(): void {
+      this.logger.log('domain', 'Iniciando warm-up do modelo qwen2.5:0.5b...');
+      fetch('http://127.0.0.1:11434/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              model: "qwen2.5:0.5b",
+              prompt: "A",
+              stream: false,
+              options: { num_predict: 1 }
+          })
+      }).then(() => {
+          this.logger.log('domain', 'Warm-up do LLM concluído com sucesso!');
+      }).catch(err => {
+          this.logger.log('error', `Falha no warm-up do LLM: ${err}`);
+      });
+  }
+
+  private createWorldInstance(mapId: string): GameWorld {
+    if (mapId === 'vilgem') {
+      return new VilgemWorld(this.eventManager);
+    }
+    if (mapId === 'alun') {
+      return new AlunWorld(this.eventManager);
+    }
+    if (mapId === 'cemii') {
+      return new CemiiWorld(this.eventManager);
+    }
+    if (IntermapRegistry.has(mapId)) {
+      const def = IntermapRegistry.get(mapId)!;
+      return new IntermapWorld(def, this.eventManager);
+    }
+    // Fallback genérico caso viaje para mapas sem classe registrada ainda
+    return new VilgemWorld(this.eventManager);
+  }
+
+  private resolveInitialSpawn(mapId: string, customPos?: { x: number; y: number }): { x: number; y: number } {
+    if (customPos) {
+      if (mapId === 'vilgem' && ((customPos.x === 1536 && customPos.y === 1615) || (customPos.x === 0 && customPos.y === 0))) {
+        return { x: 512, y: 591 };
+      }
+      // Se customPos for o initialPos global de Vilgem e estivermos carregando outro mundo que possui seu próprio defaultSpawn, prioriza o defaultSpawn do mundo!
+      if (mapId !== 'vilgem' && this.world?.defaultSpawn && customPos === this.config?.player?.initialPos) {
+        return { ...this.world.defaultSpawn };
+      }
+      return { x: customPos.x, y: customPos.y };
+    }
+    if (this.world?.defaultSpawn) {
+      return { ...this.world.defaultSpawn };
+    }
+    return mapId === 'vilgem' ? { x: 512, y: 591 } : { x: 0, y: 0 };
+  }
+
+  private initPlayer(): void {
+    const playerId = this.config?.player?.id ?? 1;
+    const initialPos = this.resolveInitialSpawn(this.world?.mapId || 'vilgem', this.config?.player?.initialPos);
+    const level = this.config?.player?.level ?? 1;
+
+    this.player = new Player(
+      playerId,
+      { x: initialPos.x, y: initialPos.y },
+      new Attributes(8, level, 10, 10, 10, 10, 10, 10),
+      this.eventManager
+    );
+    this.actionManager = new ActionManager(this.player, this.logger, this.eventManager);
+    this.inventoryGateway = new InventoryGateway(this.player, this.logger, this.eventManager, (cls) => { this.viewedClass = cls; });
+    this.skillTreeGateway = new SkillTreeGateway(this.player, this.logger, this.eventManager, (cls) => { this.viewedClass = cls; });
+    this.toolActionGateway = new ToolActionGateway(this.player, this.logger, this.eventManager);
+    this.mcpAdapter = new DomainMCPAdapter(this.player, this.objectManager, this.eventManager);
+    this.metaProgressionManager.applyGlobalBonuses(this.player.attributes);
+    this.logger.log('domain', 'Player entity created/reinitialized:', this.player);
+  }
+
   public async loadWorld(mapId: string, collisionData?: any[]): Promise<void> {
     this.logger.log('domain', `Loading world: ${mapId}`);
+    this.warmUpLLM();
     
-    if (mapId === 'vilgem') {
-        this.world = new VilgemWorld(this.eventManager);
-    } else {
-        // Fallback genérico caso viaje para mapas sem classe registrada ainda
-        this.world = new VilgemWorld(this.eventManager); 
+    this.world = this.createWorldInstance(mapId);
+
+    if (this.player && this.player.collectedWorldItems) {
+      this.objectManager.setCollectedWorldItems(this.player.collectedWorldItems);
     }
     
     // Aguarda a geração do mundo (agora async)
     await this.world.generate(collisionData);
     
-    this.objectManager.setWorldBounds(this.world.width, this.world.height);
+    this.objectManager.setWorldBounds(this.world.bounds);
+    this.objectManager.getChunkManager().initForWorld(this.world);
     
-    this.player = new Player(
-      this.config.player.id,
-      this.config.player.initialPos,
-      new Attributes(8, this.config.player.level, 10, 10, 10, 10, 10, 10),
-      this.eventManager
-    );
-    this.actionManager = new ActionManager(this.player, this.logger, this.eventManager);
-    this.logger.log('domain', 'Player entity created:', this.player);
+    if (!this.player) {
+      this.initPlayer();
+    } else {
+      // Reposiciona o jogador na posição inicial do mapa
+      const initPos = this.resolveInitialSpawn(mapId, this.config?.player?.initialPos);
+      this.player.coordinates = { x: initPos.x, y: initPos.y };
+      if (this.player.hitboxes) {
+        for (let i = 0; i < this.player.hitboxes.length; i++) {
+          this.player.hitboxes[i]?.update(
+            { x: this.player.coordinates.x + this.player.size.width / 2, y: this.player.coordinates.y + this.player.size.height / 2 },
+            this.player.rotation
+          );
+        }
+      }
+    }
+    this.objectManager.getChunkManager().updatePlayerPosition(this.player.coordinates.x, this.player.coordinates.y);
+  }
+
+  private activeTransitionPromise: Promise<void> | null = null;
+
+  public async transitionWorld(targetMapId: string, spawnCoords?: { x: number; y: number }, collisionData?: any[]): Promise<void> {
+    if (this.activeTransitionPromise) {
+      return this.activeTransitionPromise;
+    }
+
+    this.activeTransitionPromise = (async () => {
+      this.logger.log('domain', `Transitioning to world: ${targetMapId}`);
+
+      // 1. Limpa todas as entidades antigas preservando o jogador
+      this.objectManager.clearWorldElements(true);
+
+      // Sincroniza os itens coletados pelo jogador antes de gerar o novo mundo
+      if (this.player && this.player.collectedWorldItems) {
+        this.objectManager.setCollectedWorldItems(this.player.collectedWorldItems);
+      }
+
+      // 2. Instancia o novo mundo
+      this.world = this.createWorldInstance(targetMapId);
+
+      // 3. Atualiza os limites do mundo no gerenciador de elementos
+      this.objectManager.setWorldBounds(this.world.bounds);
+      this.objectManager.getChunkManager().initForWorld(this.world);
+
+      // 4. Reposiciona o jogador no ponto de spawn especificado ou default do mundo antes de gerar entidades
+      let targetX = 0;
+      let targetY = 0;
+
+      const recordedReturn = this.lastEnteredPortalReturnByMap.get(targetMapId);
+
+      if (spawnCoords !== undefined && spawnCoords !== null) {
+        const isDefaultSharedReturn =
+          targetMapId === 'vilgem' &&
+          ((spawnCoords.x === 700 && spawnCoords.y === 450) || (spawnCoords.x === 1536 && spawnCoords.y === 1615) || (spawnCoords.x === -324 && spawnCoords.y === -574) || (spawnCoords.x === 512 && spawnCoords.y === 591));
+
+        if (isDefaultSharedReturn && recordedReturn) {
+          targetX = recordedReturn.x;
+          targetY = recordedReturn.y;
+          this.lastEnteredPortalReturnByMap.delete(targetMapId);
+        } else {
+          const resolved = this.resolveInitialSpawn(targetMapId, spawnCoords);
+          targetX = resolved.x;
+          targetY = resolved.y;
+          this.lastEnteredPortalReturnByMap.delete(targetMapId);
+        }
+      } else if (recordedReturn) {
+        targetX = recordedReturn.x;
+        targetY = recordedReturn.y;
+        this.lastEnteredPortalReturnByMap.delete(targetMapId);
+      } else if (IntermapRegistry.has(targetMapId)) {
+        const def = IntermapRegistry.get(targetMapId)!;
+        if (def.defaultSpawn) {
+          targetX = def.defaultSpawn.x;
+          targetY = def.defaultSpawn.y;
+        }
+      } else {
+        const initPos = this.resolveInitialSpawn(targetMapId, this.config?.player?.initialPos);
+        targetX = initPos.x;
+        targetY = initPos.y;
+      }
+
+      if (this.player) {
+        this.player.coordinates.x = targetX;
+        this.player.coordinates.y = targetY;
+        this.objectManager.getChunkManager().updatePlayerPosition(targetX, targetY);
+        if (this.player.hitboxes) {
+          for (let i = 0; i < this.player.hitboxes.length; i++) {
+            this.player.hitboxes[i]?.update(
+              { x: targetX + this.player.size.width / 2, y: targetY + this.player.size.height / 2 },
+              this.player.rotation
+            );
+          }
+        }
+      }
+
+      // 5. Gera os elementos do novo mundo
+      await this.world.generate(collisionData);
+
+      // 6. Notifica os adaptadores sobre a conclusão da transição
+      this.eventManager.dispatch('mapTransitionCompleted', {
+        mapId: targetMapId,
+        coordinates: { x: targetX, y: targetY }
+      });
+    })().finally(() => {
+      this.activeTransitionPromise = null;
+    });
+
+    return this.activeTransitionPromise;
   }
 
   /** Interface de comunicação que passa a responsabilidade para o domínio. @param command O objeto de comando vindo da camada de apresentação. @param deltaTime O tempo desde o último frame, usado para calcular o movimento. */
@@ -103,308 +389,312 @@ export default class DomainFacade implements IGameDomain {
     this.actionManager.checkEvent(command.actions, mouseLastCoordinates)
   }
 
-  public manageInventory(action: 'equip' | 'unequip' | 'consume' | 'delete', payload: { index?: number; slot?: string }): void {
-    if (action === 'equip' && payload.index !== undefined) {
-      this.player.equipItem(payload.index);
-      
-      // Game Feel (UX): Auto-equipa a classe associada à arma para poupar cliques na UI!
-      const equipment = (this.player as any).equipment;
-      const handItem = equipment?.mainHand || equipment?.hand || equipment?.weapon; // O slot real no Player.ts é 'mainHand'!
-      
-      this.logger.log('actions', `[DomainFacade] Item equipado. Arma atual: ${handItem?.name} | Desbloqueia: ${handItem?.unlocksClass}`);
-
-      if (handItem && 'unlocksClass' in handItem && handItem.unlocksClass) {
-          if (!this.player.unlockedClasses.includes(handItem.unlocksClass)) {
-              this.player.unlockedClasses.push(handItem.unlocksClass);
-          }
-          this.player.setActiveClass(handItem.unlocksClass);
-          this.viewedClass = null; // Reseta a classe visualizada para acompanhar a arma atual
-          this.logger.log('actions', `[DomainFacade] Forçando classe do jogador para: ${handItem.unlocksClass}`);
-                  this.eventManager.dispatch('classChanged', { oldClassInstance: null, newClassInstance: null });
-      }
-    }
-    if (action === 'unequip' && payload.slot !== undefined) {
-      this.player.unequipItem(payload.slot as string);
-    }
-    if (action === 'consume' && payload.index !== undefined) {
-      this.player.consumeItem(payload.index);
-    }
-    if (action === 'delete' && payload.index !== undefined) {
-      this.player.deleteItem(payload.index);
-    }
-  }
-
-  public manageSkillTree(action: 'unlock' | 'changeClass' | 'equip', payload: { className?: string; skillId?: string; slotIndex?: number }): void {
-    if (action === 'changeClass' && payload.className) {
-       // Apenas muda a classe que está sendo visualizada na UI, NÃO a classe ativa (armada) do jogador!
-       this.viewedClass = payload.className as string;
-       this.logger.log('actions', `[DomainFacade] UI está agora visualizando a árvore da classe: ${payload.className}`);
-       this.eventManager.dispatch('classChanged', { oldClassInstance: null, newClassInstance: null }); // Atualiza UI
-    } else if (action === 'unlock' && payload.skillId) {
-       // Procura a skill em qualquer classe (já que podemos comprar de outras árvores)
-       let activeClassInstance = undefined;
-       for (const cls of this.player.classes) {
-           const map = (cls as any).skillsByLevel as Map<number, any>;
-           if (map) {
-               for (const sk of map.values()) {
-                   if (sk.id === payload.skillId) {
-                       activeClassInstance = cls;
-                       break;
-                   }
-               }
-           }
-           if (activeClassInstance) break;
-       }
-       
-       let requiredLevel = 1;
-       
-       if (activeClassInstance) {
-           const skillsMap = (activeClassInstance as any).skillsByLevel as Map<number, any>;
-           if (skillsMap) {
-               for (const [lvl, skill] of skillsMap.entries()) {
-                   if (skill.id === payload.skillId) {
-                       requiredLevel = lvl;
-                       break;
-                   }
-               }
-           }
-       }
-       
-       if (this.player.attributes.level >= requiredLevel) {
-           if (this.player.attributes.availablePoints > 0) {
-               (this.player.attributes as any)._availablePoints--; // Gasta o ponto de habilidade!
-               this.player.unlockSkill(payload.skillId as string);
-           } else {
-               this.logger.log('error', `Acesso negado: Pontos de habilidade insuficientes para a skill ${payload.skillId}.`);
-           }
-       } else {
-           this.logger.log('error', `Acesso negado: Nível insuficiente para destravar a skill. (Nível atual: ${this.player.attributes.level}, Necessário: ${requiredLevel})`);
-       }
-    } else if (action === 'equip' && payload.skillId && payload.slotIndex !== undefined) {
-       this.player.equipSkillInLoadout(payload.skillId, payload.slotIndex);
-    }
-  }
-
-  public allocateAttribute(attribute: string): void {
-    this.player.allocateAttribute(attribute as any);
-  }
+  // [ARCH] Os métodos manageInventory, manageSkillTree e allocateAttribute foram
+  // removidos para evitar o antipattern "God Class". As UIs agora devem se comunicar
+  // com os sistemas internos disparando eventos semânticos no EventBus.
 
   public sendDialogue(message: string, targetNpcId?: number): void {
-    this.logger.log('input', `Player says: "${message}" to NPC ${targetNpcId}`);
-    if (targetNpcId) {
-        const npc = this.objectManager.getElementById(targetNpcId) as any;
-        if (npc && typeof npc.receiveMessage === 'function') {
-            npc.receiveMessage(message);
-        }
-    }
+    this.dialogueGateway.sendDialogue(message, targetNpcId);
+  }
+
+  public notifyPauseState(isPaused: boolean): void {
+      if ((window as any).__TAURI_INTERNALS__) {
+          import('@tauri-apps/api/core').then(({ invoke }) => {
+              const payload = isPaused ? 'game_paused(true)' : '~game_paused(true)';
+              invoke('panteao_send', { agent: 'broadcast', ilf: 'tell', content: payload }).catch(err => {
+                  this.logger.log('error', 'Falha ao notificar pausa ao Panteão:', err);
+              });
+          }).catch(err => {
+              this.logger.log('error', 'Falha ao carregar Tauri API para notificar pausa:', err);
+          });
+      }
+  }
+
+  /**
+   * Atualiza as configurações de LLM/IA no Domínio e propaga para todos os NPCs cognitivos
+   * de forma desacoplada via EventBus e IPC do Panteão.
+   */
+  public updateLLMPreset(preset: CustomLLMPresetDTO): void {
+      this.logger.log('domain', 'Aplicando novo preset de LLM no Domínio:', preset);
+
+      // Atualiza a configuração interna do domínio
+      (this.config as any).activeLlmModel = preset.llm_model;
+      (this.config as any).llmPreset = preset;
+
+      // Notifica as entidades e sistemas de domínio através do barramento de eventos
+      this.eventManager.dispatch('llmPresetChanged', { preset });
+
+      // Aplica via porta secundária de infraestrutura
+      this.llmConfigPort.applyPreset(preset).catch((err: any) => {
+          this.logger.log('error', 'Falha ao aplicar preset na porta ILLMConfigPort:', err);
+      });
+
+      // Notifica NPCs cognitivos ativos no mundo via porta secundária
+      const npcs = this.objectManager.getEntities().filter(e => (e as any).agentName != null);
+      npcs.forEach(npc => {
+          const agentName = (npc as any).agentName;
+          if (agentName) {
+              this.llmConfigPort.notifyAgent(agentName, preset).catch((e: any) => {
+                  this.logger.log('error', `Falha ao atualizar agente ${agentName}:`, e);
+              });
+          }
+      });
   }
 
   /** Fase de Desenho (Coleta de Dados): Constrói e retorna uma representação em DTOs do estado atual do jogo para a camada de renderização. @throws {Error} Se o mundo não foi inicializado. @returns Um objeto com o estado do mundo e uma lista de DTOs renderizáveis. */
   public getRenderState(): { world: WorldState; renderables: readonly RenderableState[] } {
-    this.logger.log('sync', 'DomainFacade getting render state...');
-    if (!this.world) throw new Error("O mundo do domínio não foi inicializado. Chame loadWorld() antes de getRenderState().");
-
-    this.cachedRenderState.world.width = this.world.width;
-    this.cachedRenderState.world.height = this.world.height;
-    this.cachedRenderState.world.mapId = this.world.mapId;
-
-    if (!this.cachedPlayerState) {
-      this.cachedPlayerState = {
-        id: this.player.id,
-        entityTypeId: this.player.objectId,
-        coordinates: { x: 0, y: 0 },
-        size: { width: 0, height: 0 },
-        attributes: {},
-        equipment: {}
-      };
-    }
-
-    const ps = this.cachedPlayerState;
-    ps.coordinates.x = this.player.coordinates.x;
-    ps.coordinates.y = this.player.coordinates.y;
-    ps.size.width = this.player.size.width;
-    ps.size.height = this.player.size.height;
-    ps.state = this.player.state;
-    ps.rotation = this.player.rotation;
-    ps.hasBeard = this.player.hasBeard;
-    ps.facingDirection = this.player.facingDirection;
-    
-    ps.level = this.player.attributes.level;
-    ps.currentXp = this.player.attributes.currentXp;
-    ps.xpToNextLevel = this.player.attributes.xpToNextLevel;
-    ps.hp = this.player.attributes.hp;
-    ps.maxHp = this.player.attributes.maxHp;
-    ps.mana = this.player.attributes.mana;
-    ps.maxMana = this.player.attributes.maxMana;
-    ps.coins = this.player.coins;
-    
-    // Object Pooling para Hitboxes do Player
-    if (!ps.hitboxes) ps.hitboxes = [];
-    const playerHitboxes = this.player.hitboxes || [];
-    for (let i = 0; i < playerHitboxes.length; i++) {
-        ps.hitboxes[i] = playerHitboxes[i]!.getDebugShape();
-    }
-    ps.hitboxes.length = playerHitboxes.length;
-
-    // Object Pooling para Status Ativos (Sem instanciar novos objetos por frame)
-    if (!ps.activeStatuses) ps.activeStatuses = [];
-    let statusIndex = 0;
-    const statusesList = this.player.activeStatusesList || [];
-    for (let i = 0; i < statusesList.length; i++) {
-        const s = statusesList[i]!;
-        if (!ps.activeStatuses[statusIndex]) ps.activeStatuses[statusIndex] = { id: '', description: '', remaining: 0 };
-        const uiStatus = ps.activeStatuses[statusIndex];
-        uiStatus.id = s.id;
-        uiStatus.description = s.description;
-        uiStatus.remaining = Math.max(0, s.duration - s.elapsed);
-        statusIndex++;
-    }
-    ps.activeStatuses.length = statusIndex;
-    
-    ps.attributes.strength = this.player.attributes.strength;
-    ps.attributes.constitution = this.player.attributes.constitution;
-    ps.attributes.dexterity = this.player.attributes.dexterity;
-    ps.attributes.intelligence = this.player.attributes.intelligence;
-    ps.attributes.wisdom = this.player.attributes.wisdom;
-    ps.attributes.charisma = this.player.attributes.charisma;
-    ps.attributes.availablePoints = this.player.attributes.availablePoints;
-
-    ps.backpack = this.player.backpack;
-    ps.equipment = this.player.equipment;
-
-    ps.activeClass = this.player.activeClass;
-    ps.unlockedClasses = this.player.unlockedClasses;
-    
-    // Object Pooling para Classes
-    if (!ps.classes) ps.classes = [];
-    for (let i = 0; i < this.player.classes.length; i++) {
-        const c = this.player.classes[i]!;
-        if (!ps.classes[i]) ps.classes[i] = { name: '', isUnlocked: false, isActive: false };
-        const uiClass = ps.classes[i];
-        uiClass.name = c.name;
-        uiClass.isUnlocked = this.player.unlockedClasses.includes(c.name);
-        uiClass.isActive = this.player.activeClass === c.name;
-    }
-    ps.classes.length = this.player.classes.length;
-    
-    // Mapeia as skills da Classe que a UI está VENDO para a interface da Árvore
-    const classToView = this.viewedClass || this.player.activeClass;
-    let viewedClassInstance = undefined;
-    for (let i = 0; i < this.player.classes.length; i++) {
-        if (this.player.classes[i]!.name === classToView) {
-            viewedClassInstance = this.player.classes[i];
-            break;
-        }
-    }
-    
-    // Atualiza a flag visual de qual classe está ativa na aba "Classes" da árvore
-    for (const c of ps.classes) {
-        c.isActive = c.name === classToView;
-    }
-
-    if (!ps.skillTree) ps.skillTree = [];
-    if (viewedClassInstance) {
-        const skillsMap = (viewedClassInstance as any).skillsByLevel as Map<number, any>;
-        
-        let stIndex = 0;
-        for (let s = 0; s < viewedClassInstance.allSkills.length; s++) {
-            const skill = viewedClassInstance.allSkills[s]!;
-            
-            // Find required level for this skill
-            let requiredLevel = 1;
-            for (const [lvl, sk] of skillsMap.entries()) {
-                if (sk.id === skill.id) {
-                    requiredLevel = lvl;
-                    break;
-                }
-            }
-            
-            if (!ps.skillTree[stIndex]) ps.skillTree[stIndex] = { id: '', name: '', description: '', type: 'active', tier: 1, unlocked: false, canUnlock: false };
-            const uiNode = ps.skillTree[stIndex];
-            
-            uiNode.id = skill.id;
-            uiNode.name = skill.name;
-            uiNode.description = skill.description || '';
-            uiNode.type = skill.type;
-            uiNode.tier = skill.tier || 1;
-            uiNode.unlocked = this.player.unlockedSkills.has(skill.id);
-            
-            const hasPrereq = !skill.requiredSkillId || this.player.unlockedSkills.has(skill.requiredSkillId);
-            uiNode.canUnlock = !uiNode.unlocked && this.player.attributes.level >= requiredLevel && hasPrereq;
-            
-            stIndex++;
-        }
-        ps.skillTree.length = stIndex;
-    } else {
-        ps.skillTree.length = 0;
-    }
-
-    // Preenche o Loadout Ativo e a "Mochila de Magias" para o Deck Building
-    if (!ps.activeLoadout) ps.activeLoadout = [];
-    for (let i = 0; i < this.player.activeLoadout.length; i++) {
-        ps.activeLoadout[i] = this.player.activeLoadout[i];
-    }
-    ps.activeLoadout.length = this.player.activeLoadout.length;
-
-    if (!ps.unlockedActiveSkills) ps.unlockedActiveSkills = [];
-    let activeSkillIndex = 0;
-    for (let c = 0; c < this.player.classes.length; c++) {
-        const cls = this.player.classes[c]!;
-        for (let s = 0; s < cls.allSkills.length; s++) {
-            const skill = cls.allSkills[s]!;
-            if (skill.type === 'active' && this.player.unlockedSkills.has(skill.id)) {
-                if (!ps.unlockedActiveSkills[activeSkillIndex]) ps.unlockedActiveSkills[activeSkillIndex] = {} as any;
-                const uiSkill = ps.unlockedActiveSkills[activeSkillIndex];
-                uiSkill.id = skill.id;
-                uiSkill.name = skill.name;
-                uiSkill.description = skill.description || '';
-                uiSkill.type = skill.type;
-                uiSkill.tier = skill.tier || 1;
-                uiSkill.unlocked = true;
-                uiSkill.canUnlock = false;
-                activeSkillIndex++;
-            }
-        }
-    }
-    ps.unlockedActiveSkills.length = activeSkillIndex;
-
-    const otherStates = this.objectManager.getAllRenderableStates();
-    
-    // Lógica de Proximidade (Interação com NPCs)
-    let nearestDist = 50; // Range máximo para interação (em pixels)
-    let nearestNpc = null;
-    const px = ps.coordinates.x + ps.size.width / 2;
-    const py = ps.coordinates.y + ps.size.height / 2;
-
-    for (let i = 0; i < otherStates.length; i++) {
-        const st = otherStates[i]!;
-        if (st.entityTypeId === 'molor' || st.entityTypeId === 'interactiveNpc') {
-            const ex = st.coordinates.x + st.size.width / 2;
-            const ey = st.coordinates.y + st.size.height / 2;
-            const dist = Math.hypot(px - ex, py - ey);
-            if (dist < nearestDist) {
-                nearestDist = dist;
-                nearestNpc = st;
-            }
-        }
-    }
-
-    if (nearestNpc) {
-        const npcName = nearestNpc.entityTypeId === 'molor' ? 'Diretor Molor' : 'NPC';
-        if (!ps.interactablePrompt) ps.interactablePrompt = { npcId: 0, text: '', npcName: '' };
-        ps.interactablePrompt.npcId = nearestNpc.id;
-        ps.interactablePrompt.text = '[Z] Falar';
-        ps.interactablePrompt.npcName = npcName;
-    } else {
-        ps.interactablePrompt = undefined;
-    }
-    
-    this.cachedRenderState.renderables.length = otherStates.length + 1;
-    this.cachedRenderState.renderables[0] = ps;
-    for (let i = 0; i < otherStates.length; i++) {
-        this.cachedRenderState.renderables[i + 1] = otherStates[i];
-    }
-    return this.cachedRenderState;
+    return this.renderStateBuilder.getRenderState(this.world, this.player, this.objectManager);
   }
 
+  public getAvailableWorlds(): { id: string, name: string, cx: number, cy: number, scale: number, path: string }[] {
+    return [
+        { id: 'cemii', name: 'Cemii', cx: 150, cy: 300, scale: 1.0, path: 'M 100 200 L 150 200 L 200 250 L 200 350 L 150 400 L 100 350 Z' },
+        { id: 'vilgem', name: 'Vilgem', cx: 400, cy: 320, scale: 1.0, path: 'M 300 220 L 450 220 L 500 280 L 500 400 L 400 450 L 300 400 Z' },
+        { id: 'alun', name: 'Alun', cx: 650, cy: 300, scale: 1.0, path: 'M 600 200 L 700 200 L 750 280 L 700 380 L 600 350 Z' }
+    ];
+  }
+
+  public get worldBounds(): WorldBoundsDTO | undefined {
+    return this.world?.bounds;
+  }
+
+  public get activeChunk(): ChunkCoordDTO | undefined {
+    return this.objectManager.getChunkManager()?.getCurrentChunk();
+  }
+
+  public get activeChunks(): readonly ChunkCoordDTO[] | undefined {
+    return this.objectManager.getChunkManager()?.getActiveChunks();
+  }
+
+  public get unlockedGlobalNodes(): string[] {
+    return this.metaProgressionManager.getUnlockedNodes();
+  }
+
+  public get globalNodesMap(): Record<string, any> {
+    return this.metaProgressionManager.getAvailableNodesMap();
+  }
+
+  public get globalMetaSummary() {
+      return this.metaProgressionManager ? (this.metaProgressionManager.getAggregatedMetaStats() ?? { stats: [], brooches: [] }) : { stats: [], brooches: [] };
+  }
+
+  public generateLocalRewards(): { id: string, name: string, desc: string, iconSvg: string }[] {
+      return generateRandomLocalRewards(3);
+  }
+
+  public serializePlayerState(): PlayerSaveState | null {
+    return this.player ? this.player.serializeState() : null;
+  }
+
+  public resetToInitialState(): void {
+    this.metaProgressionManager.reset();
+    this.initPlayer();
+    this.objectManager.setCollectedWorldItems(new Set());
+    this.eventManager.dispatch('inventoryUpdated', {
+      backpack: this.player.backpack,
+      equipment: this.player.equipment
+    });
+    this.eventManager.dispatch('skillTreeUpdated', {
+      skills: Array.from(this.player.unlockedSkills),
+      loadout: (this.player as any).activeLoadout,
+      passiveLoadout: (this.player as any).passiveLoadout,
+      globalActiveLoadout: (this.player as any).globalActiveLoadout
+    });
+    this.logger.log('domain', 'Domain state reset to initial values.');
+  }
+
+  public resetRunState(): void {
+    if (!this.player) return;
+
+    // 1. Preserva o loadout atual de broches (passivos e ativos globais da meta-progressão)
+    const preservedPassiveLoadout = [...(this.player.classManager?.passiveLoadout || [])];
+    const preservedGlobalActiveLoadout = [...(this.player.classManager?.globalActiveLoadout || [])];
+
+    // 2. Reseta os atributos para o nível 1 base da run
+    const level = this.config?.player?.level ?? 1;
+    this.player.attributes = new Attributes(8, level, 10, 10, 10, 10, 10, 10);
+    // Re-aplica os bônus permanentes da árvore global
+    this.metaProgressionManager.applyGlobalBonuses(this.player.attributes);
+    this.player.attributes.hp = this.player.attributes.maxHp;
+    this.player.attributes.mana = this.player.attributes.maxMana;
+
+    // 3. Reseta inventário da run (mochila e moedas)
+    this.player.inventory.backpack = [];
+    this.player.inventory.coins = 0;
+
+    // 4. Reseta equipamentos da run
+    this.player.equipmentManager.equipment = {
+      mainHand: undefined,
+      secondHand: undefined,
+      helmet: undefined,
+      chestplate: undefined,
+      pants: undefined,
+      boots: undefined,
+      gloves: undefined,
+      amulet: undefined,
+      bag: undefined,
+      belt: undefined,
+      leftHandRings: [],
+      rightHandRings: []
+    };
+    this.player.equipmentManager.syncEquipedItens();
+
+    // 5. Reseta habilidades e cooldowns da classe para a nova run
+    this.player.classManager.resetRun();
+
+    // 6. Restaura os broches da meta-progressão no loadout
+    for (let i = 0; i < 4; i++) {
+      this.player.classManager.equipPassiveInLoadout(preservedPassiveLoadout[i] || null, i);
+      this.player.classManager.equipGlobalActiveBrooch(preservedGlobalActiveLoadout[i] || null, i);
+    }
+    BroochRegistry.resetAll();
+
+    // 7. Revive e reseta cinemática, estado motor e coordenadas de spawn
+    this.player.revive();
+    const initPos = this.resolveInitialSpawn(this.world?.mapId || 'vilgem', this.config?.player?.initialPos);
+    this.player.coordinates = { x: initPos.x, y: initPos.y };
+    if (this.player.hitboxes) {
+      for (let i = 0; i < this.player.hitboxes.length; i++) {
+        this.player.hitboxes[i]?.update(
+          { x: this.player.coordinates.x + this.player.size.width / 2, y: this.player.coordinates.y + this.player.size.height / 2 },
+          this.player.rotation
+        );
+      }
+    }
+    this.player.collectedWorldItems.clear();
+    this.objectManager.setCollectedWorldItems(new Set());
+
+    // 8. Despacha eventos de sincronização para a interface
+    this.eventManager.dispatch('inventoryUpdated', {
+      backpack: this.player.backpack,
+      equipment: this.player.equipment
+    });
+    this.eventManager.dispatch('skillTreeUpdated', {
+      skills: Array.from(this.player.unlockedSkills),
+      loadout: this.player.activeLoadout,
+      passiveLoadout: this.player.passiveLoadout,
+      globalActiveLoadout: this.player.globalActiveLoadout
+    });
+    this.eventManager.dispatch('runResetCompleted', {});
+    this.logger.log('domain', 'Run reset completed: Player reset to level 1, preserving global meta progression and brooches.');
+  }
+
+  public restorePlayerState(state: any): void {
+    if (!state) {
+      this.resetToInitialState();
+      return;
+    }
+    const metaState = state.metaProgressionState || state.activeCheckpoint?.metaProgressionState || state.checkpoint?.metaProgressionState;
+    if (metaState) {
+      this.metaProgressionManager.loadGlobalState(metaState);
+      if (this.player && this.player.attributes) {
+        this.metaProgressionManager.applyGlobalBonuses(this.player.attributes);
+      }
+    }
+    const pState = state.playerState || state.player || state.activeCheckpoint?.playerState || state.activeCheckpoint?.player || state.checkpoint?.playerState || state.checkpoint?.player || state;
+    if (this.player) {
+      this.player.restoreState(pState);
+      this.sanitizePlayerCoordinatesForCurrentWorld(state);
+      if (this.player.attributes && this.player.attributes.hp <= 0) {
+        this.player.attributes.hp = this.player.attributes.maxHp;
+      }
+      (this.player as any).state = 'idle';
+      if (this.player.collectedWorldItems) {
+        this.objectManager.setCollectedWorldItems(this.player.collectedWorldItems);
+      }
+    }
+  }
+
+  public getMetaProgressionState(): any {
+    return this.metaProgressionManager ? this.metaProgressionManager.getGlobalState() : null;
+  }
+
+  private sanitizePlayerCoordinatesForCurrentWorld(saveData?: any): void {
+    if (!this.player) return;
+    const currentMapId = this.world?.mapId || 'vilgem';
+    const rawSavedMapId = saveData?.mapId
+      || (typeof saveData?.world === 'string' ? saveData.world : saveData?.world?.mapId)
+      || saveData?.activeCheckpoint?.mapId
+      || saveData?.checkpoint?.mapId
+      || 'vilgem';
+    const savedMapId = rawSavedMapId.toString().toLowerCase();
+
+    // 1. Se o jogador escolheu iniciar em outro mundo diferente do save, usa o spawn do mundo atual
+    if (this.world && savedMapId && savedMapId !== currentMapId) {
+      const spawn = this.resolveInitialSpawn(currentMapId, this.world.defaultSpawn);
+      this.player.coordinates.x = spawn.x;
+      this.player.coordinates.y = spawn.y;
+    } else if (currentMapId === 'vilgem') {
+      const cx = this.player.coordinates.x;
+      const cy = this.player.coordinates.y;
+      // 2. Migra apenas coordenadas legadas da antiga grade positiva [0..3072] (onde o spawn central era 1536, 1615 no Chunk 1,1)
+      // ou (0, 0) para o spawn oficial da Praça Central (512, 591) dentro do Chunk (0, 0) [0..1024, 0..1024]
+      if ((cx === 1536 && cy === 1615) || (cx === 0 && cy === 0)) {
+        this.player.coordinates.x = 512;
+        this.player.coordinates.y = 591;
+      }
+    }
+
+    if (this.player.hitboxes) {
+      for (let i = 0; i < this.player.hitboxes.length; i++) {
+        this.player.hitboxes[i]?.update(
+          { x: this.player.coordinates.x + this.player.size.width / 2, y: this.player.coordinates.y + this.player.size.height / 2 },
+          this.player.rotation
+        );
+      }
+    }
+    this.objectManager.getChunkManager().updatePlayerPosition(this.player.coordinates.x, this.player.coordinates.y);
+  }
+
+  public restoreGameState(data: any): void {
+    if (!data) {
+      this.resetToInitialState();
+      return;
+    }
+    const metaState = data.metaProgressionState || 
+                      data.activeCheckpoint?.metaProgressionState || 
+                      data.checkpoint?.metaProgressionState ||
+                      data.globalMetaSummary?.metaProgressionState ||
+                      (data.globalMetaSummary?.unlockedNodes ? data.globalMetaSummary : undefined);
+    if (metaState) {
+      this.metaProgressionManager.loadGlobalState(metaState);
+      if (this.player && this.player.attributes) {
+        this.metaProgressionManager.applyGlobalBonuses(this.player.attributes);
+      }
+    }
+    const pState = data.playerState || data.player || data.activeCheckpoint?.playerState || data.activeCheckpoint?.player || data.checkpoint?.playerState || data.checkpoint?.player || data;
+    if (this.player) {
+      this.player.restoreState(pState);
+      this.sanitizePlayerCoordinatesForCurrentWorld(data);
+      if (this.player.attributes && this.player.attributes.hp <= 0) {
+        this.player.attributes.hp = this.player.attributes.maxHp;
+      }
+      (this.player as any).state = 'idle';
+      if (this.player.collectedWorldItems) {
+        this.objectManager.setCollectedWorldItems(this.player.collectedWorldItems);
+      }
+    }
+
+    // Garante que todos os broches equipados no loadout ou salvos no save sejam conhecidos pela meta-progressão
+    const broochesToUnlock = new Set<string>();
+    if (Array.isArray(metaState?.unlockedBrooches)) metaState.unlockedBrooches.forEach((b: string) => b && broochesToUnlock.add(b));
+    [
+      pState?.classes?.globalActiveLoadout, pState?.classes?.passiveLoadout,
+      pState?.globalActiveLoadout, pState?.passiveLoadout,
+      data?.globalActiveLoadout, data?.passiveLoadout,
+      data?.unlockedBrooches, data?.globalMetaSummary?.brooches
+    ].flat().filter(Boolean).forEach((b: any) => {
+      const id = typeof b === 'string' ? b : b?.id;
+      if (id?.startsWith?.('brooch_')) broochesToUnlock.add(id);
+    });
+    for (const bId of broochesToUnlock) this.metaProgressionManager.unlockBrooch(bId);
+  }
+
+  public async flushAutoSave(reason: string = 'manualFlush'): Promise<void> {
+    if (this.autoSaveService) await this.autoSaveService.scheduleAutoSave(reason, true);
+  }
+
+  public triggerAssetState(payload: import("./ports/domain-contracts").TriggerAssetStateDTO): boolean {
+    return this.objectManager.handleTriggerAssetState(payload);
+  }
 }

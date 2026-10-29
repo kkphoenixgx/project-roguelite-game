@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+  <defs>
+    <linearGradient id="def_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ced6e0"/>
+      <stop offset="50%" stop-color="#747d8c"/>
+      <stop offset="100%" stop-color="#2f3542"/>
+    </linearGradient>
+    
+  </defs>
+  <g>
+    <!-- Escudo de Torre / Carapaça de Ferro -->
+    <path d="M12 8 L36 8 L34 26 C34 35 24 43 24 43 C24 43 14 35 14 26 Z" fill="url(#def_grad)" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- Reforço em Cruz de Ferro -->
+    <path d="M24 8 V43 M13 18 H35" stroke="#2f3542" stroke-width="3"/>
+    <path d="M24 8 V43 M13 18 H35" stroke="#f1f2f6" stroke-width="1.2"/>
+    <!-- Rebites de Aço nos cantos -->
+    <circle cx="16" cy="11" r="1.5" fill="#f1f2f6"/>
+    <circle cx="32" cy="11" r="1.5" fill="#f1f2f6"/>
+    <circle cx="16" cy="24" r="1.5" fill="#f1f2f6"/>
+    <circle cx="32" cy="24" r="1.5" fill="#f1f2f6"/>
+    <!-- Umbo Central Reforçado -->
+    <circle cx="24" cy="18" r="4" fill="#57606f" stroke="#ffffff" stroke-width="1"/>
+  </g>
+</svg>

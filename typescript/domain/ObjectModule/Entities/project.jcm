@@ -1,0 +1,17 @@
+mas project {
+    agent talaria {
+        ag-arch: br.com.kkphoenix.jason.ipc.TalariaAgArch
+    }
+    agent molor : NPCs/Molor/molor.asl {
+        ag-arch: br.com.kkphoenix.Athena
+    }
+    agent candelion : NPCs/Candelion/candelion.asl {
+        ag-arch: br.com.kkphoenix.Athena
+    }
+    agent derocar : NPCs/Derocar/derocar.asl {
+        ag-arch: br.com.kkphoenix.Athena
+    }
+    agent molin : NPCs/Molin/molin.asl {
+        ag-arch: br.com.kkphoenix.Athena
+    }
+}

@@ -89,4 +89,27 @@ describe('Mage (Spell Parser & Buffer)', () => {
     expect((mage as any).spellBuffer.length).toBe(0);
     expect(mockEventManager.dispatch).not.toHaveBeenCalledWith('spawn', expect.anything());
   });
+
+  it('deve ativar a Infusão de Lâmina de Ar ao digitar Self + Potência + Air (spell_1, spell_9, spell_4, spell_4, spell_5)', () => {
+    const initialSpeed = player.attributes.speed;
+
+    // spell_1 (self)
+    mage.onSpellInput({ x: 0, y: 0 }, 'spell_1');
+    // spell_9 (magic) + spell_4 (fire) -> Potência
+    mage.onSpellInput({ x: 0, y: 0 }, 'spell_9');
+    mage.onSpellInput({ x: 0, y: 0 }, 'spell_4');
+    // spell_4 (fire) + spell_5 (water) -> Air
+    mage.onSpellInput({ x: 0, y: 0 }, 'spell_4');
+    mage.onSpellInput({ x: 0, y: 0 }, 'spell_5');
+
+    mage.onCastSpell(); // Dispara o feitiço
+
+    // O status da Infusão de Ar deve estar ativo no jogador
+    expect(player.activeStatuses.has('blade_infusion_air')).toBe(true);
+    expect((player as any).elementalType).toBe('air');
+    expect(player.attributes.speed).toBe(initialSpeed + 25);
+    expect(mockEventManager.dispatch).toHaveBeenCalledWith('particle', expect.objectContaining({
+      effect: 'windGust'
+    }));
+  });
 });

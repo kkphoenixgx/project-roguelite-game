@@ -93,13 +93,13 @@ describe('ObjectElementManager', () => {
     const spyCol1 = vi.spyOn(el1.hitboxes![0]!, 'onColision');
     const spyCol2 = vi.spyOn(el2.hitboxes![0]!, 'onColision');
 
-    (manager as any).pendingCollisions = new Int32Array([el1.id, el2.id]);
+    (manager as any).collisionManager.pendingCollisions = new Int32Array([el1.id, el2.id]);
 
     manager.updateAll(0.016, player);
 
     expect(spyCol1).toHaveBeenCalledWith(el2);
     expect(spyCol2).toHaveBeenCalledWith(el1);
-    expect((manager as any).pendingCollisions.length).toBe(0);
+    expect((manager as any).collisionManager.pendingCollisions.length).toBe(0);
   });
 
   it('deve retornar vizinhos dentro de um raio em "requestNeighbors"', () => {

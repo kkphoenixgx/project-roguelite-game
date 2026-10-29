@@ -1,0 +1,31 @@
+{
+  "hitboxes": [
+    {
+      "id": "rock_mossy_poly_1",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 8,
+          "y": 52
+        },
+        {
+          "x": 77,
+          "y": 52
+        },
+        {
+          "x": 77,
+          "y": 20
+        },
+        {
+          "x": 8,
+          "y": 20
+        }
+      ]
+    }
+  ]
+}

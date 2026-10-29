@@ -26,6 +26,7 @@ import AbysEffect from "../../Items/Effects/ElementalEffects/AbysEffect";
 import HolyEffect from "../../Items/Effects/ElementalEffects/HolyEffect";
 import DecayEffect from "../../Items/Effects/ElementalEffects/DecayEffect";
 import CrystalEffect from "../../Items/Effects/ElementalEffects/CrystalEffect";
+import NegationEffect from "../../Items/Effects/ElementalEffects/NegationEffect";
 
 @RegisterSpawner('dynamicSpell')
 export class DynamicProjectile extends Bullet {
@@ -112,6 +113,7 @@ export class DynamicProjectile extends Bullet {
                 if (el === 'holy') elementalEffects.push(new HolyEffect(source, payload.attack!));
                 if (el === 'decay') elementalEffects.push(new DecayEffect(source));
                 if (el === 'crystal') elementalEffects.push(new CrystalEffect(eventManager, source, payload.attack!, payload.spellElements!));
+                if (el === 'negation') elementalEffects.push(new NegationEffect(eventManager, 3));
             }
         }
         

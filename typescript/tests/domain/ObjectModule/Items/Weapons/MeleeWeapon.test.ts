@@ -80,4 +80,35 @@ describe('MeleeWeapon', () => {
     // Alvo atrás foi ignorado graças à limitação do attackAngle de 90 graus
     expect(takeDamageSpyBehind).not.toHaveBeenCalled();
   });
+
+  it('deve respeitar areaMultiplier do atacante se configurado', () => {
+    const weapon = new DummyMelee();
+    vi.spyOn(attacker.attributes, 'areaMultiplier', 'get').mockReturnValue(2.0);
+
+    const dispatchSpy = vi.spyOn(eventManager, 'dispatch');
+    weapon.attack(attacker, new Vector2D(1, 0), eventManager);
+
+    // requestNeighbors deve ter radius = attackRange * areaMultiplier = 50 * 2 = 100
+    expect(dispatchSpy).toHaveBeenCalledWith('requestNeighbors', expect.objectContaining({
+      radius: 100
+    }));
+    expect(dispatchSpy).toHaveBeenCalledWith('spawnVisual', expect.objectContaining({
+      size: { width: 64, height: 64 }
+    }));
+  });
+
+  it('deve ignorar vizinho quando for o próprio atacante ou se distance for 0', () => {
+    const weapon = new DummyMelee();
+    const samePositionTarget = new MockEntity(4, 0, 0); // Mesma coordenada que attacker
+    const takeDamageSpy = vi.spyOn(samePositionTarget, 'takeDamage');
+
+    vi.spyOn(eventManager, 'dispatch').mockImplementation((key, payload: any) => {
+      if (key === 'requestNeighbors') {
+        payload.callback([attacker, samePositionTarget]);
+      }
+    });
+
+    weapon.attack(attacker, new Vector2D(1, 0), eventManager);
+    expect(takeDamageSpy).not.toHaveBeenCalled();
+  });
 });

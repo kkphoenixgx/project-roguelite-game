@@ -1,6 +1,8 @@
 import type Entity from "../Entities/Entity";
 import type Vector2D from "../../shared/Vector2D";
-import type { DamageType, IAtack, OnHitAction } from "./IAtack";
+import type { IAtack, OnHitAction } from "./IAtack";
+import type { DamageType } from "../../ports/domain-contracts";
+import BurnStatus from "../Entities/Status/BurnStatus";
 
 /**
  * Representa uma instância de um ataque, encapsulando toda a sua lógica.
@@ -16,7 +18,7 @@ export default class Attack implements IAtack {
    * @param onHitActions Uma lista de callbacks a serem executados no impacto.
    */
   constructor(
-    private _attacker: Entity,
+    private _attacker: any,
     private baseDamage: number,
     private damageType: DamageType,
     private onHitActions: OnHitAction[] = []
@@ -45,6 +47,11 @@ export default class Attack implements IAtack {
       totalDamage *= (this._attacker.attributes.critDamage / 100);
     }
 
+    // Aplica multiplicador dinâmico de dano concedido por broches/buffs (ex: Berserk)
+    if ((this._attacker as any).classManager?.broochManager) {
+      totalDamage *= (this._attacker as any).classManager.broochManager.getDamageMultiplier();
+    }
+
     const damageDealt = target.takeDamage({
       totalDamage: Math.floor(totalDamage),
       damageType: this.damageType,
@@ -58,6 +65,11 @@ export default class Attack implements IAtack {
       if ('xpGiven' in target) {
         (this._attacker as any).gainXp((target as any).xpGiven);
       }
+    }
+
+    // Dispara hooks pós-ataque de broches equipados (ex: Dente do Vampiro, Núcleo Piromante)
+    if ((this._attacker as any).classManager?.broochManager) {
+      (this._attacker as any).classManager.broochManager.onAfterAttack(target, isCritical, damageDealt);
     }
 
     // Vampirismo (Lifesteal) - Cura a entidade atacante baseada no dano real causado!
@@ -76,6 +88,27 @@ export default class Attack implements IAtack {
 
     // Executa as ações de impacto sem instanciar literais (Zero-GC)
     this.onHitActions.forEach(action => action(this._attacker, target, damageDealt));
+
+    // Lâmina Anti-Magia: purga até 1 buff mágico (Tier <= 3) do alvo atingido
+    if (this._attacker.hasAntiMagicBlade && target.activeStatusesList && target.activeStatusesList.length > 0) {
+      for (let i = target.activeStatusesList.length - 1; i >= 0; i--) {
+        const status = target.activeStatusesList[i]!;
+        const cat = (status as any).category || 'magical';
+        const tier = typeof (status as any).tier === 'number' ? (status as any).tier : 1;
+        if (cat === 'magical' && tier <= 3) {
+          target.removeStatus(status.id);
+          const cx = target.coordinates.x + target.size.width / 2;
+          const cy = target.coordinates.y + target.size.height / 2;
+          (this._attacker as any).eventManager?.dispatch('particle', { effect: 'magicPulse', x: cx, y: cy });
+          (this._attacker as any).eventManager?.dispatch('log', {
+            channel: 'domain',
+            message: `[Lâmina Anti-Magia] O corte purificou o status mágico '${status.id}' de ${target.objectId}!`,
+            params: []
+          });
+          break;
+        }
+      }
+    }
 
     setTimeout(() => {
       this._attacker.resetAccelerator();

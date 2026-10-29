@@ -1,0 +1,31 @@
+{
+  "hitboxes": [
+    {
+      "id": "house_poly_1",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 96,
+          "y": 0
+        },
+        {
+          "x": 96,
+          "y": 96
+        },
+        {
+          "x": 0,
+          "y": 96
+        }
+      ]
+    }
+  ]
+}

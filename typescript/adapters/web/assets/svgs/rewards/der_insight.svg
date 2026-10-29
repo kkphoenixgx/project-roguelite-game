@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%">
+  <defs>
+    <linearGradient id="eye_lens" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e272e"/>
+      <stop offset="100%" stop-color="#2f3542"/>
+    </linearGradient>
+    <linearGradient id="orb_blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#70a1ff"/>
+      <stop offset="50%" stop-color="#1e90ff"/>
+      <stop offset="100%" stop-color="#3742fa"/>
+    </linearGradient>
+    <filter id="ins_glow">
+      <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#1e90ff" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+  <!-- Olho da Percepção com Esfera Azul de XP como Retina/Pupila Central -->
+  <g filter="url(#ins_glow)">
+    <!-- Contorno Esclera / Olho Místico -->
+    <path d="M6 24 C14 12 34 12 42 24 C34 36 14 36 6 24 Z" fill="url(#eye_lens)" stroke="#70a1ff" stroke-width="2" stroke-linejoin="round"/>
+    <!-- Anel Externo de Foco Perceptivo / Íris -->
+    <circle cx="24" cy="24" r="10" fill="none" stroke="#70a1ff" stroke-width="1.8" stroke-dasharray="3 2"/>
+    <!-- Orbe Azul Radiante de XP no Centro (Retina / Esfera de Conhecimento) -->
+    <circle cx="24" cy="24" r="7.5" fill="url(#orb_blue)" stroke="#ffffff" stroke-width="1.5"/>
+    <!-- Brilho / Reflexo Esférico de XP -->
+    <ellipse cx="22" cy="21" rx="2.5" ry="1.5" fill="#ffffff" opacity="0.9"/>
+    <circle cx="26" cy="26" r="1" fill="#ffffff" opacity="0.6"/>
+    <!-- Núcleo de XP / Sabedoria -->
+    <circle cx="24" cy="24" r="2" fill="#ffffff"/>
+    <!-- Raios de Iluminação e Percepção Mística -->
+    <path d="M24 6 V10 M24 38 V42 M14 9 L17 12 M34 9 L31 12 M14 39 L17 36 M34 39 L31 36" stroke="#70a1ff" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -3,6 +3,7 @@
 
 import type { ILogger, LogChannel } from "../../../domain/ports/ILogger"; 
 import { Telemetry } from "../../../tests/Telemetry"; 
+import { TelemetryAdapter } from "../../TelemetryAdapter/TelemetryAdapterSingleton";
 
 /**
  * @class Logger
@@ -15,11 +16,21 @@ class Logger implements ILogger {
   /** @private Um Set contendo os canais que devem exibir um stack trace completo. */
   private traceEnabledChannels: Set<LogChannel> = new Set();
 
-  /** Registra uma mensagem de log se o seu canal estiver ativo. @param channel O canal ao qual a mensagem pertence. @param message A mensagem a ser exibida. @param data Dados adicionais para serem logados. */
   public log(channel: LogChannel, message: string, ...data: any[]): void {
-    if (channel === 'error') Telemetry.errors++;
+    const logMessage = `[${channel.toUpperCase()}] ${message}`;
+    if (channel === 'error') {
+      Telemetry.errors++;
+      try {
+        TelemetryAdapter.getInstance().incrementError();
+        TelemetryAdapter.getInstance().captureLog(logMessage);
+      } catch (e) {}
+      console.error(logMessage, ...data);
+      return;
+    }
     if (this.activeChannels.has(channel)) {
-      const logMessage = `[${channel.toUpperCase()}] ${message}`;
+      try {
+        TelemetryAdapter.getInstance().captureLog(logMessage);
+      } catch (e) {}
       this.traceEnabledChannels.has(channel) ? console.trace(logMessage, ...data) : console.log(logMessage, ...data);
     }
   }

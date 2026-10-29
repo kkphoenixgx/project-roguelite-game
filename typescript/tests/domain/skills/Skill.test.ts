@@ -26,20 +26,57 @@ describe('Skill', () => {
     expect(skill.keybind).toBe('slot_1');
   });
 
-  it('deve construir corretamente com apenas as propriedades obrigatórias', () => {
+  it('deve construir com requiredSkillId sendo array e mesclar dependencies evitando duplicatas', () => {
     const skill = new Skill(
-      'strength_boost',
-      'Força Aumentada',
-      'Aumenta a força passivamente.',
-      'passive',
-      1
+      'meteor',
+      'Meteoro',
+      'Invoca um meteoro.',
+      'active',
+      2,
+      ['fireball', 'mana_surge'],
+      undefined,
+      undefined,
+      ['fireball', 'cosmic_power']
     );
 
-    expect(skill.id).toBe('strength_boost');
-    expect(skill.name).toBe('Força Aumentada');
-    expect(skill.tier).toBe(1);
-    expect(skill.requiredSkillId).toBeUndefined();
-    expect(skill.effect).toBeUndefined();
-    expect(skill.keybind).toBeUndefined();
+    expect(skill.id).toBe('meteor');
+    expect(skill.dependencies).toEqual(['fireball', 'mana_surge', 'cosmic_power']);
+    expect(skill.requiredSkillId).toBe('fireball');
+    expect(skill.prerequisiteId).toBe('fireball');
+  });
+
+  it('deve lidar com requiredSkillId vazio ou não-array', () => {
+    const skill = new Skill(
+      'arcane_mind',
+      'Mente Arcana',
+      'Passiva mental.',
+      'passive',
+      1,
+      '',
+      undefined,
+      undefined,
+      ['focus']
+    );
+
+    expect(skill.dependencies).toEqual(['focus']);
+    expect(skill.requiredSkillId).toBe('focus');
+    expect(skill.prerequisiteId).toBe('focus');
+  });
+
+  it('deve armazenar a flag requiresMainHandWeapon corretamente', () => {
+    const skill = new Skill(
+      'fanhammer',
+      'Fan the Hammer',
+      'Rajada de tiros',
+      'active',
+      2,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true
+    );
+
+    expect(skill.requiresMainHandWeapon).toBe(true);
   });
 });

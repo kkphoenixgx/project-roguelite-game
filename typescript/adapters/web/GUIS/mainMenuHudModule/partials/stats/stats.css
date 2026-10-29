@@ -1,0 +1,255 @@
+/* --- ABA 4: Stats --- */
+#stats-layout {
+    display: flex;
+    gap: 24px;
+    height: 100%;
+    max-height: calc(100vh - 96px);
+    box-sizing: border-box;
+    padding: 24px 32px;
+    overflow: hidden;
+}
+
+/* Painéis Esquerda e Direita */
+.stats-panel {
+    background: rgba(16, 8, 30, 0.7);
+    border: 2px solid var(--ui-border-primary);
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.stats-left-panel {
+    flex: 3;
+    min-width: 0;
+}
+
+.stats-right-panel {
+    flex: 2;
+    min-width: 320px;
+    max-width: 440px;
+}
+
+/* Header dos Painéis */
+.stats-panel-header {
+    padding: 16px 20px;
+    border-bottom: 2px solid rgba(133, 92, 199, 0.3);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.stats-title {
+    font-size: 26px;
+    margin: 0;
+    color: var(--accent-gold);
+    text-shadow: 2px 2px 0 var(--accent-gold-shadow);
+    letter-spacing: 1px;
+}
+
+.upgrades-title {
+    font-size: 22px;
+    margin: 0;
+    color: var(--accent-gold);
+    text-shadow: 2px 2px 0 var(--accent-gold-shadow);
+    letter-spacing: 1px;
+}
+
+.stats-subtitle {
+    font-size: 13px;
+    color: var(--ui-text-primary);
+    opacity: 0.7;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Categorias Wrapper com Scroll Interno Limpo */
+.stats-categories-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.stats-categories-wrapper::-webkit-scrollbar,
+.brooches-stats-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.stats-categories-wrapper::-webkit-scrollbar-track,
+.brooches-stats-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.stats-categories-wrapper::-webkit-scrollbar-thumb,
+.brooches-stats-list::-webkit-scrollbar-thumb {
+    background: var(--ui-border-primary);
+    border-radius: 3px;
+}
+
+/* Título de Cada Categoria */
+.stats-category-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.stats-category-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--ui-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(178, 236, 163, 0.2);
+    padding-bottom: 4px;
+}
+
+.category-icon {
+    font-size: 16px;
+}
+
+/* Grid de Cards de Stats */
+.stats-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 8px;
+}
+
+/* Card Individual de Atributo */
+.stat-card-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(20, 10, 36, 0.6);
+    border: 1px solid rgba(133, 92, 199, 0.25);
+    border-radius: 5px;
+    padding: 8px 12px;
+    transition: all 0.2s ease;
+}
+
+.stat-card-item:hover {
+    background: rgba(35, 18, 65, 0.8);
+    border-color: rgba(133, 92, 199, 0.6);
+}
+
+.stat-card-item.has-bonus {
+    border-color: rgba(255, 215, 0, 0.5);
+    background: rgba(45, 25, 20, 0.4);
+}
+
+.stat-card-name {
+    font-size: 16px;
+    color: var(--ui-text-primary);
+    white-space: normal;
+    margin-right: 8px;
+    line-height: 1.2;
+}
+
+.stat-card-value {
+    font-size: 16px;
+    font-weight: bold;
+    color: #888;
+    white-space: nowrap;
+}
+
+.stat-card-item.has-bonus .stat-card-name {
+    color: #fff;
+    font-weight: bold;
+}
+
+.stat-card-item.has-bonus .stat-card-value {
+    color: var(--accent-gold);
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+}
+
+/* Lista de Broches */
+.brooches-stats-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding: 16px 20px;
+}
+
+.brooch-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 215, 0, 0.25);
+    border-radius: 6px;
+    padding: 10px 14px;
+    transition: all 0.2s ease;
+}
+
+.brooch-stat-card:hover {
+    border-color: var(--accent-gold);
+    background: rgba(20, 15, 30, 0.7);
+}
+
+.brooch-stat-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.brooch-stat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.brooch-stat-name {
+    font-size: 16px;
+    color: #fff;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.brooch-stat-desc {
+    font-size: 12px;
+    color: #aaa;
+    line-height: 1.3;
+}
+
+.brooch-stat-badge {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.brooch-stat-badge.ativo {
+    background: rgba(255, 165, 0, 0.2);
+    color: #ffa500;
+    border: 1px solid rgba(255, 165, 0, 0.4);
+}
+
+.brooch-stat-badge.passivo {
+    background: rgba(100, 200, 255, 0.2);
+    color: #64c8ff;
+    border: 1px solid rgba(100, 200, 255, 0.4);
+}
+
+.empty-state-text {
+    color: #777;
+    font-size: 14px;
+    text-align: center;
+    padding: 30px 10px;
+    font-style: italic;
+}

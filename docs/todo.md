@@ -2,17 +2,13 @@
 
 ## Issues
 
-- [ ] Interface geral (#13)
-    descrição: - [ ] Seleção de broches
-    - [ ] Seleção de broches
-    - [ ] Geração dos broches
-    - [ ] Seleção dos broches
-    - [ ] Salvamento dos broches
-    - [ ] Telas de status gerais
-
-
-
-
+- [X] Interface geral (#13)
+    descrição: - [X] Seleção de broches
+    - [X] Seleção de broches
+    - [X] Geração dos broches
+    - [X] Seleção dos broches
+    - [X] Salvamento dos broches
+    - [X] Telas de status gerais
 
 - [ ] Árvore de habilidades de cada classe (#12)
     descrição: - [ ] Árvores de habilidade das 5 classes-base (guerreiro, gunslighter, arqueiro, mago e feiticeiro)
@@ -20,10 +16,6 @@
     - [ ] Seleção de classes ao iniciar a run
     - [ ] Listagem e controle das classes desbloqueadas no player
     - [ ] Ganho de itens através de um npc
-
-
-
-
 
 - [ ] NPCS (#11)
     descrição: - [X] Entidade npc no jogo
@@ -34,19 +26,11 @@
     - [X] Dialog Handler do hud de conversa pelo canvas
     - [ ] Opções para diálogo
 
-
-
-
-
-- [ ] Interface personagem (#10)
+- [X] Interface personagem (#10)
     descrição: 
     - [X] - Bag
-    - [~]  - Itens equipados (Habilitar as classes e manter as classes atuais no personagem)
-    - [ ] - Status
-
-
-
-
+    - [X]  - Itens equipados (Habilitar as classes e manter as classes atuais no personagem)
+    - [X] - Status
 
 - [~] Tela seleção de mapas (#9)
     descrição: - [ ] HUD
@@ -58,10 +42,6 @@
     - [ ] Fog
     - [ ] Seleção de mapas para jogar
 
-
-
-
-
 - [ ] Compositor de personagem (#8)
     descrição: - [ ] Melhorar o `renderModule/Sprite` para poder juntar os sprites de partes do **personagem** 
     - [ ] Melhorar o `renderModule/Sprite` para poder juntar os sprites de partes do **personagem**
@@ -69,27 +49,15 @@
     - [X] Adição de **armaduras**
     - [ ] Composição dos sprites de **skills**
 
-
-
-
-
 - [~] Progressão de Habilidade Mínima (de dentro do mundo): (#6)
     descrição: - [ ] Tela da árvore podendo adicionar habilidades na árvore
     - [ ] Tela da árvore podendo adicionar habilidades na árvore
     - [ ] Nível de xp para upar habilidade
     - [ ] Abrir uma UI temporária (e simples) que oferece a escolha de 1 de 3 upgrades passivos (ex: "+5% Dano", "+10% Velocidade de Ataque", "+1 HP").
 
-
-
-
-
-- [~] Inventário Mínimo (#5)
-    descrição: - [ ] Implementar apenas a UI de "Itens Equipados" (o "Paper")
-    - [ ] Implementar apenas a UI de "Itens Equipados" (o "Paper")
-
-
-
-
+- [X] Inventário Mínimo (#5)
+    descrição: - [X] Implementar apenas a UI de "Itens Equipados" (o "Paper")
+    - [X] Implementar apenas a UI de "Itens Equipados" (o "Paper")
 
 - [ ] Drop de Item Básico (#4)
     descrição: - [X] Inimigos têm X% de chance (ex: 3%) de "dropar" um item ao morrer.
@@ -98,29 +66,16 @@
     - [X] O item é coletado ao passar por cima.
     - [ ] Item tem range de atributos (e muito menor de ter efeito)
 
-
-
-
-
 - [ ] Paredes e colisões (#3)
     descrição: - [ ] Colisão de entidades
     - [ ] Colisão em objetos do mundo
     - [ ] Mapa de lugares que não pode andar
     - [ ] Lógica de "spawn" de inimigos em áreas.
 
-
-
-
-
 - [ ] Player Básico (#1)
     descrição: - [x] Design inicial do personagem
     - [ ] Animação para cada uma das direções (8 direções) andando
     - [ ] Animação para cada uma das direções (8 direções) idle
-
-
-
-
-
 
 ---
 

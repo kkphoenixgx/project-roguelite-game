@@ -1,0 +1,73 @@
+flowchart LR
+
+subgraph 0["typescript"]
+subgraph 1["domain"]
+subgraph 2["ObjectModule"]
+subgraph 3["Items"]
+4["Attack.ts"]
+P["IAtack.ts"]
+end
+9["objectType.type.ts"]
+subgraph D["Entities"]
+E["Entity.ts"]
+J["Attributes.ts"]
+L["IXPTable.ts"]
+subgraph M["Status"]
+N["BurnStatus.ts"]
+O["StatusEffect.ts"]
+end
+end
+I["ObjectElement.ts"]
+end
+subgraph 5["ports"]
+6["domain-contracts.ts"]
+A["ILLMConfigPort.ts"]
+end
+subgraph 7["eventDispacher"]
+8["actions.type.ts"]
+F["IGameEvents.ts"]
+end
+subgraph B["shared"]
+C["Vector2D.ts"]
+K["Dice.ts"]
+end
+subgraph G["hitBox"]
+H["HitBox.ts"]
+end
+end
+end
+4-->6
+4-->C
+4-->E
+4-->N
+4-->P
+6-->8
+6-->9
+6-->A
+6-->A
+E-->F
+E-->H
+E-->6
+E-->C
+E-->I
+E-->9
+E-->J
+F-->9
+F-->6
+F-->6
+F-->C
+H-->6
+I-->F
+I-->H
+I-->6
+I-->9
+J-->K
+J-->L
+N-->C
+N-->E
+N-->O
+O-->6
+O-->E
+P-->6
+P-->C
+P-->E

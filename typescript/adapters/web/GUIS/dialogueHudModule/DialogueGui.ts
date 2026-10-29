@@ -1,4 +1,5 @@
 import { logger } from "../../shared/Logger";
+import { RenderRegistry } from "../../shared/RenderRegistry";
 import html from './dialogue.html?raw';
 import css from './dialogue.css?raw';
 
@@ -7,9 +8,22 @@ export default class DialogueGui {
     private nameEl!: HTMLElement;
     private textEl!: HTMLElement;
     private inputEl!: HTMLInputElement;
+    private portraitEl!: HTMLElement;
+    private portraitCanvas!: HTMLCanvasElement;
+    private portraitCtx!: CanvasRenderingContext2D;
     private isVisible: boolean = false;
+    private isTyping: boolean = false;
+    private fullTextToType: string = '';
     private typingInterval: number | null = null;
     private currentNpcId: number | undefined;
+
+    // Portrait animation state
+    private portraitImage: HTMLImageElement | null = null;
+    private portraitConfig: { frameCount: number; frameWidth: number; frameHeight: number; animationSpeed: number } | null = null;
+    private portraitFrame: number = 0;
+    private portraitFrameCounter: number = 0;
+    private portraitAnimId: number | null = null;
+    private isTalking: boolean = false;
 
     constructor(
         private onPlayerReply: (message: string, npcId?: number) => void,
@@ -29,65 +43,323 @@ export default class DialogueGui {
         this.nameEl = this.container.querySelector('#dialogue-name') as HTMLElement;
         this.textEl = this.container.querySelector('#dialogue-text') as HTMLElement;
         this.inputEl = this.container.querySelector('#dialogue-input') as HTMLInputElement;
+        this.portraitEl = this.container.querySelector('#dialogue-portrait') as HTMLElement;
+        this.portraitCanvas = this.container.querySelector('#portrait-canvas') as HTMLCanvasElement;
+        this.portraitCtx = this.portraitCanvas.getContext('2d')!;
+
+        // Click no texto para pular o efeito de digitação
+        this.textEl.addEventListener('click', () => {
+            if (this.isTyping) {
+                this.finishTypingImmediately();
+            }
+        });
     }
 
     public get isOpen(): boolean { return this.isVisible; }
 
     private setupInput(): void {
         this.inputEl.addEventListener('keydown', (e) => {
-            // Impede que o personagem se mova enquanto digita (evita vazar atalhos de input para o InputManager)
             e.stopPropagation(); 
             
             if (e.key === 'Enter') {
+                if (this.isTyping) {
+                    this.finishTypingImmediately();
+                    return;
+                }
+
                 const msg = this.inputEl.value.trim();
                 if (msg) {
                     this.onPlayerReply(msg, this.currentNpcId);
                     this.inputEl.value = '';
-                    this.inputEl.disabled = true; // Trava até a IA responder
-                    this.textEl.innerHTML = '<div class="waiting-indicator"><div class="waiting-spinner"></div><span>Aguardando os pensamentos do Mestre... (Isso pode demorar um pouco)</span></div>';
+                    this.inputEl.disabled = true;
+                    this.showWaitingState();
                 }
             }
         });
 
-        // Listener global para garantir que o Escape feche mesmo sem foco no input
         window.addEventListener('keydown', (e) => {
             if (this.isVisible && e.key === 'Escape') {
                 this.hide();
             }
         });
 
-        // Botão de fechar (X)
         const closeBtn = this.container.querySelector('#dialogue-close-btn');
         if (closeBtn) {
             closeBtn.addEventListener('click', () => this.hide());
         }
     }
 
-    public show(npcName: string, text: string, npcId?: number): void {
+    // --- Portrait Sprite System ---
+
+    private loadPortrait(entityTypeId?: string): void {
+        if (!entityTypeId) {
+            console.warn('[DialogueGui Portrait] entityTypeId is undefined/null, no portrait.');
+            this.portraitImage = null;
+            this.portraitConfig = null;
+            this.clearPortrait();
+            return;
+        }
+
+        // Try idle first, then walking as fallback
+        const idleConfig = RenderRegistry.spriteConfigs.get(`${entityTypeId}-idle`);
+        const walkConfig = RenderRegistry.spriteConfigs.get(`${entityTypeId}-walking`);
+        
+        console.log(`[DialogueGui Portrait] entityTypeId="${entityTypeId}", idleConfig=${!!idleConfig}, walkConfig=${!!walkConfig}, registeredKeys:`, Array.from(RenderRegistry.spriteConfigs.keys()).filter(k => k.startsWith(entityTypeId)));
+        
+        if (!idleConfig) {
+            console.warn(`[DialogueGui Portrait] No idle config found for "${entityTypeId}-idle"`);
+            this.portraitImage = null;
+            this.portraitConfig = null;
+            this.clearPortrait();
+            return;
+        }
+
+        this.portraitConfig = {
+            frameCount: idleConfig.frameCount,
+            frameWidth: idleConfig.frameWidth,
+            frameHeight: idleConfig.frameHeight,
+            animationSpeed: idleConfig.animationSpeed,
+        };
+
+        // Load the idle image
+        const img = new Image();
+        img.src = idleConfig.imageSrc;
+        console.log(`[DialogueGui Portrait] Loading idle sprite: "${idleConfig.imageSrc}"`);
+        img.onload = () => {
+            console.log(`[DialogueGui Portrait] ✅ Idle sprite loaded successfully.`);
+            this.portraitImage = img;
+            this.portraitFrame = 0;
+            this.portraitFrameCounter = 0;
+            this.drawPortraitFrame();
+            this.startPortraitLoop();
+        };
+        img.onerror = (e) => {
+            console.error(`[DialogueGui Portrait] ❌ Failed to load idle sprite: "${idleConfig.imageSrc}"`, e);
+        };
+
+        // Pre-cache walking sprite for when NPC is talking
+        if (walkConfig) {
+            const walkImg = new Image();
+            walkImg.src = walkConfig.imageSrc;
+            walkImg.onload = () => {
+                // Store walking image and config for the talking state
+                (this as any)._walkImage = walkImg;
+                (this as any)._walkConfig = {
+                    frameCount: walkConfig.frameCount,
+                    frameWidth: walkConfig.frameWidth,
+                    frameHeight: walkConfig.frameHeight,
+                    animationSpeed: walkConfig.animationSpeed,
+                };
+            };
+        }
+    }
+
+    private clearPortrait(): void {
+        this.portraitCtx.clearRect(0, 0, 64, 64);
+    }
+
+    private drawPortraitFrame(): void {
+        if (!this.portraitImage || !this.portraitConfig) return;
+        
+        const ctx = this.portraitCtx;
+        const config = this.portraitConfig;
+        const img = this.portraitImage;
+        
+        ctx.clearRect(0, 0, 64, 64);
+        ctx.imageSmoothingEnabled = false;
+        
+        const columns = Math.max(1, Math.floor(img.width / config.frameWidth));
+        const col = this.portraitFrame % columns;
+        const row = Math.floor(this.portraitFrame / columns);
+        
+        // Draw the sprite centered and scaled up to fill the 64x64 portrait
+        const scale = Math.min(64 / config.frameWidth, 64 / config.frameHeight);
+        const dw = config.frameWidth * scale;
+        const dh = config.frameHeight * scale;
+        const dx = (64 - dw) / 2;
+        const dy = (64 - dh) / 2;
+        
+        ctx.drawImage(
+            img,
+            col * config.frameWidth, row * config.frameHeight,
+            config.frameWidth, config.frameHeight,
+            dx, dy, dw, dh
+        );
+    }
+
+    private startPortraitLoop(): void {
+        if (this.portraitAnimId !== null) return;
+
+        const animate = () => {
+            if (!this.isVisible) {
+                this.portraitAnimId = null;
+                return;
+            }
+
+            // Decide which sprite to use: walking when talking, idle when waiting
+            let activeImage = this.portraitImage;
+            let activeConfig = this.portraitConfig;
+
+            if (this.isTalking && (this as any)._walkImage && (this as any)._walkConfig) {
+                activeImage = (this as any)._walkImage;
+                activeConfig = (this as any)._walkConfig;
+            }
+
+            if (activeImage && activeConfig) {
+                this.portraitFrameCounter++;
+                if (this.portraitFrameCounter >= activeConfig.animationSpeed) {
+                    this.portraitFrameCounter = 0;
+                    this.portraitFrame = (this.portraitFrame + 1) % activeConfig.frameCount;
+                }
+                
+                // Draw with the active sprite
+                const ctx = this.portraitCtx;
+                const img = activeImage;
+                const config = activeConfig;
+                
+                ctx.clearRect(0, 0, 64, 64);
+                ctx.imageSmoothingEnabled = false;
+                
+                const columns = Math.max(1, Math.floor(img.width / config.frameWidth));
+                const col = this.portraitFrame % columns;
+                const row = Math.floor(this.portraitFrame / columns);
+                
+                const scale = Math.min(64 / config.frameWidth, 64 / config.frameHeight);
+                const dw = config.frameWidth * scale;
+                const dh = config.frameHeight * scale;
+                const dx = (64 - dw) / 2;
+                const dy = (64 - dh) / 2;
+                
+                ctx.drawImage(
+                    img,
+                    col * config.frameWidth, row * config.frameHeight,
+                    config.frameWidth, config.frameHeight,
+                    dx, dy, dw, dh
+                );
+            }
+
+            this.portraitAnimId = requestAnimationFrame(animate);
+        };
+
+        this.portraitAnimId = requestAnimationFrame(animate);
+    }
+
+    private stopPortraitLoop(): void {
+        if (this.portraitAnimId !== null) {
+            cancelAnimationFrame(this.portraitAnimId);
+            this.portraitAnimId = null;
+        }
+    }
+
+    private setTalking(talking: boolean): void {
+        this.isTalking = talking;
+        if (talking) {
+            this.portraitEl.classList.add('talking');
+            this.portraitFrame = 0;
+            this.portraitFrameCounter = 0;
+        } else {
+            this.portraitEl.classList.remove('talking');
+            this.portraitFrame = 0;
+            this.portraitFrameCounter = 0;
+        }
+    }
+
+    // --- End Portrait ---
+
+    private showWaitingState(customMessage?: string): void {
+        this.inputEl.disabled = true;
+        this.setTalking(false);
+        const msg = customMessage || `Aguardando pensamentos de ${this.nameEl.textContent || 'NPC'}...`;
+        this.textEl.innerHTML = `<div class="waiting-indicator"><div class="waiting-spinner"></div><span>${msg}</span></div>`;
+    }
+
+    private finishTypingImmediately(): void {
+        if (this.typingInterval !== null) {
+            clearInterval(this.typingInterval);
+            this.typingInterval = null;
+        }
+        this.isTyping = false;
+        this.setTalking(false);
+        this.textEl.textContent = this.fullTextToType;
+        this.inputEl.disabled = false;
+        this.inputEl.focus();
+    }
+
+    private startTypewriter(text: string): void {
+        if (this.typingInterval !== null) {
+            clearInterval(this.typingInterval);
+            this.typingInterval = null;
+        }
+
+        this.fullTextToType = text;
+        this.isTyping = true;
+        this.setTalking(true); // NPC is "talking" while typewriter runs
+        this.inputEl.disabled = false;
+        this.textEl.textContent = '';
+        
+        let charIndex = 0;
+        const speed = 18; // ms por caractere para ritmo natural
+        
+        this.typingInterval = window.setInterval(() => {
+            if (charIndex < text.length) {
+                this.textEl.textContent += text.charAt(charIndex);
+                charIndex++;
+            } else {
+                if (this.typingInterval !== null) {
+                    clearInterval(this.typingInterval);
+                    this.typingInterval = null;
+                }
+                this.isTyping = false;
+                this.setTalking(false); // NPC stops "talking" when done
+                this.inputEl.focus();
+            }
+        }, speed);
+    }
+
+    public show(npcName: string, text: string, npcId?: number, entityTypeId?: string): void {
         this.currentNpcId = npcId;
         this.nameEl.textContent = npcName;
         
         if (!this.isVisible) {
             this.isVisible = true;
             this.container.style.display = 'flex';
-            this.onTogglePause(); // Pausa o jogo no fundo
+            this.onTogglePause();
+            this.loadPortrait(entityTypeId);
         }
         
-        if (text === "...") {
-            this.inputEl.disabled = true;
-            this.textEl.innerHTML = '<div class="waiting-indicator"><div class="waiting-spinner"></div><span>Aguardando os pensamentos do Mestre... (Isso pode demorar um pouco)</span></div>';
-        } else {
+        if (text === "..." || text.startsWith("*(Conectando") || text.startsWith("*(Organizando") || text.startsWith("*(Sincronizando") || text.startsWith("*(Consultando") || text.startsWith("*(Despertando") || text.startsWith("*(Sintonizando")) {
+            this.showWaitingState(text !== "..." ? text.replace(/^\*\(/, '').replace(/\)\*$/, '') : undefined);
+        } else if (text.startsWith("*(") && text.endsWith(")*")) {
+            // Pensamento interno rápido
             this.inputEl.disabled = false;
-            this.textEl.textContent = text;
+            this.setTalking(false);
+            this.textEl.innerHTML = `<span class="internal-thought">${text}</span>`;
             this.inputEl.focus();
+        } else {
+            this.startTypewriter(text);
         }
     }
 
+    public showSystemMessage(message: string): void {
+        if (!this.isVisible) return;
+        this.finishTypingImmediately();
+        this.setTalking(false);
+        this.inputEl.disabled = false;
+        this.textEl.innerHTML = `<span style="color: #ff4444; font-weight: bold;">[Erro no Sistema Cognitivo]</span><br><span style="color: #ff9999;">${message}</span>`;
+    }
+
     public hide(): void {
+        if (this.typingInterval !== null) {
+            clearInterval(this.typingInterval);
+            this.typingInterval = null;
+        }
+        this.isTyping = false;
+        this.setTalking(false);
+        this.stopPortraitLoop();
         if (this.isVisible) {
             this.isVisible = false;
             this.container.style.display = 'none';
-            this.onTogglePause(); // Retoma o jogo
+            this.onTogglePause();
         }
     }
 }

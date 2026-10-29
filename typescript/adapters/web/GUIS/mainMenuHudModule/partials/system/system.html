@@ -1,0 +1,461 @@
+<!-- ABA 5: SYSTEM -->
+<div class="mm-tab-content" id="mm-tab-5">
+    <div id="settings-layout" class="system-scroll-container">
+        
+        <!-- HEADER PRINCIPAL DA ABA SISTEMA COM SUB-NAVEGAÇÃO (V2) -->
+        <header class="system-header-panel">
+            <div class="system-title-group">
+                <div class="system-emblem-box">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="system-main-title">Configurações do Sistema</h1>
+                    <p class="system-subtitle">Persistência dos sonhos e controle do motor neural cognitivo</p>
+                </div>
+            </div>
+
+            <!-- SUB-ABAS INTERNAS: SAVES (DEFAULT) E MODELOS -->
+            <nav class="system-subtabs-nav">
+                <button class="system-subtab-btn active" id="btn-subtab-saves" data-subtab="saves">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    <span>Saves & Backup</span>
+                </button>
+                <button class="system-subtab-btn" id="btn-subtab-models" data-subtab="models">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04z"></path>
+                        <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04z"></path>
+                    </svg>
+                    <span>Modelos (Ollama)</span>
+                </button>
+            </nav>
+        </header>
+
+        <!-- ============================================================ -->
+        <!-- SUB-ABA 1: SAVES (ESTILO DON'T STARVE / RECEPTÁCULOS DE MEMÓRIA) -->
+        <!-- ============================================================ -->
+        <div id="system-content-saves" class="system-subtab-content active">
+            <section class="system-section-block">
+                <div class="system-section-header ds-header-bar">
+                    <div class="section-title-wrapper">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        <h2 class="section-title">Slots de Salvamento (Saves)</h2>
+                    </div>
+                    <div class="ds-header-actions">
+                        <button id="btn-create-slot-save" class="btn-retro-primary" title="Iniciar um novo save do zero em um slot disponível">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            <span>+ Novo Save</span>
+                        </button>
+                        <button id="btn-quick-export" class="btn-retro-secondary" title="Exportar o progresso atual em formato de save">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            <span>Exportar Save</span>
+                        </button>
+                        <button id="btn-quick-import" class="btn-retro-primary" title="Importar save em um slot">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            <span>Importar Save</span>
+                        </button>
+                    </div>
+                </div>
+
+                <p class="ds-flavor-quote">
+                    "Escolha o save ativo para carregar e sincronizar seus dados com as abas de Progressão, Loadout e Estatísticas do Menu Principal."
+                </p>
+
+                <!-- BANNER DO SAVE ATIVO ATUALMENTE VINCULADO AO MENU PRINCIPAL -->
+                <div class="ds-active-slot-banner" id="ds-active-slot-banner">
+                    <div class="ds-active-slot-banner-info">
+                        <span class="ds-active-slot-tag">SAVE ATIVO VINCULADO AO MENU:</span>
+                        <div class="ds-active-slot-main-row">
+                            <strong id="ds-active-slot-name" class="ds-active-slot-title">Registro 1</strong>
+                            <span id="ds-active-slot-badge" class="ds-badge-active-slot">Ativo</span>
+                        </div>
+                        <span id="ds-active-slot-details" class="ds-active-slot-subtext">Progresso carregado nas abas de Progressão, Loadout e Estatísticas.</span>
+                    </div>
+                </div>
+
+                <!-- STACK DE SLOTS NO ESTILO DON'T STARVE -->
+                <div id="ds-save-slots-stack" class="ds-slots-stack">
+                    <div class="catalog-loading-state">
+                        <span class="loading-spinner"></span>
+                        <span>Inspecionando os registros no disco...</span>
+                    </div>
+                </div>
+
+                <!-- DRAWER DE IMPORTAÇÃO / EXPORTAÇÃO -->
+                <div id="save-io-drawer" class="system-panel save-drawer-panel" style="display: none;">
+                    <div class="save-drawer-header">
+                        <span id="save-io-title" class="save-drawer-title">Dados do Save</span>
+                        <button id="btn-close-save-drawer" class="btn-close-retro" title="Fechar painel">✕</button>
+                    </div>
+                    <div class="save-drawer-target-row" id="save-drawer-target-row" style="display: none;">
+                        <label for="save-target-slot-select" class="save-target-label">Importar diretamente para qual slot?</label>
+                        <select id="save-target-slot-select" class="retro-select">
+                            <option value="1">Slot 1</option>
+                            <option value="2">Slot 2</option>
+                            <option value="3">Slot 3</option>
+                            <option value="4">Slot 4</option>
+                            <option value="5">Slot 5</option>
+                        </select>
+                    </div>
+                    <textarea id="save-data-io" class="retro-textarea" placeholder="Cole os dados do seu save aqui..."></textarea>
+                    <div class="save-drawer-footer">
+                        <button id="btn-copy-save" class="btn-retro-secondary" style="display: none;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span id="copy-btn-text">Copiar Save</span>
+                        </button>
+                        <button id="btn-confirm-import" class="btn-retro-primary" style="display: none;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span>Confirmar Restauração</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SUB-ABA 2: MODELOS COGNITIVOS (OLLAMA)                        -->
+        <!-- ============================================================ -->
+        <div id="system-content-models" class="system-subtab-content" style="display: none;">
+            <section class="system-section-block">
+                <div class="system-section-header">
+                    <div class="section-title-wrapper">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04z"></path>
+                            <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04z"></path>
+                        </svg>
+                        <h2 class="section-title">Motor Cognitivo & Agentes Neurais (Ollama)</h2>
+                    </div>
+                    <!-- STATUS BAR INDICATORS INTEGRADOS -->
+                    <div class="system-status-group">
+                        <div class="status-chip-box" id="ollama-daemon-status">
+                            <span class="status-dot checking"></span>
+                            <span id="ollama-status-label" class="status-chip-text">Ollama: Verificando...</span>
+                        </div>
+                        <div class="status-chip-box active-model-chip">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg>
+                            <span class="status-chip-text">Ativo:</span>
+                            <strong id="llm-active-display" class="active-model-name">Carregando...</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRESETS DE HARDWARE RECOMENDADOS -->
+                <div class="system-hardware-presets-bar">
+                    <div class="hw-presets-top-row">
+                        <span class="preset-label-title">⚡ Perfis Recomendados:</span>
+                        <div class="preset-buttons-group">
+                            <button class="btn-hw-preset" id="hw-preset-eco" title="Requisitos: CPU ou Gráficos Integrados (Intel UHD/Iris, AMD Vega) e ≥ 4 GB RAM. Modelo: qwen2.5:0.5b">
+                                <span class="hw-preset-name">🌱 Econômico</span>
+                                <span class="hw-preset-model">qwen2.5:0.5b</span>
+                            </button>
+                            <button class="btn-hw-preset" id="hw-preset-bal" title="Requisitos: GPUs com 4 GB - 6 GB VRAM (GTX 1650/1660, RTX 2060/3050) ou ≥ 8 GB RAM. Modelo: qwen2.5:1.5b">
+                                <span class="hw-preset-name">⚖️ Equilibrado</span>
+                                <span class="hw-preset-model">qwen2.5:1.5b</span>
+                            </button>
+                            <button class="btn-hw-preset" id="hw-preset-high" title="Requisitos: GPUs com ≥ 8 GB VRAM (RTX 3070/3080/4070+, RX 7800 XT+) e CPU 8+ núcleos. Modelo: qwen2.5:7b">
+                                <span class="hw-preset-name">👑 High-End</span>
+                                <span class="hw-preset-model">qwen2.5:7b</span>
+                            </button>
+                            <button class="btn-hw-preset btn-preset-toggle" id="btn-toggle-config-menu" title="Expandir ou ocultar o menu de configurações e presets salvos">
+                                <span class="hw-preset-name">⚙️ Menu de Config</span>
+                                <span class="hw-preset-arrow" id="toggle-config-arrow">▼</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- PRESETS SALVOS PELO JOGADOR (INTEGRADOS DIRETAMENTE EM PERFIS RECOMENDADOS) -->
+                    <div class="saved-presets-bar" id="hw-saved-presets-bar">
+                        <div class="saved-presets-header">
+                            <span class="saved-presets-title">📋 Presets Salvos:</span>
+                        </div>
+                        <div class="saved-presets-list" id="saved-presets-pills-list">
+                            <!-- Injetado dinamicamente pelo TS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAINEL DE PRESET CUSTOMIZADO DO JOGADOR (JSON & FORM) - TOGGLEABLE -->
+                <div class="system-panel custom-preset-panel is-hidden" id="custom-preset-container">
+                    <div class="panel-header-row">
+                        <div class="panel-title-group">
+                            <h3 class="panel-title">⚙️ Configurações de Inferência & Presets</h3>
+                            <span class="panel-badge-tag">Parâmetros do Jogador</span>
+                        </div>
+                        <div class="custom-preset-actions-bar">
+                            <span id="custom-preset-status" class="preset-status-tag">Ativo</span>
+                            <div class="new-preset-save-box">
+                                <input type="text" id="input-new-preset-name" class="retro-input-compact" placeholder="Nome do preset..." spellcheck="false">
+                                <button id="btn-save-as-new-preset" class="btn-retro-secondary" title="Salvar configuração atual como novo preset">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    <span>Salvar Novo</span>
+                                </button>
+                            </div>
+                            <button id="btn-copy-custom-preset" class="btn-retro-secondary" title="Copiar JSON formatado">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                <span>Copiar JSON</span>
+                            </button>
+                            <button id="btn-reset-custom-preset" class="btn-retro-secondary" title="Restaurar template padrão">
+                                <span>Resetar</span>
+                            </button>
+                            <button id="btn-save-custom-preset" class="btn-retro-primary" title="Salvar e ativar este preset imediatamente">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path></svg>
+                                <span>Salvar & Ativar</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="panel-lead-text">
+                        Ajuste os parâmetros nos campos interativos ou edite/cole diretamente o JSON para configurar o motor dos NPCs:
+                    </p>
+
+                    <div class="custom-preset-grid">
+                        <!-- Coluna 1: Campos do Preset -->
+                        <div class="preset-form-col">
+                            <div class="preset-field-group">
+                                <label for="custom-preset-model" class="preset-field-label">Modelo LLM (Local ou Hugging Face):</label>
+                                <input type="text" id="custom-preset-model" class="retro-input" placeholder="Ex: qwen2.5:1.5b ou hf.co/usuario/modelo" value="qwen2.5:1.5b" spellcheck="false">
+                            </div>
+
+                            <div class="preset-fields-row">
+                                <div class="preset-field-group">
+                                    <label for="custom-preset-ctx" class="preset-field-label">Contexto (num_ctx):</label>
+                                    <input type="number" id="custom-preset-ctx" class="retro-input-number" min="512" max="16384" step="256" value="1024">
+                                </div>
+                                <div class="preset-field-group">
+                                    <label for="custom-preset-timeout" class="preset-field-label">Timeout (segundos):</label>
+                                    <input type="number" id="custom-preset-timeout" class="retro-input-number" min="5" max="900" step="5" value="180">
+                                </div>
+                            </div>
+
+                            <div class="preset-fields-row">
+                                <div class="preset-field-group">
+                                    <label for="custom-preset-temp" class="preset-field-label">Temperatura (0.0 a 2.0):</label>
+                                    <input type="number" id="custom-preset-temp" class="retro-input-number" min="0" max="2" step="0.05" value="0.65">
+                                </div>
+                                <div class="preset-field-group">
+                                    <label for="custom-preset-tokens" class="preset-field-label">Max Tokens (num_predict):</label>
+                                    <input type="number" id="custom-preset-tokens" class="retro-input-number" min="16" max="2048" step="16" value="100">
+                                </div>
+                            </div>
+
+                            <div class="preset-checkbox-row">
+                                <label class="preset-checkbox-label">
+                                    <input type="checkbox" id="custom-preset-stateless" checked>
+                                    <span>Modo Stateless (conversas limpas, economiza memória da GPU)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Coluna 2: Live JSON Editor -->
+                        <div class="preset-json-col">
+                            <div class="json-header-row">
+                                <span class="json-header-title">JSON do Preset (Edição / Importação):</span>
+                                <span id="json-sync-indicator" class="json-sync-ok">✓ Sincronizado</span>
+                            </div>
+                            <textarea id="custom-preset-json" class="preset-json-textarea" spellcheck="false" rows="8"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAINEL DE DOWNLOAD / PULL DIRETO (OLLAMA / HUGGING FACE) -->
+                <div class="system-panel pull-model-panel">
+                    <div class="panel-header-row">
+                        <div class="panel-title-group">
+                            <h3 class="panel-title">📥 Baixar Modelo (Pull)</h3>
+                            <span class="panel-badge-tag">Ollama & Hugging Face</span>
+                        </div>
+                    </div>
+                    <p class="panel-lead-text">
+                        Digite o nome do modelo oficial (ex: <code>qwen2.5:1.5b</code>) ou cole o link/identificador do Hugging Face (ex: <code>hf.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M</code>):
+                    </p>
+                    <div class="pull-action-container">
+                        <div class="pull-input-wrapper">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            <input type="text" id="llm-pull-input" class="retro-input" placeholder="Ex: qwen2.5:1.5b ou hf.co/usuario/modelo:quant" spellcheck="false" autocomplete="off">
+                        </div>
+                        <button id="btn-pull-model" class="btn-retro-primary">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            <span>Baixar (Pull)</span>
+                        </button>
+                    </div>
+
+                    <!-- BARRA DE PROGRESSO DO DOWNLOAD -->
+                    <div id="llm-pull-progress-container" class="progress-container-box" style="display: none; margin-top: 14px;">
+                        <div class="progress-labels-row">
+                            <span id="llm-pull-progress" class="progress-text-status">Conectando...</span>
+                            <span id="llm-pull-percent" class="progress-text-pct">0%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div id="llm-pull-bar" class="progress-fill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAINEL DE MODELOS INSTALADOS LOCALMENTE -->
+                <div class="system-panel installed-models-panel">
+                    <div class="panel-header-row">
+                        <div class="panel-title-group">
+                            <h3 class="panel-title">💾 Modelos Instalados no Computador</h3>
+                            <span class="panel-badge-tag" id="installed-models-count">0</span>
+                        </div>
+                        <button id="btn-refresh-models" class="btn-retro-secondary" title="Atualizar lista de modelos locais">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                            <span>Atualizar Lista</span>
+                        </button>
+                    </div>
+                    <ul id="llm-models-list" class="models-list-ul">
+                        <!-- Injetado dinamicamente via MainMenuGui.ts -->
+                    </ul>
+                </div>
+
+                <!-- CATÁLOGO DINÂMICO DE MODELOS FETCHED DE OLLAMA.COM/LIBRARY -->
+                <div class="system-panel catalog-wide-panel">
+                    <div class="catalog-top-bar">
+                        <div class="catalog-info-col">
+                            <div class="catalog-title-wrapper">
+                                <h3 class="panel-title">Biblioteca Oficial de Modelos</h3>
+                                <span class="catalog-source-tag" id="catalog-status-badge">ollama.com/library</span>
+                            </div>
+                            <p class="panel-lead-text">
+                                Modelos disponíveis diretamente no repositório Ollama. Filtre pelo nome ou tamanho e clique em "Baixar" para instalar instantaneamente.
+                            </p>
+                        </div>
+
+                        <!-- BOTÕES E AÇÕES DO CATÁLOGO -->
+                        <div class="catalog-actions-group">
+                            <div class="catalog-search-wrapper">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                <input type="text" id="catalog-search-input" class="retro-input-search" placeholder="Buscar modelo (ex: llama, qwen, 1b)..." autocomplete="off" spellcheck="false">
+                            </div>
+                            <button id="btn-refresh-catalog" class="btn-retro-secondary" title="Recarregar catálogo ao vivo do site Ollama">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                                <span>Recarregar Web</span>
+                            </button>
+                            <a href="https://ollama.com/library" target="_blank" rel="noopener noreferrer" class="btn-retro-secondary btn-external-link">
+                                <span>Abrir Site</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- FILTROS RÁPIDOS POR CATEGORIA/FAMÍLIA -->
+                    <div class="catalog-filters-row">
+                        <button class="filter-pill-btn active" data-filter="all">Todos</button>
+                        <button class="filter-pill-btn" data-filter="highend">👑 High-End (7B - 14B)</button>
+                        <button class="filter-pill-btn" data-filter="huggingface">🤗 Hugging Face & GGUF</button>
+                        <button class="filter-pill-btn" data-filter="light">Ultraleves (0.5B - 2B)</button>
+                        <button class="filter-pill-btn" data-filter="roleplay">🎭 Roleplay & Imersão</button>
+                        <button class="filter-pill-btn" data-filter="qwen">Qwen</button>
+                        <button class="filter-pill-btn" data-filter="llama">Llama</button>
+                        <button class="filter-pill-btn" data-filter="deepseek">DeepSeek</button>
+                        <button class="filter-pill-btn" data-filter="mistral">Mistral</button>
+                    </div>
+
+                    <!-- GRID DINÂMICA DE MODELOS FETCHED -->
+                    <div id="ollama-catalog-grid" class="catalog-cards-grid">
+                        <div class="catalog-loading-state">
+                            <span class="loading-spinner"></span>
+                            <span>Buscando biblioteca de modelos no site do Ollama...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAINEL DE MODDING & HUGGING FACE (NO FINAL) -->
+                <div class="system-panel modding-panel">
+                    <div class="panel-header-row">
+                        <div class="panel-title-group">
+                            <h3 class="panel-title">🤗 Comunidade, Hugging Face & Modelos Customizados (.gguf)</h3>
+                            <span class="panel-badge-tag">Modding de IA</span>
+                        </div>
+                    </div>
+                    <p class="panel-lead-text">
+                        Integração transparente com Hugging Face Hub (hf.co/) e suporte a compilação de personas e arquivos .gguf da comunidade:
+                    </p>
+
+                    <div class="modding-features-grid">
+                        <div class="modding-card">
+                            <div class="modding-card-header">
+                                <span class="modding-icon">🤗</span>
+                                <h4 class="modding-card-title">1. Hugging Face Direto</h4>
+                            </div>
+                            <p class="modding-card-desc">Baixe qualquer modelo quantizado do HF informando o prefixo <code>hf.co/</code> ou a URL do repositório.</p>
+                            <div class="modding-example-box">
+                                <code>hf.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M</code>
+                            </div>
+                            <button class="btn-retro-secondary btn-apply-hf-example" data-hf="hf.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M">
+                                <span>Preencher p/ Download</span>
+                            </button>
+                        </div>
+
+                        <div class="modding-card">
+                            <div class="modding-card-header">
+                                <span class="modding-icon">📁</span>
+                                <h4 class="modding-card-title">2. Pasta Local de Mods</h4>
+                            </div>
+                            <p class="modding-card-desc">Coloque arquivos <code>.gguf</code> ou <code>Modelfile</code> na pasta <code>/mods/models/</code> para detecção automática.</p>
+                            <div class="modding-example-box">
+                                <code>FROM ./mods/models/meu-npc-grimdark.gguf</code>
+                            </div>
+                            <button id="btn-open-mods-folder" class="btn-retro-secondary" title="Abrir pasta local de mods de IA">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                                <span>Pasta de Mods</span>
+                            </button>
+                        </div>
+
+                        <div class="modding-card">
+                            <div class="modding-card-header">
+                                <span class="modding-icon">📜</span>
+                                <h4 class="modding-card-title">3. Criar Modelfile</h4>
+                            </div>
+                            <p class="modding-card-desc">Compile um novo NPC com System Prompt e temperatura embutidos via terminal Ollama ou Modelfile.</p>
+                            <div class="modding-example-box">
+                                <code>ollama create custom-npc -f ./Modelfile</code>
+                            </div>
+                            <button id="btn-toggle-modelfile-creator" class="btn-retro-secondary">
+                                <span>Compilador Rápido</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- GAVETA EXPANSÍVEL: CRIADOR DE MODELFILE -->
+                    <div id="modelfile-creator-drawer" class="modelfile-drawer" style="display: none;">
+                        <h4 class="drawer-subtitle">Compilar Novo Modelo via Modelfile</h4>
+                        <div class="modelfile-inputs-row">
+                            <div class="preset-field-group">
+                                <label class="preset-field-label">Nome do Modelo (ID):</label>
+                                <input type="text" id="modelfile-name-input" class="retro-input" placeholder="Ex: custom-npc-mod" value="custom-npc-mod">
+                            </div>
+                            <div class="preset-field-group">
+                                <label class="preset-field-label">Origem (FROM base ou ./arquivo.gguf):</label>
+                                <input type="text" id="modelfile-from-input" class="retro-input" placeholder="Ex: qwen2.5:1.5b ou ./meu-npc.gguf" value="qwen2.5:1.5b">
+                            </div>
+                        </div>
+                        <div class="preset-field-group">
+                            <label class="preset-field-label">System Prompt (Persona Grimdark):</label>
+                            <textarea id="modelfile-system-input" class="modelfile-textarea" rows="3">Você é um NPC do universo Grimdark do rpg-roguelite-game.
+Você nunca sai do personagem e sempre responde em no máximo duas frases curtas.</textarea>
+                        </div>
+                        <div class="modelfile-actions-row">
+                            <button id="btn-submit-modelfile" class="btn-retro-primary">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                <span>Compilar no Ollama</span>
+                            </button>
+                            <span id="modelfile-status-label" class="modelfile-status"></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+    </div>
+</div>

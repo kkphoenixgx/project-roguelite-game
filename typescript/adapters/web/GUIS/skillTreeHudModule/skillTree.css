@@ -110,18 +110,39 @@
 .skill-tree-canvas {
     position: absolute;
     transform-origin: 0 0;
-    display: flex;
-    flex-direction: column; /* Cresce organicamente colocando os primeiros itens no topo */
-    align-items: center;
-    padding: 100px;
-    gap: 40px;
-    /* Inicia no centro do viewport visualmente */
-    min-width: 1000px;
-    min-height: 800px;
+    width: 960px;
+    height: 1050px;
+    min-width: 960px;
+    min-height: 1050px;
+    pointer-events: auto;
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.skill-tree-svg-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.skill-tree-nodes-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: auto;
 }
 
 /* Diamante de Pontos (Direita) */
-.floating-points { position: absolute; top: 20px; right: 30px; z-index: 10; }
+.floating-points { position: absolute; top: 20px; right: 30px; z-index: 20; }
 .points-diamond {
     width: 60px; height: 60px;
     background: #2b2318;
@@ -132,72 +153,231 @@
 }
 #st-available-points { transform: rotate(-45deg); color: #FFD700; font-size: 24px; font-weight: bold; text-shadow: 0 0 5px #FFD700; }
 
-/* Elementos da Árvore */
-.skill-tier { display: flex; align-items: center; width: 100%; position: relative; justify-content: center; gap: 30px; margin: 10px 0; }
-.tier-label { position: absolute; left: -50px; color: #5a4a38; font-weight: bold; font-size: 20px; }
-.skill-nodes { display: flex; gap: 40px; }
+/* Conexões SVG Bézier */
+.skill-connection-path {
+    fill: none;
+    transition: stroke 0.3s, filter 0.3s;
+    vector-effect: non-scaling-stroke;
+}
+.skill-connection-path.path-unlocked {
+    stroke: #ffd700;
+    stroke-width: 4;
+    filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.7));
+}
+.skill-connection-path.path-available {
+    stroke: #00ffcc;
+    stroke-width: 3;
+    stroke-dasharray: 6,6;
+    filter: drop-shadow(0 0 4px rgba(0, 255, 204, 0.6));
+}
+.skill-connection-path.path-locked {
+    stroke: #3a2e24;
+    stroke-width: 2.5;
+    stroke-dasharray: 6,6;
+    opacity: 0.7;
+}
 
+/* Guias e Cabeçalhos da Árvore */
+.branch-header {
+    position: absolute;
+    transform: translateX(-50%);
+    font-family: 'Minecraft', 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: bold;
+    color: #e6c27a;
+    text-shadow: 0 0 10px rgba(230, 194, 122, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    pointer-events: none;
+    border-bottom: 1px solid rgba(230, 194, 122, 0.3);
+    padding-bottom: 4px;
+}
+
+.tier-guide-label {
+    position: absolute;
+    left: 20px;
+    transform: translateY(-50%);
+    font-family: 'Minecraft', 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: bold;
+    color: #5a4a38;
+    letter-spacing: 1px;
+    pointer-events: none;
+}
+
+/* Nós da Árvore de Habilidades */
 .skill-node { 
-    width: 48px; height: 48px; 
+    position: absolute;
+    width: 60px; 
+    height: 60px; 
     cursor: pointer; 
-    position: relative; 
-    background: #1a1612; 
-    border: 2px solid #3a2e24;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    display: flex; justify-content: center; align-items: center;
-}
-.skill-node:hover { transform: scale(1.15); box-shadow: 0 0 15px rgba(230, 194, 122, 0.3); border-color: #e6c27a; }
-
-/* TOPOLOGIA SEMÂNTICA (As Formas do Wireframe) */
-.node-active { border-radius: 8px; } /* Retângulo Ativa comum */
-.node-passive { 
-    clip-path: polygon(50% 0%, 0% 100%, 100% 100%); /* Triângulo */
-    background: linear-gradient(to bottom, #1a1612, #2b2318);
-    border: none; /* Clip-path corta bordas nativas, simulamos com shadow/glow abaixo */
-    width: 54px; height: 48px;
-}
-.node-essential { 
-    clip-path: polygon(50% 0%, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0% 50%, 40% 40%); /* Brilho Mágico Afiado de 4 pontas */
-    background: linear-gradient(to bottom, #2b2318, #1a1612);
+    background: transparent; 
     border: none;
-    width: 60px; height: 60px;
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    padding: 0;
+    transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.25s;
+    user-select: none;
 }
-.node-attribute { border-radius: 50%; } /* Círculo */
 
-.node-rare { 
-    transform: rotate(45deg); /* Losango de Subclasse */
-    border-radius: 4px; 
-    border-color: #A335EE; 
+.skill-icon-img {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    pointer-events: none;
+    image-rendering: pixelated;
+    transition: transform 0.2s;
 }
-.node-rare:hover { transform: rotate(45deg) scale(1.15); }
 
-/* Estados de Desbloqueio (Glowing Fantasy) */
+.skill-node:hover { 
+    transform: scale(1.18); 
+    filter: drop-shadow(0 0 18px rgba(255, 215, 0, 0.95)) brightness(1.2); 
+    z-index: 10; 
+}
+
+/* Estados de Desbloqueio */
 .skill-node.unlocked { 
-    border-color: #e6c27a; 
-    background: rgba(230, 194, 122, 0.1);
-    box-shadow: 0 0 20px rgba(230, 194, 122, 0.2), inset 0 0 10px rgba(230, 194, 122, 0.1);
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
 }
-.node-passive.unlocked { background: linear-gradient(to bottom, #d4af37, #8b6508); }
-.node-essential.unlocked { background: linear-gradient(to bottom, #ffd700, #b8860b); }
 
-.skill-node.can-unlock { border-color: #FFD700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); animation: pulseGlow 2s infinite; }
-.skill-node.locked { filter: brightness(0.4) grayscale(80%); cursor: not-allowed; border-color: #2a2018; }
-.skill-node.locked:hover { transform: none; box-shadow: none; border-color: #2a2018; }
-
-/* Linhas de Conexão Glowing */
-.skill-path-line { 
-    width: 4px; height: 40px; 
-    background: #3a2e24; 
-    border-radius: 2px;
-    transition: opacity 0.5s;
+.skill-node.can-unlock { 
+    filter: drop-shadow(0 0 10px rgba(0, 255, 204, 0.85)); 
+    animation: pulseNodeScale 1.8s ease-in-out infinite; 
 }
-.skill-path-line.unlocked {
-    background: linear-gradient(to top, #FFD700, rgba(255,215,0,0.1));
-    box-shadow: 0 0 10px rgba(255,215,0,0.3);
+
+.skill-node.locked { 
+    filter: brightness(0.35) grayscale(90%); 
+    opacity: 0.65; 
+    cursor: not-allowed; 
+}
+.skill-node.locked:hover { 
+    transform: scale(1.05); 
+    filter: brightness(0.45) grayscale(80%); 
+}
+
+/* Badges e Marcadores */
+.skill-check-badge {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    color: #ffd700;
+    font-size: 16px;
+    font-weight: bold;
+    text-shadow: 0 0 4px #000, 0 0 8px #ffd700;
+    pointer-events: none;
+    font-family: sans-serif;
+}
+
+.skill-unlock-indicator {
+    position: absolute;
+    top: -16px;
+    font-size: 14px;
+    color: #00ffcc;
+    animation: bounceUnlock 1s infinite;
+    pointer-events: none;
+    text-shadow: 0 0 8px #00ffcc;
+}
+
+/* Painel Flutuante de Detalhes da Habilidade */
+.st-details-panel {
+    position: absolute;
+    z-index: 100;
+    pointer-events: none;
+    display: none;
+    opacity: 0;
+    min-width: 250px;
+    max-width: 320px;
+    background: rgba(20, 16, 14, 0.96);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 2px solid #5a4a38;
+    border-radius: 8px;
+    padding: 14px 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(230, 194, 122, 0.08);
+    transition: opacity 0.2s ease;
+}
+
+.st-details-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(90, 74, 56, 0.5);
+    padding-bottom: 6px;
+}
+
+#st-skill-name {
+    color: #ffd700;
+    margin: 0;
+    font-family: 'Minecraft', 'Courier New', monospace;
+    font-size: 16px;
+    text-transform: uppercase;
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
+}
+
+#st-skill-type {
+    font-size: 11px;
+    font-weight: bold;
+    color: #e6c27a;
+    font-family: 'Minecraft', 'Courier New', monospace;
+    letter-spacing: 1px;
+}
+
+#st-skill-desc {
+    color: #ddd;
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    font-family: 'Minecraft', 'Courier New', monospace;
+    line-height: 1.4;
+}
+
+.st-details-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 8px;
+    font-family: 'Minecraft', 'Courier New', monospace;
+    font-size: 12px;
+}
+
+#st-skill-tier {
+    color: #888;
+    font-weight: bold;
+}
+
+.st-hint-available {
+    color: #00ffcc;
+    animation: pulseGlow 1.5s infinite alternate;
+}
+.st-hint-unlocked {
+    color: #ffd700;
+}
+.st-hint-locked {
+    color: #ff6666;
 }
 
 @keyframes pulseGlow {
-    0% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.2); }
-    50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
-    100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.2); }
+    0% { opacity: 0.65; }
+    100% { opacity: 1; }
+}
+
+@keyframes pulseNodeScale {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+}
+
+@keyframes dashMove {
+    to { stroke-dashoffset: -12; }
+}
+
+@keyframes bounceUnlock {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); text-shadow: 0 0 10px #00ffcc; }
+}
+
+@keyframes floatNode {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
 }

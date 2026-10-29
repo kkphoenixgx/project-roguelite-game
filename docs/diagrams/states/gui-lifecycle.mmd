@@ -1,0 +1,11 @@
+stateDiagram-v2
+    [*] --> Hidden
+    Hidden --> Opening: OPEN_TRIGGERED
+    Opening --> Visible: DOM_INJECTED
+    Visible --> Closing: PRESS_ESCAPE
+    Visible --> Closing: CLICK_BACKDROP
+    Visible --> Closing: CONFIRM_ACTION
+    Visible --> Closing: CANCEL_ACTION
+    Closing --> Hidden: ANIMATION_END
+    Closing --> Destroyed: DESTROY
+    Destroyed --> [*]

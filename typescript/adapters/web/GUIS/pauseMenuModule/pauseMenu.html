@@ -1,0 +1,117 @@
+<div id="pause-menu-overlay">
+    <div class="pause-menu-left">
+        <div class="pause-menu-content">
+            <h1 class="game-title">Project Roguelite</h1>
+            
+            <button class="pause-btn" id="pm-btn-resume">Resume</button>
+            <button class="pause-btn" id="pm-btn-save">Save Game (Slot 1)</button>
+            <div id="pm-save-status" class="pause-save-status"></div>
+            <button class="pause-btn" id="pm-btn-settings">Settings</button>
+            <button class="pause-btn" id="pm-btn-quit">Quit Game</button>
+            
+            <div class="pause-menu-footer">
+                <p>Design seguindo a coerência no design do jogo</p>
+                <div class="social-icons">
+                    <button class="icon-btn discord-icon">DC</button>
+                    <button class="icon-btn wiki-icon">WK</button>
+                    <button class="icon-btn reddit-icon">RD</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="pause-menu-right">
+        <div id="settings-panel">
+            <div class="settings-nav">
+                <span class="nav-item" data-tab="tab-audio">Audio</span>
+                <span class="nav-item" data-tab="tab-video">Video</span>
+                <span class="nav-item active" data-tab="tab-llm">LLM AI</span>
+            </div>
+            
+            <!-- AUDIO TAB -->
+            <div class="settings-body" id="tab-audio" style="display: none;">
+                <div class="setting-row">
+                    <label>Master Volume</label>
+                    <input type="range" min="0" max="100" value="100">
+                </div>
+                <div class="setting-row">
+                    <label>SFX Volume</label>
+                    <input type="range" min="0" max="100" value="90">
+                </div>
+            </div>
+
+            <!-- VIDEO TAB -->
+            <div class="settings-body" id="tab-video" style="display: none;">
+                <div class="setting-row">
+                    <label>Fullscreen</label>
+                    <input type="checkbox">
+                </div>
+                <div class="setting-row">
+                    <label>V-Sync</label>
+                    <input type="checkbox" checked>
+                </div>
+            </div>
+
+            <!-- LLM AI TAB -->
+            <div class="settings-body" id="tab-llm" style="display: flex;">
+                <div class="settings-presets">
+                    <button class="preset-btn" id="preset-potato" title="Requisitos: CPU ou Gráficos Integrados (Intel UHD/Iris, AMD Vega) e ≥ 4 GB RAM. Modelo: qwen2.5:0.5b">Econômico (0.5B)</button>
+                    <button class="preset-btn" id="preset-balanced" title="Requisitos: GPUs com 4 GB - 6 GB VRAM (GTX 1650/1660, RTX 2060/3050) ou ≥ 8 GB RAM. Modelo: qwen2.5:1.5b">Equilibrado (1.5B)</button>
+                    <button class="preset-btn" id="preset-beast" title="Requisitos: GPUs com ≥ 8 GB VRAM (RTX 3070/3080/4070+, RX 7800 XT+) e CPU 8+ núcleos. Modelo: qwen2.5:7b">High-End (7B)</button>
+                </div>
+                
+                <div class="setting-row">
+                    <label>Ollama Model</label>
+                    <select id="llm-model">
+                        <option value="qwen2.5:0.5b">Qwen 2.5 (0.5B) - Econômico / Leve</option>
+                        <option value="qwen2.5:1.5b">Qwen 2.5 (1.5B) - Equilibrado</option>
+                        <option value="qwen2.5:7b">Qwen 2.5 (7B) - High-End / Profundo</option>
+                        <option value="qwen2.5:14b">Qwen 2.5 (14B) - Entusiasta (≥16GB)</option>
+                        <option value="hermes-3:8b">Hermes 3 (8B) - Roleplay Imersivo</option>
+                        <option value="mistral-nemo:12b">Mistral Nemo (12B) - Narrativa Concisa</option>
+                        <option value="mistral:7b">Mistral (7B) - Balanceado Clássico</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label>Context (num_ctx)</label>
+                    <input type="range" id="llm-ctx" min="512" max="8192" step="512" value="2048">
+                    <span class="range-val" id="val-ctx">2048</span>
+                </div>
+                <div class="setting-row">
+                    <label>Timeout (s)</label>
+                    <input type="range" id="llm-timeout" min="5" max="900" step="5" value="30">
+                    <span class="range-val" id="val-timeout">30s</span>
+                </div>
+                <div class="setting-row">
+                    <label>Temperature</label>
+                    <input type="range" id="llm-temp" min="0" max="2" step="0.1" value="0.7">
+                    <span class="range-val" id="val-temp">0.7</span>
+                </div>
+                <div class="setting-row">
+                    <label>Max Tokens</label>
+                    <input type="range" id="llm-tokens" min="32" max="1024" step="32" value="128">
+                    <span class="range-val" id="val-tokens">128</span>
+                </div>
+                <div class="setting-row">
+                    <label>Auto-Reflexion</label>
+                    <input type="checkbox" id="llm-reflexion" checked>
+                </div>
+                <div class="setting-row">
+                    <label>Action Guards</label>
+                    <input type="checkbox" id="llm-guards" checked>
+                </div>
+                <div class="setting-row">
+                    <label>Stateless Mode (sem memória)</label>
+                    <input type="checkbox" id="llm-stateless" checked>
+                </div>
+            </div>
+            
+            <div class="settings-bottom">
+                <button class="green-text-btn" id="settings-restart">Restart game</button>
+                <button class="green-text-btn" id="settings-resume">Resume Game</button>
+            </div>
+        </div>
+        
+        <div class="version-text">v0.1.0</div>
+    </div>
+</div>

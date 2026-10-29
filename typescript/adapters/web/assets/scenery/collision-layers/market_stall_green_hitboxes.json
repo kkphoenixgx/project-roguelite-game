@@ -1,0 +1,31 @@
+{
+  "hitboxes": [
+    {
+      "id": "market_stall_green_poly_1",
+      "type": "polygon",
+      "coordinates": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "points": [
+        {
+          "x": 8,
+          "y": 86
+        },
+        {
+          "x": 82,
+          "y": 86
+        },
+        {
+          "x": 82,
+          "y": 48
+        },
+        {
+          "x": 8,
+          "y": 48
+        }
+      ]
+    }
+  ]
+}

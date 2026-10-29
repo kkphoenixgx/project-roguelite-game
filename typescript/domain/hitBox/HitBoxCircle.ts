@@ -1,5 +1,6 @@
 // Em HitBoxCircle.ts (Assumindo que Vector2D tem os métodos necessários)
-import { HitBox, type HitboxDebugShape } from './HitBox'; 
+import { HitBox } from './HitBox';
+import type { HitboxDebugShape } from '../ports/domain-contracts'; 
 import Vector2D from '../shared/Vector2D';
 import type ObjectElement from '../ObjectModule/ObjectElement';
 
@@ -13,7 +14,7 @@ export class HitBoxCircle extends HitBox {
         coordinates: {x:number, y:number}, 
         rotation: number = 0,
         public radius: number,
-        onColision: (otherElement: ObjectElement) => void,
+        onColision: (otherElement: any) => void,
     ) 
     {
         super( coordinates, rotation, onColision );

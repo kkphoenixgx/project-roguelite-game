@@ -5,25 +5,67 @@
   "main": "index.js",
   "scripts": {
     "dev": "vite",
+    "dev:no-gpu": "vite -- --no-gpu",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
+    "tauri:dev:no-gpu": "tauri dev -- -- --no-gpu",
     "tauri:build": "tauri build",
-    "test": "vitest",
-    "test:ui": "vitest --ui"
+    "story": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "test": "tsc --noEmit && vitest run",
+    "test:coverage": "vitest run --coverage",
+    "coverage:report": "node scripts/generate_coverage_dashboard.js",
+    "test:maps": "tsc --noEmit && vitest run typescript/tests/compliance/MapsCompliance.test.ts",
+    "test:maps:fast": "vitest run typescript/tests/compliance/MapsCompliance.test.ts",
+    "test:regression": "tsc --noEmit && vitest run Regression",
+    "test:regression:fast": "vitest run Regression",
+    "test:arch": "vitest run typescript/tests/compliance/ArchitecturalGovernance.test.ts",
+    "test:ui": "vitest --ui",
+    "test:perf": "vitest run typescript/tests/performance/",
+    "test:stability": "vitest run typescript/tests/stability/",
+    "test:mutate": "stryker run",
+    "analyze:code": "node scripts/analyze_codebase.js",
+    "analyze:arch": "madge --circular --extensions ts typescript/",
+    "analyze": "npm run analyze:code && npm run analyze:arch",
+    "diagrams:update": "npx tsx docs/diagrams/scripts/update-diagrams.ts",
+    "map:print": "npx tsx scripts/print-map.ts",
+    "pipeline": "npm run test:arch && npm run test:maps && npm test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@napi-rs/canvas": "^1.0.13",
+    "@storybook/addon-essentials": "^8.6.14",
+    "@storybook/html": "^8.6.18",
+    "@storybook/html-vite": "^8.6.18",
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/cli": "^2.0.0",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.9.9",
+    "@vitest/coverage-v8": "4.1.11",
     "@webgpu/types": "^0.1.66",
+    "@xstate/graph": "^3.0.4",
+    "dependency-cruiser": "^18.6.0",
     "js-yaml": "^4.1.1",
     "jsdom": "^29.0.2",
+    "madge": "^8.0.0",
+    "storybook": "^8.6.18",
     "typescript": "^5.9.3",
     "vite": "^7.1.12",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.4",
+    "xstate": "^5.33.2"
+  },
+  "dependencies": {
+    "@types/three": "^0.185.4",
+    "three": "^0.185.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
   }
 }

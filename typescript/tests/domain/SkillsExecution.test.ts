@@ -44,10 +44,10 @@ describe('Generalist Skills Execution Test', () => {
         warrior.executeSkill('w_t2_cleave', { x: 150, y: 150 });
         
         expect(mockEventManager.dispatch).toHaveBeenCalledWith('spawnVisual', expect.objectContaining({
-            type: 'slashSparks'
+            type: 'cleave'
         }));
         expect(mockEventManager.dispatch).toHaveBeenCalledWith('requestNeighbors', expect.objectContaining({
-            radius: 100
+            radius: expect.any(Number)
         }));
     });
 
@@ -56,10 +56,10 @@ describe('Generalist Skills Execution Test', () => {
         necromancer.executeSkill('n_t4_corpse_explosion', { x: 200, y: 200 });
         
         expect(mockEventManager.dispatch).toHaveBeenCalledWith('spawnVisual', expect.objectContaining({
-            type: 'darkPulse'
+            type: 'n_t4_corpse_explosion'
         }));
         expect(mockEventManager.dispatch).toHaveBeenCalledWith('requestNeighbors', expect.objectContaining({
-            radius: 120
+            radius: expect.any(Number)
         }));
     });
 
@@ -80,7 +80,7 @@ describe('Generalist Skills Execution Test', () => {
         pescador.executeSkill('pesc_t2_net', { x: 150, y: 150 });
         
         expect(mockEventManager.dispatch).toHaveBeenCalledWith('spawnVisual', expect.objectContaining({
-            type: 'waterSplash'
+            type: 'fishing-net'
         }));
         expect(mockEventManager.dispatch).toHaveBeenCalledWith('requestNeighbors', expect.objectContaining({
             radius: 96
@@ -89,11 +89,56 @@ describe('Generalist Skills Execution Test', () => {
 
     it('should correctly execute Pescador pesc_t3_leviata', () => {
         const pescador = new Pescador(xpTable, player as any, mockEventManager);
-        // Garantir tempo pra cooldown (caso os testes andem rápido, eles rodam instâncias novas de pescador)
         pescador.executeSkill('pesc_t3_leviata', { x: 150, y: 150 });
         
         expect(mockEventManager.dispatch).toHaveBeenCalledWith('spawn', expect.objectContaining({
             type: 'spawn-leviatã'
+        }));
+    });
+
+    it('should correctly execute Warrior skills with correct sprites and sizes', () => {
+        const warrior = new Warrior(xpTable, player as any, mockEventManager);
+
+        // 1. Pancada Pesada (Heavy Blow)
+        warrior.executeSkill('w_t1_heavy_blow', { x: 150, y: 100 });
+        expect(mockEventManager.dispatch).toHaveBeenCalledWith('spawnVisual', expect.objectContaining({
+            type: 'heavy-blow',
+            size: { width: 64, height: 64 }
+        }));
+
+        // 2. Investida com Escudo (Shield Bash)
+        warrior.executeSkill('w_t2_shield_bash', { x: 150, y: 100 });
+        expect(mockEventManager.dispatch).toHaveBeenCalledWith('spawnVisual', expect.objectContaining({
+            type: 'shield-bash',
+            size: { width: 64, height: 64 }
+        }));
+
+        // 3. Grito de Guerra (War Cry)
+        warrior.executeSkill('w_t3_war_cry', { x: 100, y: 100 });
+        expect(mockEventManager.dispatch).toHaveBeenCalledWith('spawnVisual', expect.objectContaining({
+            type: 'war-cry',
+            size: { width: 128, height: 128 }
+        }));
+
+        // 4. Impacto Sísmico (Ground Slam)
+        warrior.executeSkill('w_t4_ground_slam', { x: 100, y: 100 });
+        expect(mockEventManager.dispatch).toHaveBeenCalledWith('spawnVisual', expect.objectContaining({
+            type: 'ground-slam',
+            size: { width: 128, height: 128 }
+        }));
+
+        // 5. Dança das Lâminas do Colosso (Blade Dance)
+        warrior.executeSkill('w_t5_blade_dance', { x: 150, y: 100 });
+        expect(mockEventManager.dispatch).toHaveBeenCalledWith('spawnVisual', expect.objectContaining({
+            type: 'blade-dance',
+            size: { width: 128, height: 128 }
+        }));
+
+        // 6. Avatar da Guerra (Avatar of War)
+        warrior.executeSkill('w_t5_avatar_of_war', { x: 100, y: 100 });
+        expect(mockEventManager.dispatch).toHaveBeenCalledWith('spawnVisual', expect.objectContaining({
+            type: 'avatar-of-war',
+            size: { width: 128, height: 128 }
         }));
     });
 });

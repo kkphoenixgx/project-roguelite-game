@@ -36,6 +36,20 @@ export default class WeaponHudGui {
         this.weaponIcon = this.container.querySelector('#weapon-icon') as HTMLImageElement;
     }
 
+    private static itemConfigCache: Map<number, ItemVisualConfig> | null = null;
+
+    private static getItemConfig(iconId: number): ItemVisualConfig | undefined {
+        if (!WeaponHudGui.itemConfigCache) {
+            WeaponHudGui.itemConfigCache = new Map();
+            for (const c of Object.values(VisualConfigMap)) {
+                if ((c.category === 'equipment' || c.category === 'weapon') && (c as ItemVisualConfig).iconId !== undefined) {
+                    WeaponHudGui.itemConfigCache.set((c as ItemVisualConfig).iconId, c as ItemVisualConfig);
+                }
+            }
+        }
+        return WeaponHudGui.itemConfigCache.get(iconId);
+    }
+
     public update(data: EntityRenderableState, playerScreenPos?: {x: number, y: number}, mousePos?: {x: number, y: number}): void {
         const mainHand = data.equipment?.mainHand;
 
@@ -44,25 +58,19 @@ export default class WeaponHudGui {
             return;
         }
 
-        const itemConfig = Object.values(VisualConfigMap).find(c => 
-            (c.category === 'equipment' || c.category === 'weapon') && 
-            (c as ItemVisualConfig).iconId === mainHand.iconId
-        ) as ItemVisualConfig;
-
-        if (!itemConfig) {
-            this.container.style.display = 'none';
-            this.lastIconId = undefined;
-            return;
-        }
-
         if (mainHand.iconId !== this.lastIconId) {
+            const itemConfig = WeaponHudGui.getItemConfig(mainHand.iconId);
+            if (!itemConfig) {
+                this.container.style.display = 'none';
+                this.lastIconId = undefined;
+                return;
+            }
             this.weaponIcon.src = itemConfig.uiIconUrl;
             this.lastIconId = mainHand.iconId;
         }
 
         this.container.style.display = 'block';
-        this.container.style.left = `${playerScreenPos.x}px`;
-        this.container.style.top = `${playerScreenPos.y}px`;
+        this.container.style.transform = `translate3d(${playerScreenPos.x}px, ${playerScreenPos.y}px, 0)`;
 
         let angle = 0;
 
@@ -83,7 +91,16 @@ export default class WeaponHudGui {
         this.weaponCircle.style.transform = `rotate(${angle + 90}deg)`;
         // Contra-rotaciona o ícone para que seu eixo permaneça fixo na tela (Canvas).
         // Retiramos o +180 para que a ponta da arma fique virada para cima naturalmente!
-        this.weaponIcon.style.transform = `rotate(${-(angle + 90)}deg)`;
+        const hasAirInfusion = data.spellElements?.includes('air') || data.activeStatuses?.some(s => s.id === 'blade_infusion_air');
+        const hasLightInfusion = data.spellElements?.includes('light') || data.activeStatuses?.some(s => s.id === 'blade_infusion_light');
+
+        const baseScale = hasLightInfusion ? 'scale(1.5) ' : '';
+        this.weaponIcon.style.transform = `rotate(${-(angle + 90)}deg) ${baseScale}`;
+
+        this.weaponIcon.classList.toggle('infused-air', !!hasAirInfusion);
+        this.weaponIcon.classList.toggle('infused-light', !!hasLightInfusion);
+        this.weaponCircle.classList.toggle('infused-air', !!hasAirInfusion);
+        this.weaponCircle.classList.toggle('infused-light', !!hasLightInfusion);
 
         // Lógica de Fade Out por Inatividade
         const currentWorldPos = data.coordinates;

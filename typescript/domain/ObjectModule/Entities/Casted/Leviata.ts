@@ -1,6 +1,6 @@
 import type { IEventManager } from "../../../eventDispacher/IGameEvents";
 import Attributes from "../Attributes";
-import Entity from "../Entity";
+import Entity, { type DamageInfo } from "../Entity";
 import { RegisterSpawner, type SpawnPayload } from "../../SpawnRegistry";
 import HitBoxPolygon from "../../../hitBox/HitBoxPolygon";
 import type ObjectElement from "../../ObjectElement";
@@ -8,6 +8,7 @@ import Attack from "../../Items/Attack";
 import Vector2D from "../../../shared/Vector2D";
 
 @RegisterSpawner('spawn-leviatã')
+@RegisterSpawner('spawn-leviata')
 export default class Leviata extends Entity {
   
 
@@ -49,11 +50,13 @@ export default class Leviata extends Entity {
             squarePoints,
             { x: 64, y: 64 }, // Pivot no centro exato da imagem
             (other: ObjectElement) => {
+                if (other.id === this.id) return;
+                // Previne o Leviatã de esmagar o jogador ou outras invocações aliadas
+                if (other.objectId === 'player' || other.objectId === 'spawn-leviatã' || other.objectId === 'spawn-leviata' || other.objectId === 'fishPet') return;
+                if (this.leviataSpawnAttack.attacker && other.id === this.leviataSpawnAttack.attacker.id) return;
+
                 // Verifica se já não bateu no inimigo e se tem vida
-                if (other.id !== this.id && !this.enemiesHit.has(other.id) && 'takeDamage' in other) {
-                    // Previne o Leviatã de esmagar o próprio Pescador!
-                    if (this.leviataSpawnAttack.attacker && other.id === this.leviataSpawnAttack.attacker.id) return;
-                    
+                if (!this.enemiesHit.has(other.id) && 'takeDamage' in other) {
                     this.enemiesHit.add(other.id);
                     
                     // Direção radial a partir do centro do Leviatã para afastar os inimigos atingidos
@@ -75,6 +78,15 @@ export default class Leviata extends Entity {
 
   //? ----------- Methods -----------
 
+  // Leviatã é uma invocação mágica de área temporária, imune a dano e debuffs
+  public override takeDamage(_damageInfo: DamageInfo): number {
+    return 0;
+  }
+
+  public override applyStatus(_status: any): void {
+    // Imune a status effects
+  }
+
   public override update(deltaTime: number, player?: any): void {
     this.updateStatuses(deltaTime);
 
@@ -85,6 +97,11 @@ export default class Leviata extends Entity {
     }
   }
 
+  public override destroy(): void {
+    this.state = 'dead';
+    super.destroy();
+  }
+
   protected override updatePosition(): void {
     super.updatePosition();
     // Sincroniza a hitbox quadrada com a entidade
@@ -93,9 +110,11 @@ export default class Leviata extends Entity {
 
   public static createSpawn(id: number, payload: SpawnPayload, eventManager: IEventManager): Leviata {
     // Centraliza a coordenada (que vem do clique do mouse) subtraindo metade do tamanho (128 / 2 = 64)
+    const px = payload.coordinates?.x ?? 0;
+    const py = payload.coordinates?.y ?? 0;
     const centeredCoords = {
-        x: payload.coordinates.x - 64,
-        y: payload.coordinates.y - 64
+        x: px - 64,
+        y: py - 64
     };
     return new Leviata(id, centeredCoords, eventManager, payload.attack);
   }

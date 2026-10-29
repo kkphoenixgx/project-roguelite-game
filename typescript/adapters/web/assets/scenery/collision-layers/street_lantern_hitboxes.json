@@ -1,0 +1,14 @@
+{
+  "hitboxes": [
+    {
+      "id": "street_lantern_circle_1",
+      "type": "circle",
+      "coordinates": {
+        "x": 17,
+        "y": 70
+      },
+      "rotation": 0,
+      "radius": 8
+    }
+  ]
+}

@@ -32,6 +32,15 @@ ABA 2: Equipamentos / Loadout (Baseado na Imagem Dividida Verticalmente)
 
 A tela é explicitamente dividida por uma linha vertical central desenhada à mão, separando a área de slots equipados (esquerda) do inventário de itens disponíveis (direita).
 
+    Taxonomia das 4 Categorias de Habilidades e Formatos Geométricos Semânticos:
+    - 1. Ativas da Árvore de Classes: 1 a 4 slots com botão (teclas 1 a 4). Formato visual: **Quadrados** (`square-slot`).
+    - 2. Ativas Primordiais / Essenciais de Classe: Habilidade central da classe com botão dedicado (ex: peixe do pescador). Formato visual: **Estrelas SVG** (`primordial-slot`).
+    - 3. Broches Ativos da Árvore Global: 1 a 6 slots com botão (teclas de atalho). Formato visual: **Círculo com espinhos em volta tipo Sol SVG** (`sun-brooch-slot`).
+    - 4. Broches Passivos da Árvore Global: 1 a 4 slots sem botão (numerais romanos I a IV). Formato visual: **Triângulo Truncado SVG** (`triangle-passive-slot`).
+    - 5. Atributos Acumulativos da Árvore Global: **Círculos / Orbes** (`cumulative-attr-orb`) com container de rolagem fluida para suportar crescimento infinito.
+
+    *Nota de Design:* Não existe aba separada de "Broches Relicários". Os broches são os broches ativos (1-6) e passivos (I-IV) equipados e vinculados à meta-progressão global.
+
     Coluna da Esquerda (Slots de Equipamento - Teclas 1, 2, 3 e 4):
 
         Existem quatro botões em formato de "pílula" (retângulos com as bordas direitas fortemente arredondadas), encostados na margem esquerda da tela.
@@ -54,9 +63,9 @@ A tela é explicitamente dividida por uma linha vertical central desenhada à m�
 
             Item 3 (Direita): Um círculo liso completamente vazio.
 
-        Centro: Uma forma geométrica grande de uma estrela poligonal irregular, com aproximadamente 10 a 12 pontas afiadas (semelhante a uma explosão).
+        Centro: Uma forma geométrica grande de uma estrela poligonal irregular, com aproximadamente 10 a 12 pontas afiadas (semelhante a uma explosão / broche ativo em sol).
 
-        Centro-Direita: Um triângulo de cantos arredondados, preenchido com linhas paralelas de sombreamento/textura (parecido com uma insígnia). Uma seta aponta para ele vinda da palavra "Passivo", localizada logo acima e à direita.
+        Centro-Direita: Um triângulo truncado de cantos arredondados, preenchido com linhas paralelas de sombreamento/textura (insígnia de broche passivo). Uma seta aponta para ele vinda da palavra "Passivo", localizada logo acima e à direita.
 
 ABA 3: Seleção de Mapa (Baseado na Imagem das Ilhas)
 

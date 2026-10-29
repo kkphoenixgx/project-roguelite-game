@@ -8,7 +8,12 @@ export default class InputGateway {
   public inputManager: InputManager;
   private activeActions: Array<action> = []; // Pré-alocado para evitar Garbage Collection
 
-  constructor(private domain: IGameDomain) {
+  constructor(
+    private domain: IGameDomain,
+    private onSpellInputCallback?: (spell: string) => void,
+    private onCastSpellCallback?: () => void,
+    private onInteractCallback?: () => void
+  ) {
     this.inputManager = new InputManager();
   }
 
@@ -47,20 +52,33 @@ export default class InputGateway {
       if (this.inputManager.consumeAction(spell)) {
         logger.log("input", `(Input Gateway) handled ${spell} to player`);
         actions.push(spell as action);
+        this.onSpellInputCallback?.(spell);
       }
     });
 
     if (this.inputManager.consumeAction('cast_spell')) {
       actions.push('castSpell');
+      this.onCastSpellCallback?.();
     }
 
-    const slotActions: GameAction[] = ['slot_1', 'slot_2', 'slot_3', 'slot_4'];
+    const slotActions: GameAction[] = ['slot_1', 'slot_2', 'slot_3', 'slot_4', 'slot_5', 'slot_6', 'slot_7', 'slot_8'];
     slotActions.forEach(slot => {
       if (this.inputManager.consumeAction(slot)) {
         logger.log("input", `(Input Gateway) handled ${slot} to player`);
         actions.push(slot as action);
       }
     });
+
+    if (this.inputManager.consumeAction('interact')) {
+      logger.log("input", "(Input Gateway) handled interact to player");
+      actions.push('interact');
+      this.onInteractCallback?.();
+    }
+
+    if (this.inputManager.consumeAction('swap_weapon')) {
+      logger.log("input", "(Input Gateway) handled swap_weapon to player");
+      actions.push('swapWeapons');
+    }
 
     if (actions.length <= 0) return;
 
