@@ -101,8 +101,8 @@ describe('QA - Chunk Rendering Performance & Compliance in Web Adapter (GameMap)
       const vilgemMap = new GameMap('vilgem');
 
       expect(vilgemMap.chunkSize).toBe(1024);
-      expect(vilgemMap.width).toBe(3072); // 3 colunas * 1024
-      expect(vilgemMap.height).toBe(3072); // 3 linhas * 1024
+      expect(vilgemMap.width).toBe(5120); // 5 colunas * 1024
+      expect(vilgemMap.height).toBe(6144); // 6 linhas * 1024
 
       // Posição de spawn de Vilgem (ex: 200, 200)
       vilgemMap.updateActiveWindow(200, 200);

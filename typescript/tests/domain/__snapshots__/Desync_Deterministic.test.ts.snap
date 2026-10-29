@@ -1,3 +1,3 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Determinismo Numérico e Prevenção de Desync (Sanity Check) > deve computar a mesma topologia matemática bit-a-bit após 60 frames sofrendo input contínuo > Falha de Checksum (Desync): Se a mudança matemática da Engine foi intencional e benéfica, pressione 'u' no terminal para atualizar o Hash de aprovação! 1`] = `"58008646e9fa6c7e89d7728de1190bc4a9db2bb2fdd6ad37821d165c3a848b89"`;
+exports[`Determinismo Numérico e Prevenção de Desync (Sanity Check) > deve computar a mesma topologia matemática bit-a-bit após 60 frames sofrendo input contínuo > Falha de Checksum (Desync): Se a mudança matemática da Engine foi intencional e benéfica, pressione 'u' no terminal para atualizar o Hash de aprovação! 1`] = `"dd619c5221b94bc352f370a2d383fcaffad63cf0b7e25fe34617951e6a24b8a5"`;

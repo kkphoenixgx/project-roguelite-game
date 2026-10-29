@@ -121,6 +121,8 @@ describe('AssetsEditorNaturalizeVariation (Unit Test)', () => {
     });
 
     it('2. deve variar a escala suavemente respeitando o percentual máximo e preservando a proporção de aspecto (aspect ratio)', () => {
+        const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.9); // Garante variação determinística no teste
+
         const canvas = new MapCanvas('canvas-container', mockMap);
         canvas.setPlacedAssets([tree1]);
         canvas.selectAsset(tree1);
@@ -142,6 +144,8 @@ describe('AssetsEditorNaturalizeVariation (Unit Test)', () => {
 
         // Deve marcar como custom scaled
         expect(tree1.isCustomScaled).toBe(true);
+
+        randomSpy.mockRestore();
     });
 
     it('3. NÃO deve modificar assets marcados como locked nem assets fora da seleção', () => {

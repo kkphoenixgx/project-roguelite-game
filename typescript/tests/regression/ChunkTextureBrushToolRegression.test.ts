@@ -8,7 +8,7 @@
  * - Preservação de objetos normais do cenário enquanto a camada pintada é manipulada e fixada (Bake).
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { MapCanvas } from '../../../typescript/adapters/assets-adapter/Components/MapCanvas';
 import type { SelectedMapConfig } from '../../../typescript/adapters/assets-adapter/Components/MapSelectorModal';
 
@@ -18,6 +18,7 @@ describe('ChunkTextureBrushTool (Regression Suite)', () => {
     let mapCanvas: MapCanvas;
 
     beforeEach(() => {
+        vi.stubGlobal('requestAnimationFrame', vi.fn());
         document.body.innerHTML = `
             <div id="canvas-container" style="width: 1024px; height: 768px;"></div>
         `;
@@ -76,6 +77,10 @@ describe('ChunkTextureBrushTool (Regression Suite)', () => {
         };
 
         mapCanvas = new MapCanvas('canvas-container', mapConfig);
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
     });
 
     it('1. deve garantir exclusão mútua entre Modo Carimbo (B) e Pincel de Textura de Chunk (T)', () => {

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Player from '../../domain/ObjectModule/Entities/Player/Player';
 import Attributes from '../../domain/ObjectModule/Entities/Attributes';
 import { EventHandler } from '../../domain/eventDispacher/eventDispacher';
@@ -26,10 +26,15 @@ describe('Testes de Regressao - Casos de Requisitos Solicitados pelo Usuario', (
     beforeEach(() => {
         document.body.innerHTML = '';
         localStorage.clear();
+        vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
         eventManager = new EventHandler();
         mockLogger = { log: vi.fn() };
         player = new Player(1, { x: 100, y: 100 }, new Attributes(10, 10, 10, 10, 10, 10, 10, 10), eventManager);
         actionManager = new ActionManager(player, mockLogger, eventManager);
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
     });
 
     // =========================================================================

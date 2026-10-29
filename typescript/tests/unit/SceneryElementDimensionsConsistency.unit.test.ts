@@ -98,7 +98,11 @@ describe('SceneryElementDimensionsConsistency (Unit Test)', () => {
         for (const [key, data] of Object.entries(ASSET_HITBOX_CATALOG)) {
             expect(data.baseWidth, `${key} deve ter baseWidth > 0`).toBeGreaterThan(0);
             expect(data.baseHeight, `${key} deve ter baseHeight > 0`).toBeGreaterThan(0);
-            expect(data.shapes.length, `${key} deve ter ao menos 1 shape`).toBeGreaterThan(0);
+            expect(Array.isArray(data.shapes), `${key} deve possuir array de shapes definida`).toBe(true);
+            // Elementos de cenário sólido (não estradas/pisos transitáveis) devem ter ao menos 1 shape de colisão
+            if (!key.startsWith('road') && !key.startsWith('dirt_') && !key.startsWith('floor')) {
+                expect(data.shapes.length, `${key} deve ter ao menos 1 shape`).toBeGreaterThan(0);
+            }
         }
     });
 });

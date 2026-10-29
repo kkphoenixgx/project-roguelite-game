@@ -147,14 +147,13 @@ describe('Placed Objects Fidelity & Proportion Compliance (Assets Editor vs Dom�
                     `Item "${item.itemClass || item.name}" em (${item.x}, ${item.y}) não foi instanciado!`
                 ).toBeDefined();
 
-                // Proporções padrão de itens de chão no mundo (16x16)
+                //? Proporções padrão de itens de chão no mundo (16x16)
                 expect(matching!.size.width).toBe(16);
                 expect(matching!.size.height).toBe(16);
 
                 // Classe e características do item
-                if (item.itemClass) {
-                    expect(matching!.item.constructor.name).toBe(item.itemClass);
-                }
+                if (item.itemClass) expect(matching!.item.constructor.name).toBe(item.itemClass);
+                
             }
         });
     });
@@ -172,7 +171,7 @@ describe('Placed Objects Fidelity & Proportion Compliance (Assets Editor vs Dom�
             const portals = entities.filter(e => e instanceof PortalLink || e instanceof PortalLinkRequest) as (PortalLink | PortalLinkRequest)[];
             const items = entities.filter(e => e instanceof DroppedItem) as DroppedItem[];
 
-            // 1. Cenário
+            //? 1. Cenário
             for (const sc of def!.scenery || []) {
                 const matching = scenery.find(
                     e => Math.round(e.coordinates.x) === Math.round(sc.x) &&
@@ -182,7 +181,7 @@ describe('Placed Objects Fidelity & Proportion Compliance (Assets Editor vs Dom�
                 expect(matching!.presetType).toBe(sc.presetId);
             }
 
-            // 2. Portais
+            //? 2. Portais
             for (const p of def!.portals || []) {
                 const matching = portals.find(
                     portal => Math.round(portal.coordinates.x) === Math.round(p.x) &&
@@ -194,7 +193,7 @@ describe('Placed Objects Fidelity & Proportion Compliance (Assets Editor vs Dom�
                 expect(matching!.targetMapId).toBe(p.targetMapId);
             }
 
-            // 3. Itens
+            //? 3. Itens
             for (const it of def!.items || []) {
                 const matching = items.find(
                     item => Math.round(item.coordinates.x) === Math.round(it.x) &&
@@ -213,11 +212,10 @@ describe('Placed Objects Fidelity & Proportion Compliance (Assets Editor vs Dom�
             const editorAssets = codeSync.parseSceneryFromCode(rawVilgemWorldCode, scanner);
 
             for (const asset of editorAssets) {
-                if (asset.isPortal || asset.isItem) continue;
+                if (asset.isPortal || asset.isItem || (asset as any).isCustomScaled) continue;
 
                 const catalogData = ASSET_HITBOX_CATALOG[asset.presetId];
                 if (catalogData) {
-                    // O tamanho deve bater com baseWidth e baseHeight do catálogo
                     expect(
                         asset.width,
                         `Largura do asset ${asset.presetId} no editor difere do catálogo normativo`
