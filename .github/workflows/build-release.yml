@@ -35,7 +35,7 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf zstd
 
       - name: Install frontend dependencies
         run: npm install --legacy-peer-deps
@@ -63,8 +63,12 @@ jobs:
             chmod +x src-tauri/bin/ollama-aarch64-apple-darwin
           elif [ "${{ matrix.platform }}" = "windows-latest" ]; then
             curl -L https://github.com/ollama/ollama/releases/latest/download/ollama-windows-amd64.zip -o ollama.zip
-            unzip ollama.zip -d src-tauri/bin/
-            mv src-tauri/bin/ollama.exe src-tauri/bin/ollama-x86_64-pc-windows-msvc.exe
+            unzip -o ollama.zip -d src-tauri/bin/
+            if [ -f src-tauri/bin/ollama.exe ]; then
+              mv src-tauri/bin/ollama.exe src-tauri/bin/ollama-x86_64-pc-windows-msvc.exe
+            else
+              find src-tauri/bin/ -name "ollama.exe" -exec mv {} src-tauri/bin/ollama-x86_64-pc-windows-msvc.exe \;
+            fi
           fi
 
       - name: Download Panteao Engine Sidecar Binaries
