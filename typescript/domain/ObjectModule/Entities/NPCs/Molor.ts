@@ -13,9 +13,9 @@ export default class Molor extends CognitiveNPC {
     }
 
     public static createSpawn(id: number, payload: SpawnPayload, eventManager: IEventManager): Molor {
-        // Como Diretor da Academia de Magia, Molor possui Inteligência e Sabedoria colossais!
+    //? Atributos elevados condizentes com Diretor da Academia de Magia
         const molorStats = payload.attributes || new Attributes(6, 50, 8, 12, 10, 99, 99, 85);
-        // O payload deve injetar o llmService configurado pela fábrica no adaptador
+    //? Injeção de dependência de llmService configurada pelo adaptador
         return new Molor(id, payload.coordinates, molorStats, eventManager, (payload as any).llmService);
     }
 }

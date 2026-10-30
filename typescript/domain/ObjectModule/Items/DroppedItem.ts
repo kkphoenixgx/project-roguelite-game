@@ -31,7 +31,7 @@ export default class DroppedItem extends ObjectElement {
             return;
         }
 
-        // A ANTECIPAÇÃO (Pavlov): Dispara o farol dopaminérgico visual se o item for de alta raridade!
+    //? Emite farol de feixe vertical para itens de alta raridade (épico/lendário)
         if (this.item.rarity && ['rare', 'epic', 'legendary'].includes(this.item.rarity)) {
             setTimeout(() => {
                 this.eventManager.dispatch('particle', { 
@@ -46,23 +46,21 @@ export default class DroppedItem extends ObjectElement {
             new HitBoxCircle(
                 { x: this.coordinates.x + this.size.width / 2, y: this.coordinates.y + this.size.height / 2 },
                 0,
-                12, // Radius um pouco maior (12px) para facilitar a coleta ao passar perto
+                12, //? Raio de coleta ampliado (12px) para facilitar captação ao caminhar próximo
                 (otherElement: ObjectElement) => {
-                    if (this.isCollected || !this.item) return; // Trava de Idempotência
+                    if (this.isCollected || !this.item) return; //? Trava de idempotência contra coleta duplicada no mesmo tick
 
                     if (otherElement instanceof Player) {
                         if (this.item.category === 'currency' && 'use' in this.item) {
-                            // Ouro auto-coletado! Não ocupa espaço na mochila.
                             (this.item as any).use(otherElement);
                             if (this.pickupId) {
                                 otherElement.collectWorldItem(this.pickupId);
                                 this.eventManager.dispatch('worldItemCollected', { pickupId: this.pickupId });
                             }
-                            // Um estalo visual dopaminérgico amarelo
                             this.eventManager.dispatch('particle', { effect: 'magicAura', x: this.coordinates.x, y: this.coordinates.y, color: '#FFD700' });
                             this.eventManager.dispatch('log', { channel: 'domain', message: `Collected item: ${this.item.name}`, params: [] });
                             this.isCollected = true;
-                            super.destroy(); // Despawna a cápsula do mapa
+                            super.destroy();
                         } else {
                             if (otherElement.backpack.length < otherElement.maxBackpackSize) {
                                 otherElement.addItem(this.item);
@@ -72,7 +70,7 @@ export default class DroppedItem extends ObjectElement {
                                 }
                                 this.isCollected = true;
                                 this.eventManager.dispatch('log', { channel: 'domain', message: `Collected item: ${this.item.name}`, params: [] });
-                                super.destroy(); // Despawna a cápsula do mapa
+                                super.destroy();
                             } else {
                                 this.eventManager.dispatch('log', { channel: 'error', message: `Mochila cheia! Não é possível coletar ${this.item.name}.`, params: [] });
                             }

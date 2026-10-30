@@ -38,7 +38,6 @@ export default class TemplateCognitiveNpcTemplate extends CognitiveNPC {
     Seja breve, conciso e nunca quebre o personagem ou use formatação excessiva.
     `;
 
-    // Configuração inicial de classes/skills do NPC
     this.classManager.unlockClass('Guerreiro');
     this.classManager.setActiveClass('Guerreiro');
   }

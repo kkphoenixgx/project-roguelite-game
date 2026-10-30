@@ -187,7 +187,7 @@ export class MageSpellTemplate {
   public static executeRecipe(recipe: StaticSpellRecipe, context: SpellExecutionContext): boolean {
     const { player, eventManager, direction, spawnCoordinates, manaCost } = context;
 
-    // Se possui execução customizada, delega integralmente
+    //? Delega para execução customizada da magia caso definida
     if (recipe.executionMode === 'custom' && recipe.customExecution) {
       const executed = recipe.customExecution(context);
       if (executed) {
@@ -198,7 +198,6 @@ export class MageSpellTemplate {
 
     const calculatedDamage = recipe.baseDamage + Math.floor((player.attributes.intelligence || 0) * recipe.intelligenceMultiplier);
 
-    // Constrói OnHitActions
     const onHitActions: OnHitAction[] = [];
     if (recipe.onHitParticles && recipe.onHitParticles.length > 0) {
       for (const p of recipe.onHitParticles) {
@@ -260,14 +259,12 @@ export class MageSpellTemplate {
       });
     }
 
-    // Partículas de Conjuração (Cast)
     if (recipe.castParticles) {
       for (const effect of recipe.castParticles) {
         eventManager.dispatch('particle', { effect: effect as any, x: spawnCoordinates.x, y: spawnCoordinates.y });
       }
     }
 
-    // Log de domínio
     if (recipe.logMessage) {
       eventManager.dispatch('log', { channel: 'domain', message: recipe.logMessage, params: [] });
     }

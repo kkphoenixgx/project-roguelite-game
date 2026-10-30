@@ -6,7 +6,8 @@ import type { IGameDomain } from "../../../../domain/ports/domain-contracts";
 /** @class InputGateway Traduz os inputs brutos do InputManager em intenções lógicas (Actions) para o Domínio. */
 export default class InputGateway {
   public inputManager: InputManager;
-  private activeActions: Array<action> = []; // Pré-alocado para evitar Garbage Collection
+  //! Pré-alocação estática Zero-GC: reaproveita array em cada frame para evitar GC Thrashing
+  private activeActions: Array<action> = [];
 
   constructor(
     private domain: IGameDomain,
@@ -19,7 +20,7 @@ export default class InputGateway {
 
   /** Coleta as interações ativas e envia para o domínio. */
   public handleInteractions(screenToWorldFn: (x: number, y: number) => { x: number, y: number }): void {
-    this.activeActions.length = 0; // Zera o array reaproveitando o espaço de memória já alocado
+    this.activeActions.length = 0;
     const actions = this.activeActions;
 
     if (this.inputManager.isActionActive('move_up')) {
@@ -82,7 +83,7 @@ export default class InputGateway {
 
     if (actions.length <= 0) return;
 
-    // O cursor sempre deve ser convertido, pois atalhos de teclado (ex: slots) precisam saber para onde o mouse aponta!
+    //? Converte cursor da tela para o mundo para alimentar contexto espacial de ações do jogador
     const screenX = this.inputManager.mouseLastCoordinates.x;
     const screenY = this.inputManager.mouseLastCoordinates.y;
     const mouseWorldCoordinates = screenToWorldFn(screenX, screenY);

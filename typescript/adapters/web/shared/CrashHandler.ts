@@ -19,9 +19,7 @@ async function sendToTauri(channel: string, level: string, message: string) {
             const { invoke } = await import('@tauri-apps/api/core');
             await invoke('log_browser', { channel, level, message });
         }
-    } catch {
-        // Fallback silencioso se o Tauri ainda não conectou
-    }
+    } catch {}
 }
 
 export function openDevTools() {
@@ -51,7 +49,7 @@ export function reportFatalCrash(context: string, error: any) {
         }
     }
 
-    // Evita flood de 60fps no console se o erro acontecer dentro do requestAnimationFrame
+    //? Throttling de logs para evitar saturação do terminal a 60fps dentro do requestAnimationFrame
     if (errorMsg === lastReportedMessage) {
         repeatCount++;
         if (repeatCount % 60 !== 0) {
@@ -69,10 +67,8 @@ export function reportFatalCrash(context: string, error: any) {
         (errorStack ? `Stack Trace:\n${errorStack}\n` : '') +
         `================================================================`;
 
-    // 1. Envia pro Rust / Terminal
     sendToTauri('CRASH', 'error', formattedLog);
 
-    // 2. Salva localmente
     try {
         localStorage.setItem('LAST_GAME_CRASH', JSON.stringify({
             time: new Date().toISOString(),
@@ -82,7 +78,6 @@ export function reportFatalCrash(context: string, error: any) {
         }));
     } catch {}
 
-    // 3. Mostra na tela
     showCrashOverlay(context, errorMsg, errorStack);
 }
 
@@ -191,21 +186,21 @@ function escapeHtml(text: string): string {
         .replace(/'/g, "&#039;");
 }
 
-// ================= GLOBAL LISTENERS =================
+/* ================= GLOBAL LISTENERS ================= */
 
-// 1. Uncaught Javascript Errors
+/* 1. Uncaught Javascript Errors */
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('error', (event) => {
         reportFatalCrash('Uncaught Error (window.onerror)', event.error || event.message);
     });
 
-    // 2. Unhandled Promise Rejections
+    /* 2. Unhandled Promise Rejections */
     window.addEventListener('unhandledrejection', (event) => {
         reportFatalCrash('Unhandled Promise Rejection', event.reason);
     });
 }
 
-// 3. Intercept console.error to notify Tauri terminal
+/* 3. Intercept console.error to notify Tauri terminal */
 const originalConsoleError = console.error;
 console.error = function(...args: any[]) {
     originalConsoleError.apply(console, args);
@@ -219,13 +214,13 @@ console.error = function(...args: any[]) {
 
     sendToTauri('ConsoleError', 'error', message);
 
-    // Se for um pânico explícito, mostra o overlay
+    //? Se o erro indicar pânico crítico, exibe o overlay visual de fatal crash
     if (message.includes('Panic') || message.includes('Falha ao inicializar') || message.includes('CRITICAL')) {
         reportFatalCrash('console.error', message);
     }
 };
 
-// 4. Tecla F12 para abrir DevTools
+/* 4. Tecla F12 para abrir DevTools */
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('keydown', (e) => {
         if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {

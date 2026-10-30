@@ -34,7 +34,7 @@ export type TransformationDamageHandler = (dmgInfo: DamageInfo, ctx: Transformat
 export interface ITransformationDefinition {
   readonly id: string;
   readonly name: string;
-  readonly duration: number; // segundos (<= 0 para infinito até cancelamento)
+  readonly duration: number; //? Duração em segundos (<= 0 para infinito até cancelamento)
   readonly visualTint?: string | undefined;
   readonly visualScale?: number | undefined;
   readonly statModifiers: TransformationStatModifiers;

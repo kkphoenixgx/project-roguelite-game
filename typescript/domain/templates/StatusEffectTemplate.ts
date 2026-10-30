@@ -30,8 +30,6 @@ export default class TemplateStatusEffectTemplate extends StatusEffect {
    * Chamado quando o status é aplicado na entidade
    */
   protected override onApply(target: Entity): void {
-    // Exemplo: pode reduzir temporariamente uma defesa ou aplicar uma tag
-    // target.attributes.speed *= 0.8;
   }
 
   /**
@@ -40,7 +38,7 @@ export default class TemplateStatusEffectTemplate extends StatusEffect {
   protected override onTick(target: Entity): void {
     if (!target.attributes || target.attributes.hp <= 0) return;
 
-    // Aplicação direta de dano contínuo sem instanciar novos objetos
+    //! Aplicação direta de dano contínuo sem instanciar novos objetos (Zero-GC)
     target.attributes.hp = Math.max(0, target.attributes.hp - this.tickDamage);
 
     if (target.attributes.hp <= 0) {
@@ -52,7 +50,5 @@ export default class TemplateStatusEffectTemplate extends StatusEffect {
    * Chamado quando a duração expira ou o status é purgado
    */
   protected override onRemove(target: Entity): void {
-    // Reverte modificações temporárias
-    // target.attributes.speed /= 0.8;
   }
 }

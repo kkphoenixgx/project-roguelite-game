@@ -1,6 +1,6 @@
 export interface IMCPVisualEffect {
     type: string;
-    ttl: number; // Time to live in ms
+    ttl: number;
     elapsed: number;
     render: (ctx: CanvasRenderingContext2D, deltaTime: number, canvas: HTMLCanvasElement) => boolean;
 }
@@ -21,14 +21,12 @@ export class CanvasMCPAdapter {
         this.fxCanvas = document.createElement('canvas');
         this.fxCanvas.id = 'fx-canvas';
         
-        // CSS Sandbox
         this.fxCanvas.style.position = 'absolute';
         this.fxCanvas.style.top = '0';
         this.fxCanvas.style.left = '0';
-        this.fxCanvas.style.pointerEvents = 'none'; // Passthrough de clicks
-        this.fxCanvas.style.zIndex = '999'; // Acima do jogo principal
+        this.fxCanvas.style.pointerEvents = 'none';
+        this.fxCanvas.style.zIndex = '999';
         
-        // Match container size or default
         this.fxCanvas.width = container.clientWidth || 800;
         this.fxCanvas.height = container.clientHeight || 600;
         

@@ -14,8 +14,8 @@ export interface IGroundHazardDefinition {
   readonly id: string;
   readonly name: string;
   readonly radius: number;
-  readonly duration: number; // segundos
-  readonly tickInterval: number; // segundos entre ticks
+  readonly duration: number; //? Duração total de persistência da poça/área em segundos
+  readonly tickInterval: number; //? Intervalo em segundos entre cada pulso de dano/efeito
   readonly targetFilter: GroundHazardTargetFilter;
   readonly damageAmount: number;
   readonly damageType: 'physical' | 'magical' | 'true';
@@ -118,7 +118,6 @@ export class GroundHazardInstance {
           const target = neighbors[i]!;
           if (!target || !('attributes' in target) || target.attributes.hp <= 0) continue;
 
-          // Valida filtro de alvo
           const isOwner = this.owner && target.id === this.owner.id;
           const isEnemy = !this.owner ? true : target.objectId !== this.owner.objectId;
 
@@ -140,12 +139,11 @@ export class GroundHazardInstance {
             eventManager: this.eventManager
           };
 
-          // Hook onEnter se acabou de entrar na área
+    //? Dispara hook onEnter na frame em que a entidade entra na área de efeito
           if (!this._insideEntities.has(target.id) && this.definition.onEnter) {
             this.definition.onEnter(tickCtx);
           }
 
-          // Aplicação de Dano
           if (this.definition.damageAmount > 0 && typeof target.takeDamage === 'function') {
             this._dirCache.x = target.coordinates.x - this.coordinates.x;
             this._dirCache.y = target.coordinates.y - this.coordinates.y;
@@ -160,7 +158,6 @@ export class GroundHazardInstance {
             });
           }
 
-          // Aplicação de Cura
           if (this.definition.healAmount > 0) {
             if (typeof target.heal === 'function') {
               target.heal(this.definition.healAmount);
@@ -169,23 +166,19 @@ export class GroundHazardInstance {
             }
           }
 
-          // Aplicação de Status
           if (this.definition.statusFactory && typeof target.applyStatus === 'function') {
             const status = this.definition.statusFactory(target);
             if (status) target.applyStatus(status);
           }
 
-          // Hook onTick customizado
           if (this.definition.onTick) {
             this.definition.onTick(tickCtx);
           }
         }
 
-        // Detecta saídas (onExit)
         if (this.definition.onExit) {
           for (const prevId of this._insideEntities) {
             if (!currentFrameInside.has(prevId)) {
-              // Notifica saída
               const exitedTarget = neighbors.find((n: any) => n && n.id === prevId);
               if (exitedTarget) {
                 this.definition.onExit({

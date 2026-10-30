@@ -58,10 +58,12 @@ export default class Mage extends Class {
     @BindAction('spell_9')
     public onSpellInput(_mouseCoordinates: any, action: action) {
         if (!this.canUseSpellBuffer()) return;
-        if (this.player.activeStatuses?.has('stun') || this.player.activeStatuses?.has('paralyze')) return; // Concentração quebrada!
+        //? Interrompe conjuração de runas se atordoado ou paralisado
+
+        if (this.player.activeStatuses?.has('stun') || this.player.activeStatuses?.has('paralyze')) return;
         this.spellBuffer.push(action);
         
-        // Trava de segurança: se passar de 9 teclas (overload de magia), a concentração quebra e o buffer limpa
+    //? Buffer máximo de 9 runas: excesso causa sobrecarga mágica e reseta o buffer
         if (this.spellBuffer.length > 9) {
             this.spellBuffer = [];
             if (this.timeoutId) clearTimeout(this.timeoutId);
@@ -73,7 +75,7 @@ export default class Mage extends Class {
         
         if (this.timeoutId) clearTimeout(this.timeoutId);
 
-        // O timer é o responsável por engatilhar a magia (Auto-Cast) após o jogador parar de digitar
+    //? Timer de auto-cast engatilha a magia combinada após o jogador cessar digitação de runas
         this.timeoutId = setTimeout(() => {
             this.evaluateSpellBuffer();
             this.spellBuffer = [];
@@ -132,13 +134,12 @@ export default class Mage extends Class {
             
             const dir = new Vector2D(mouseCoordinates.x - px, mouseCoordinates.y - py);
             const dist = dir.magnitude();
-            const maxDist = 200; // Limite de distância do Blink
+            const maxDist = 200; //? Limite máximo de alcance de teleporte (Blink) em pixels
             
             if (dist > maxDist) {
                 dir.normalizeMut().multiplyMut(maxDist);
             }
             
-            // Efeito visual e partícula de saída
             this.eventManager.dispatch('spawnVisual', {
                 type: 'teleport-blink',
                 coordinates: { x: px - 32, y: py - 32 },
@@ -147,11 +148,9 @@ export default class Mage extends Class {
             });
             this.eventManager.dispatch('particle', { effect: 'magicPulse', x: px, y: py });
             
-            // Move player
             this.player.coordinates.x += dir.x;
             this.player.coordinates.y += dir.y;
             
-            // Efeito visual e partícula de chegada
             const destX = this.player.coordinates.x + this.player.size.width / 2;
             const destY = this.player.coordinates.y + this.player.size.height / 2;
             this.eventManager.dispatch('spawnVisual', {

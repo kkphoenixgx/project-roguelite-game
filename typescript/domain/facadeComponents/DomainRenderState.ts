@@ -15,7 +15,7 @@ export default class DomainRenderState {
     };
     private cachedPlayerState: any = null;
 
-    // Dirty-checking state signatures for Skill Tree & Class Lists (Zero-GC per frame)
+  //! Assinaturas de dirty-checking para Skill Tree e Classes evitando alocações por frame (Zero-GC)
     private isSkillTreeDirty: boolean = true;
     private lastPlayerRef: Player | null = null;
     private lastViewedClass: string | null = null;
@@ -28,7 +28,7 @@ export default class DomainRenderState {
     private lastClassesCount: number = -1;
     private lastEvolvingStageSum: number = -1;
 
-    // Cache of skillId -> requiredLevel per class name to avoid linear Map entry scans
+  //! Cache estático de skillId -> requiredLevel por classe para evitar varreduras lineares em Map
     private classSkillLevelCache: Map<string, Map<string, number>> = new Map();
 
     constructor(
@@ -139,7 +139,7 @@ export default class DomainRenderState {
         ps.maxMana = player.attributes.maxMana;
         ps.coins = player.coins;
         
-        // Object Pooling para Hitboxes do Player
+    //! Pool de objetos reutilizável para Hitboxes do Player evitando coletas do V8
         if (!ps.hitboxes) ps.hitboxes = [];
         const playerHitboxes = player.hitboxes || [];
         for (let i = 0; i < playerHitboxes.length; i++) {
@@ -147,7 +147,7 @@ export default class DomainRenderState {
         }
         ps.hitboxes.length = playerHitboxes.length;
 
-        // Object Pooling para Status Ativos
+    //! Pool de objetos reutilizável para Status Ativos evitando churn de heap
         if (!ps.activeStatuses) ps.activeStatuses = [];
         let statusIndex = 0;
         const statusesList = player.activeStatusesList || [];
@@ -202,7 +202,7 @@ export default class DomainRenderState {
 
         const classToView = this.getViewedClass() || player.activeClass;
 
-        // Calcula assinatura rápida (O(1)) para detectar se a árvore de skills ou classes mudou
+    //! Calcula assinatura rápida O(1) de dirty-checking da árvore de habilidades
         let evolvingStageSum = 0;
         const playerClasses = player.classes;
         for (let i = 0; i < playerClasses.length; i++) {
@@ -252,7 +252,7 @@ export default class DomainRenderState {
             this.lastClassesCount = playerClasses.length;
             this.lastEvolvingStageSum = evolvingStageSum;
 
-            // Object Pooling para Classes (sem operador delete para preservar Hidden Classes no V8)
+    //! Pool de classes preservando Hidden Classes no V8 sem uso de delete
             if (!ps.classes) ps.classes = [];
             let viewedClassInstance = undefined;
             for (let i = 0; i < playerClasses.length; i++) {
@@ -400,7 +400,7 @@ export default class DomainRenderState {
 
         const otherStates = objectManager.getAllRenderableStates();
         
-        let nearestDistSq = 2500; // 50 * 50 (evita Math.hypot/sqrt em cada NPC a cada frame)
+        let nearestDistSq = 2500; //! 50*50 para checagem radial quadrática sem Math.hypot/sqrt (Zero-GC)
         let nearestNpc = null;
         const px = ps.coordinates.x + ps.size.width * 0.5;
         const py = ps.coordinates.y + ps.size.height * 0.5;

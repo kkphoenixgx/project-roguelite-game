@@ -76,13 +76,11 @@ export class PanelResizer {
                     this.setPropsWidth(w);
                 }
             }
-        } catch {
-            // Ignora falhas de localStorage em sandbox
-        }
+        } catch {}
     }
 
     private bindEvents(): void {
-        // 1. Resizer da Gaveta Esquerda
+        /* 1. Resizer da Gaveta Esquerda */
         if (this.drawerResizerEl && this.drawerEl) {
             this.drawerResizerEl.addEventListener('mousedown', (e) => {
                 e.preventDefault();
@@ -92,7 +90,7 @@ export class PanelResizer {
                 document.body.classList.add('is-resizing');
                 this.drawerResizerEl?.classList.add('is-active');
 
-                // Se estava colapsado, descolapsa ao arrastar
+                //? Se estava colapsado, descolapsa ao iniciar o arraste manual
                 if (this.drawerEl?.classList.contains('is-collapsed')) {
                     this.drawerEl.classList.remove('is-collapsed');
                     this.drawerEl.style.display = 'flex';
@@ -109,7 +107,7 @@ export class PanelResizer {
             });
         }
 
-        // 2. Resizer do Painel de Propriedades Direito
+        /* 2. Resizer do Painel de Propriedades Direito */
         if (this.propsResizerEl && this.propsEl) {
             this.propsResizerEl.addEventListener('mousedown', (e) => {
                 e.preventDefault();
@@ -127,7 +125,7 @@ export class PanelResizer {
             });
         }
 
-        // 3. Listeners Globais de Mouse (Move e Up)
+        /* 3. Listeners Globais de Mouse (Move e Up) */
         window.addEventListener('mousemove', (e) => {
             if (this.isDraggingDrawer && this.drawerEl) {
                 const delta = e.clientX - this.startX;
@@ -181,8 +179,6 @@ export class PanelResizer {
     private saveWidth(key: string, width: number): void {
         try {
             localStorage.setItem(key, Math.round(width).toString());
-        } catch {
-            // Ignora erro
-        }
+        } catch {}
     }
 }

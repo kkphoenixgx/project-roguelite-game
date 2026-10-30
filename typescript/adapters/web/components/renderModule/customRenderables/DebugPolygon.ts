@@ -43,7 +43,7 @@ export default class DebugPolygon implements IRenderable {
         if (this.points.length === 0) return;
         
         ctx.save();
-        // 1. Polígono real configurado
+        /* 1. Polígono real configurado */
         ctx.beginPath();
         ctx.moveTo(this.points[0]!.x, this.points[0]!.y);
         for (let i = 1; i < this.points.length; i++) {
@@ -56,7 +56,7 @@ export default class DebugPolygon implements IRenderable {
         ctx.fill();
         ctx.stroke();
 
-        // 2. Envelope físico AABB para tornar visíveis quaisquer barreiras invisíveis nos cantos
+        //? Traça o envelope físico AABB tracejado para diagnóstico de colisão de cantos
         if (this.size.width > 0 && this.size.height > 0) {
             ctx.strokeStyle = 'rgba(245, 158, 11, 0.45)';
             ctx.lineWidth = 1;

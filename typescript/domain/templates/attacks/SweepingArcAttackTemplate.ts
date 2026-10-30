@@ -12,11 +12,11 @@ export interface SweepingArcHitContext {
 export interface ISweepingArcDefinition {
   readonly id: string;
   readonly name: string;
-  readonly arcSpreadAngleRad: number; // ex: Math.PI * 0.75 (~135 graus)
+  readonly arcSpreadAngleRad: number; //? Ângulo total de abertura do corte em radianos (ex: ~135 graus)
   readonly radius: number;
   readonly hitboxRadius?: number | undefined;
-  readonly durationSec: number; // tempo que o corte leva para varrer o arco (ex: 0.18s)
-  readonly dexteritySpeedScaling: number; // mais destreza = corte mais rápido
+  readonly durationSec: number; //? Tempo de varredura do golpe em segundos
+  readonly dexteritySpeedScaling: number; //? Fator de aceleração da velocidade angular por ponto de Destreza
   readonly particleEffect?: string | undefined;
   readonly particleColor?: string | undefined;
   readonly attackFactory: (owner: Entity) => Attack;
@@ -50,12 +50,11 @@ export class ActiveSweepingArc {
   ) {
     this._attackInstance = definition.attackFactory(owner);
 
-    // Ajusta duração por destreza
     const dex = owner.attributes?.dexterity || 10;
     const speedMult = 1 + (dex * definition.dexteritySpeedScaling);
     this._finalDuration = Math.max(0.05, definition.durationSec / speedMult);
 
-    // O arco inicia na metade esquerda do leque e viaja até a metade direita
+    //? O arco é executado da extremidade angular esquerda para a direita ao longo da duração
     const halfArc = definition.arcSpreadAngleRad / 2;
     this._startAngle = centralFacingAngle - halfArc;
     this._currentAngle = this._startAngle;
@@ -104,7 +103,7 @@ export class ActiveSweepingArc {
     const hRadius = this.definition.hitboxRadius || 28;
     this.checkCollisions(bladeX, bladeY, hRadius);
 
-    // Varredura proximal para cobrir proximidade imediata ao atacante (Zero dead-zone)
+    //! Varredura proximal em raio curto para eliminar ponto cego colado ao atacante (Zero dead-zone)
     if (this.definition.radius > hRadius) {
       const midX = cx + (this.definition.radius * 0.45) * Math.cos(this._currentAngle);
       const midY = cy + (this.definition.radius * 0.45) * Math.sin(this._currentAngle);
@@ -167,7 +166,7 @@ export class ActiveSweepingArc {
  * ==============================================================================
  */
 export default class SweepingArcAttackTemplate {
-  private _arcSpreadAngleRad: number = Math.PI * 0.75; // 135 graus
+  private _arcSpreadAngleRad: number = Math.PI * 0.75; //? 135 graus em radianos
   private _radius: number = 52;
   private _hitboxRadius?: number;
   private _durationSec: number = 0.18;

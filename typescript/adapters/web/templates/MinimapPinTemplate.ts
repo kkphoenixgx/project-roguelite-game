@@ -37,10 +37,9 @@ export class MinimapPinTemplate {
     const angleToTargetRad = Math.atan2(dy, dx);
 
     const scaledDist = distanceWorld * worldScale;
-    const maxRadius = config.radarRadiusPx - 4; // Margem interna de segurança
+    const maxRadius = config.radarRadiusPx - 4;
 
     if (scaledDist <= maxRadius) {
-      // Alvo está dentro do raio do radar
       return {
         pinScreenX: config.radarCenterX + Math.cos(angleToTargetRad) * scaledDist,
         pinScreenY: config.radarCenterY + Math.sin(angleToTargetRad) * scaledDist,
@@ -49,7 +48,7 @@ export class MinimapPinTemplate {
         distanceWorld
       };
     } else {
-      // Alvo está fora: trava o pino na borda do círculo (bússola)
+      //? Alvo fora do alcance: fixa o indicador na borda radial como bússola direcional
       return {
         pinScreenX: config.radarCenterX + Math.cos(angleToTargetRad) * maxRadius,
         pinScreenY: config.radarCenterY + Math.sin(angleToTargetRad) * maxRadius,
@@ -70,7 +69,7 @@ export class MinimapPinTemplate {
     ctx.lineWidth = 1.5;
 
     if (pin.isOffscreen) {
-      // Seta triangular apontando na direção do alvo
+      //? Seta direcional orientada ao alvo externo
       ctx.translate(pin.pinScreenX, pin.pinScreenY);
       ctx.rotate(pin.angleToTargetRad);
       ctx.beginPath();
@@ -81,7 +80,6 @@ export class MinimapPinTemplate {
       ctx.fill();
       ctx.stroke();
     } else {
-      // Círculo normal
       ctx.beginPath();
       ctx.arc(pin.pinScreenX, pin.pinScreenY, radius, 0, Math.PI * 2);
       ctx.fill();

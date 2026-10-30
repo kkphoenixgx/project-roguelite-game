@@ -29,7 +29,6 @@ export default class IntermapWorld extends GameWorld {
   }
 
   protected override async generateCustomElements(): Promise<void> {
-    // 1. Spawna elementos cenograficos configurados no InnerMap
     if (this.definition.scenery && this.definition.scenery.length > 0) {
       for (const item of this.definition.scenery) {
         this.eventManager.dispatch('spawn', {
@@ -44,7 +43,7 @@ export default class IntermapWorld extends GameWorld {
       }
     }
 
-    // 2. Spawna portais do intermap (prioriza os portais definidos no intermap/editor)
+    //? Registra portais configurados no InnerMap priorizando posições do editor
     if (this.definition.portals && this.definition.portals.length > 0) {
       for (const portal of this.definition.portals) {
         const spawnPayload: any = {
@@ -86,7 +85,6 @@ export default class IntermapWorld extends GameWorld {
       }
     }
 
-    // 3. Spawna itens coletaveis configurados no InnerMap
     if (this.definition.items && this.definition.items.length > 0) {
       for (const it of this.definition.items) {
         const itemInstance = ItemFactory.createItem(it.itemClass || it.itemId || 'SimpleSword', it as any);
@@ -99,6 +97,5 @@ export default class IntermapWorld extends GameWorld {
   }
 
   protected override generatePortalLinks(_alreadySpawnedTargets?: Set<string>): void {
-    // IntermapWorld já orquestra o ciclo de vida dos seus portais em generateCustomElements
   }
 }

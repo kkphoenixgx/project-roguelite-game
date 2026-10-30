@@ -24,17 +24,17 @@ export function initializeGame(
 
 /** A função interna que é executada a cada frame pelo navegador. Calcula o deltaTime e chama os callbacks de update e draw. @private @param currentTime O timestamp atual fornecido pelo navegador. */
 async function gameLoop(currentTime: number) {
-  // Agenda o próximo frame imediatamente no início para garantir sincronia constante de 60 FPS com o VSync
+  //? Agenda o próximo frame no início da função para garantir sincronia com VSync do display
   window.requestAnimationFrame(gameLoop);
 
-  // debugger; // Descomente esta linha para pausar a execução a cada frame e inspecionar o estado.
-  let deltaTime = (currentTime - lastTime) / 1000; // Calcula o tempo decorrido desde o último frame em segundos.
-  if (deltaTime > 0.1) deltaTime = 0.1; // Trava de segurança (10 FPS) para evitar explosão da física se a janela do SO travar
-  lastTime = currentTime; // Atualiza o timestamp do último frame.
+  let deltaTime = (currentTime - lastTime) / 1000;
+  //? Clamping de deltaTime em no máximo 100ms (10 FPS) para evitar explosão de física em congelamentos
+  if (deltaTime > 0.1) deltaTime = 0.1;
+  lastTime = currentTime;
   logger.log('loop', `New frame. DeltaTime: ${deltaTime.toFixed(4)}`);
   try {
-    updateCallback(deltaTime); // Chama a função de atualização da lógica do jogo.
-    await drawCallback(); // Chama a função de desenho do estado do jogo.
+    updateCallback(deltaTime);
+    await drawCallback();
   } catch (error) {
     console.error("[Game Loop Panic Recuperado]:", error);
     reportFatalCrash("Game Loop (Update/Draw)", error);

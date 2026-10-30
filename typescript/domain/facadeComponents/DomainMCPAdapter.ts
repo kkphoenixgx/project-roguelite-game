@@ -73,7 +73,7 @@ export default class DomainMCPAdapter {
                 classManager.executeActiveSkill(skillId, { x: targetEntity.coordinates.x, y: targetEntity.coordinates.y });
                 this.eventManager.dispatch('log', { channel: 'domain', message: `NPC ${agentName} usou a skill ${skillId} no alvo ${targetId}!`, params: [] });
             } else {
-                // Se não tiver alvo, joga pra frente ou no próprio pé
+      //? Direção frontal padrão caso nenhum alvo seja especificado no comando
                 classManager.executeActiveSkill(skillId, { x: npc.coordinates.x, y: npc.coordinates.y });
                 this.eventManager.dispatch('log', { channel: 'domain', message: `NPC ${agentName} usou a skill ${skillId} sem alvo válido!`, params: [] });
             }
@@ -131,7 +131,7 @@ export default class DomainMCPAdapter {
             const enemyCount = entities.filter(e => e.objectId === 'enemy' || e.objectId === 'slime').length;
             answer = `O mundo atualmente contém ${entities.length} entidades, das quais ${npcCount} são NPCs cognitivos e ${enemyCount} são inimigos hostis.`;
         } else {
-            // Banco de conhecimento simples hardcoded para o Oráculo
+    //? Base de conhecimento sintetizada do Oráculo para consultas cognitivas
             const compendium: Record<string, string> = {
                 'slime': 'Slimes são criaturas fracas a fogo que se dividem.',
                 'fireball': 'Magia de projétil que queima inimigos. Causa dano em área.',

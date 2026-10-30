@@ -220,14 +220,14 @@ export default class CharacterMenuGui {
             mouseEvent.stopPropagation();
             const idx = parseInt(slot.getAttribute('data-index') || '0');
             if (mouseEvent.ctrlKey) {
-                // Ctrl + Click: Desequipar ferramenta do cinto e mandar para o inventário
+      //? Ctrl + Clique: desequipa ferramenta do cinto transferindo para o inventário
                 if (this.toolActionCallback) {
                     this.toolActionCallback('unequipTool', { beltSlotIndex: idx });
                 } else {
                     this.unequipItemCallback('beltTool', idx);
                 }
             } else {
-                // Clique simples: Selecionar como ferramenta ativa
+      //? Clique simples: seleciona ferramenta como item ativo
                 if (this.toolActionCallback) {
                     this.toolActionCallback('selectTool', { beltSlotIndex: idx });
                 }
@@ -265,19 +265,16 @@ export default class CharacterMenuGui {
             if (el) this.derivedEls[key] = el;
         }
 
-        // Configurar tooltips detalhados para os atributos base
         for (const [attr, tooltipHtml] of Object.entries(PRIMARY_TOOLTIPS)) {
             const row = this.container.querySelector(`.attr-add-btn[data-attr="${attr}"]`)?.closest('.attr-row');
             if (row) row.setAttribute('data-tooltip', tooltipHtml);
         }
 
-        // Configurar tooltip explicativo da Regra do Melhor Atributo
         const bestAttrChip = this.container.querySelector('#best-attr-rule-chip');
         if (bestAttrChip) {
             bestAttrChip.setAttribute('data-tooltip', BEST_ATTRIBUTE_RULE_TOOLTIP);
         }
 
-        // Configurar tooltips detalhados para os status derivados
         for (const [id, tooltipHtml] of Object.entries(DERIVED_TOOLTIPS)) {
             const el = document.getElementById(id);
             if (el) el.setAttribute('data-tooltip', tooltipHtml);
@@ -319,7 +316,6 @@ export default class CharacterMenuGui {
                     }
                     this.globalTooltip.style.display = 'block';
                     
-                    // Calcula a posição imediatamente para evitar pulos
                     let x = e.clientX + 15;
                     let y = e.clientY + 15;
                     const rect = this.globalTooltip.getBoundingClientRect();
@@ -336,7 +332,6 @@ export default class CharacterMenuGui {
                 let x = e.clientX + 15;
                 let y = e.clientY + 15;
 
-                // Previne que vaze da tela
                 const rect = this.globalTooltip.getBoundingClientRect();
                 if (x + rect.width > window.innerWidth) x = window.innerWidth - rect.width - 10;
                 if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 10;
@@ -367,7 +362,7 @@ export default class CharacterMenuGui {
         if (this.isVisible) { 
             this.isVisible = false; 
             this.container.style.display = 'none'; 
-            if (this.globalTooltip) this.globalTooltip.style.display = 'none'; // Garante que o tooltip soma ao fechar o menu!
+            if (this.globalTooltip) this.globalTooltip.style.display = 'none';
             this.togglePauseCallback(); 
         } 
     }
@@ -416,7 +411,7 @@ export default class CharacterMenuGui {
             this.intEl.textContent = attrs.intelligence.toString(); this.conEl.textContent = attrs.constitution.toString();
             this.wisEl.textContent = attrs.wisdom.toString(); this.chaEl.textContent = attrs.charisma.toString();
 
-            // Identifica e destaca dinamicamente o(s) Melhor(es) Atributo(s)
+    //? Identifica e destaca dinamicamente o maior atributo primário (Regra do Melhor Atributo)
             const attrValues: Record<string, number> = {
                 strength: attrs.strength,
                 dexterity: attrs.dexterity,
@@ -482,7 +477,7 @@ export default class CharacterMenuGui {
         const backpackGrid = this.backpackGridEl;
         const targetSlots = data.maxBackpackSize || 24;
 
-        // Recria os slots apenas se o tamanho da bolsa mudou (Desempenho)
+    //! Recria slots apenas caso a capacidade da bolsa tenha mudado (Zero-GC)
         if (backpackGrid && backpackGrid.children.length !== targetSlots) {
             backpackGrid.innerHTML = '';
             for (let i = 0; i < targetSlots; i++) {
@@ -525,7 +520,6 @@ export default class CharacterMenuGui {
             }
         }
         if (data.equipment) {
-            // Helper inteligente para atualizar slots no DOM de forma limpa!
             const updateSlot = (element: HTMLElement, itemData: any) => {
                 const currentKey = element.getAttribute('data-slot-key');
                 const newKey = itemData ? `${itemData.iconId}_${itemData.name}_${itemData.rarity || ''}` : 'none';
@@ -586,7 +580,6 @@ export default class CharacterMenuGui {
             updateSlot(this.eqAmulet, data.equipment.amulet);
             updateSlot(this.eqBag, data.equipment.bag);
             
-            // Atualiza o Cinto de Utilidades sem sobrescrever o popover de ferramentas
             const belt = (data.equipment as any)?.belt;
             const beltIconHolder = this.beltIconHolderEl;
             const currentBeltKey = this.eqBelt?.getAttribute('data-slot-key');
@@ -615,7 +608,6 @@ export default class CharacterMenuGui {
             updateRings(this.leftRingSlots, data.equipment.leftHandRings || []);
             updateRings(this.rightRingSlots, data.equipment.rightHandRings || []);
 
-            // Atualiza ferramentas no Cinto de Utilidades dinamicamente conforme belt.capacity
             const beltPopover = this.beltPopoverEl;
 
             if (belt) {
@@ -691,7 +683,6 @@ export default class CharacterMenuGui {
         }
         this.lastSkillTabHash = skillTabHash;
 
-        // 1. Ativas da Classe (1 a 4 - Quadrados)
         const classActiveContainer = this.container.querySelector('#class-active-slots');
         if (classActiveContainer) {
             classActiveContainer.innerHTML = '';
@@ -746,11 +737,9 @@ export default class CharacterMenuGui {
             }
         }
 
-        // 2. Ativas Primordiais / Essenciais da Classe (Estrelas)
         const primordialContainer = this.container.querySelector('#primordial-slot-container');
         if (primordialContainer) {
             primordialContainer.innerHTML = '';
-            // Procura todas habilidades primordiais/essenciais na árvore ou habilidades desbloqueadas
             let primordialSkills: any[] = [];
             if (data.skillTree) {
                 primordialSkills = data.skillTree.filter((s: any) => s.type === 'essential');
@@ -759,7 +748,6 @@ export default class CharacterMenuGui {
                 primordialSkills = data.unlockedActiveSkills.filter((s: any) => s.type === 'essential');
             }
 
-            // Se não houver nenhuma, cria pelo menos 1 slot vazio indicativo
             if (primordialSkills.length === 0) {
                 primordialSkills.push(null);
             }
@@ -768,13 +756,12 @@ export default class CharacterMenuGui {
                 const slotDiv = document.createElement('div');
                 slotDiv.className = `skill-slot skill-slot-frame primordial-slot ${primordialSkill ? 'filled' : 'empty'}`;
 
-                // SVG Estrela padronizado via assets
                 const svg = createSlotSvgElement('star');
                 slotDiv.appendChild(svg);
 
                 const starBadge = document.createElement('span');
                 starBadge.className = 'skill-slot-number';
-                starBadge.textContent = '★'; // Poderia ser index + 1, mas a estrela é o padrão
+                starBadge.textContent = '★';
                 slotDiv.appendChild(starBadge);
 
                 if (primordialSkill) {
@@ -807,7 +794,6 @@ export default class CharacterMenuGui {
             });
         }
 
-        // 3. Broches Ativos da Árvore Global (4 slots - Teclas 5 a 8)
         const globalActiveContainer = this.container.querySelector('#global-active-brooch-slots');
         if (globalActiveContainer) {
             globalActiveContainer.innerHTML = '';
@@ -818,7 +804,6 @@ export default class CharacterMenuGui {
                 const slotDiv = document.createElement('div');
                 slotDiv.className = `skill-slot skill-slot-frame sun-brooch-slot ${broochId ? 'filled' : 'empty'}`;
 
-                // SVG Sol com Espinhos padronizado via assets
                 const svg = createSlotSvgElement('sun');
                 slotDiv.appendChild(svg);
 
@@ -872,7 +857,6 @@ export default class CharacterMenuGui {
             }
         }
 
-        // 4. Broches Passivos da Árvore Global (I a IV - Triângulos Truncados sem botão)
         const globalPassiveContainer = this.container.querySelector('#global-passive-brooch-slots');
         if (globalPassiveContainer) {
             globalPassiveContainer.innerHTML = '';
@@ -885,7 +869,6 @@ export default class CharacterMenuGui {
                 const slotDiv = document.createElement('div');
                 slotDiv.className = `skill-slot skill-slot-frame triangle-passive-slot ${isRealPassive ? 'filled' : 'empty'}`;
 
-                // SVG Triângulo Truncado padronizado via assets
                 const svg = createSlotSvgElement('triangle');
                 slotDiv.appendChild(svg);
 
@@ -936,7 +919,6 @@ export default class CharacterMenuGui {
             }
         }
 
-        // 4.5. Lista de Broches Desbloqueados (Informativo in-game, alteração apenas no menu principal)
         const availableBroochesContainer = this.container.querySelector('#global-available-brooches-list');
         if (availableBroochesContainer) {
             availableBroochesContainer.innerHTML = '';
@@ -945,7 +927,6 @@ export default class CharacterMenuGui {
             const passiveLoadout: (string | null)[] = data.passiveLoadout || [null, null, null, null];
             const romanNumerals = ['I', 'II', 'III', 'IV'];
 
-            // Junta os broches desbloqueados ou equipados
             const broochMap = new Map<string, any>();
             unlockedBrooches.forEach((b: any) => {
                 const id = typeof b === 'string' ? b : b?.id;
@@ -955,7 +936,6 @@ export default class CharacterMenuGui {
                 }
             });
 
-            // Adiciona também os broches legitimamente equipados
             [...globalActiveLoadout, ...passiveLoadout].forEach(id => {
                 if (id && typeof id === 'string' && id.startsWith('brooch_') && !broochMap.has(id)) {
                     const found = GlobalBroochPool.find(b => b.id === id);
@@ -1025,12 +1005,11 @@ export default class CharacterMenuGui {
             }
         }
 
-        // 5. Atributos Acumulativos da Árvore Global (Círculos com Escala Infinita)
         const cumulativeContainer = this.container.querySelector('#meta-cumulative-attributes');
         if (cumulativeContainer) {
             cumulativeContainer.innerHTML = '';
             const summary = this.domain.globalMetaSummary;
-            // Filtra APENAS atributos que realmente possuem valor acumulado > 0 para não listar vários "+0"
+    //? Filtra atributos com valor acumulado maior que zero para omitir modificadores neutros
             const activeStats = (summary && summary.stats) 
                 ? summary.stats.filter((stat: any) => typeof stat.totalValue === 'number' && stat.totalValue > 0)
                 : [];

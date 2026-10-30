@@ -66,7 +66,7 @@ describe('Performance - Object Pooling Memory Leak Test', () => {
         }
         
         // Expectativa: Nenhuma das 5.000 balas sobreviveu. O memory footprint (entidades ativas no array) 
-        // deve voltar rigorosamente ao estado base do mapa (~269 entidades).
-        expect(activeCount).toBeLessThan(350);
+        // deve voltar rigorosamente ao estado base do mapa (initialEntityCount).
+        expect(activeCount).toBeLessThanOrEqual(initialEntityCount);
     });
 });

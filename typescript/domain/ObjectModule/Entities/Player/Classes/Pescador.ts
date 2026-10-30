@@ -15,21 +15,19 @@ import "../../Casted/Leviata";
 export default class Pescador extends Class {
     private skillsByLevel: Map<number, Skill> = new Map();
     
-    // Estado da mecânica de pesca
     private hookedEnemy: any | null = null;
     private accumulatedDamage: number = 0;
     private hookTimeout: ReturnType<typeof setTimeout> | null = null;
     private hookDeployed: boolean = false;
     
-    // Cooldowns
     private lastDamageTick: number = 0;
     private lastHookTime: number = 0;
     private readonly hookCooldown: number = 1000;
     private readonly hookDurationSeconds: number = 0.7;
     private lastPetTime: number = 0;
-    private readonly petCooldown: number = 10000; // 10s cooldown
+    private readonly petCooldown: number = 10000;
     private lastLeviataTime: number = 0;
-    private readonly leviataCooldown: number = 8000; // 8s de recarga
+    private readonly leviataCooldown: number = 8000;
     private leviataSpawnAttack!: Attack;
     
     private lastNetTime: number = 0;
@@ -37,7 +35,6 @@ export default class Pescador extends Class {
 
     constructor(xpTable: IXPTable, player: IPlayer, eventManager: IEventManager) {
         super('Pescador', xpTable, player, eventManager);
-        // Exemplo de uma passiva inicial temática
         this.skillsByLevel.set(1, new Skill('pesc_t1_fisgada', 'Fisgada Perfeita', 'O seu puxão se torna mais rápido e pesado.', 'passive', 1));
         this.skillsByLevel.set(4, new Skill('pesc_t2_net', 'Rede Pesada', 'Joga uma rede mágica que enraíza inimigos em área.', 'active', 2, 'pesc_t1_fisgada'));
         this.skillsByLevel.set(8, new Skill('pesc_t3_leviata', 'Fúria do Leviatã', 'Invoca um Leviatã das profundezas para esmagar uma área.', 'active', 3, 'pesc_t2_net'));
@@ -46,7 +43,8 @@ export default class Pescador extends Class {
         this.eventManager.on('hookDestroyed', (payload) => {
             if (payload.playerId === this.player.id) {
                 this.hookDeployed = false;
-                this.lastHookTime = Date.now(); // Impede o Chain-Hooking recomeçando o Cooldown apenas quando a habilidade acaba!
+                //? Impede chain-hooking recomeçando o cooldown apenas quando a habilidade termina.
+                this.lastHookTime = Date.now();
                 if (this.hookedEnemy) {
                     this.releaseEnemy();
                 }
@@ -84,10 +82,8 @@ export default class Pescador extends Class {
         this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `[Pescador] onLeftClick disparado! hookDeployed=${this.hookDeployed} hookedEnemy=${!!this.hookedEnemy}`, params: [] });
 
         if (this.hookedEnemy) {
-            // Se já pescou alguém, o clique esquerdo serve para arrastar
             this.controlHookedEnemy(mouseCoordinates);
         } else if (!this.hookDeployed) {
-            // Se não tem ninguém pescado, o clique esquerdo joga o anzol
             const now = Date.now();
             if (now - this.lastHookTime < this.hookCooldown) return;
             this.lastHookTime = now;
@@ -96,11 +92,10 @@ export default class Pescador extends Class {
             const py = this.player.coordinates.y + this.player.size.height / 2;
             const dir = new Vector2D(mouseCoordinates.x - px, mouseCoordinates.y - py).normalizeMut();
 
-            // O Ataque carregado pelo anzol
             const hookAttack = new Attack(this.player as any, 5, 'physical', [
                 (attacker, target, damageDealt) => {
                     this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `[Pescador] Anzol bateu no ID: ${(target as any)?.id}`, params: [] });
-                    // Duck Typing: Verifica se o alvo é uma entidade atacável, possui HP e não é o próprio jogador nem invocações aliadas
+                    //? Duck Typing: Garante que o alvo possui HP e não é o próprio jogador nem invocações aliadas.
                     const isAlliedOrSelf = target.id === this.player.id || 
                         target.objectId === 'player' || 
                         target.objectId === 'spawn-leviatã' || 
@@ -108,7 +103,6 @@ export default class Pescador extends Class {
                         target.objectId === 'fishPet';
 
                     if ('takeDamage' in target && target.attributes && target.attributes.hp > 0 && !isAlliedOrSelf) {
-                        // Ignora Bosses
                         if (!target.objectId.toString().toLowerCase().includes('boss')) {
                             this.hookEnemy(target);
                         } else {
@@ -120,7 +114,6 @@ export default class Pescador extends Class {
                 }
             ]);
 
-            // Dispara o anzol real mapeado na fábrica!
             this.eventManager.dispatch('spawn', {
                 type: 'fishingHook', 
                 coordinates: { x: px, y: py },
@@ -141,16 +134,15 @@ export default class Pescador extends Class {
         this.hookedEnemy = target;
         this.accumulatedDamage = 0;
 
-        // Stun no inimigo para a IA parar de lutar contra o arrasto
+        //? Aplica Stun no alvo para suspender o comportamento de IA durante o arrasto.
         try {
             if (typeof target.applyStatus === 'function') {
-                // Instancia o Status real do seu domínio com a duração configurada!
                 target.applyStatus(new StunStatus(this.hookDurationSeconds));
             } else {
                 throw new Error("No applyStatus method");
             }
         } catch (e) {
-            // Fallback de segurança extremo se o inimigo for um objeto customizado ou o Stun falhar
+            //? Fallback defensivo para objetos customizados que não implementem applyStatus.
             if (!target.activeStatuses || typeof target.activeStatuses.set !== 'function') {
                 target.activeStatuses = new Map<string, any>();
             }
@@ -162,10 +154,8 @@ export default class Pescador extends Class {
         }
 
         this.eventManager.dispatch('log', { channel: 'classes:pescador', message: 'Inimigo pescado!', params: [] });
-        // Um feedback visual para mostrar quem foi pescado
         this.eventManager.dispatch('particle', { effect: 'magicAura', x: target.coordinates.x, y: target.coordinates.y, color: '#00aaff' });
 
-        // A duração sob controle
         this.hookTimeout = setTimeout(() => {
             this.releaseEnemy();
         }, this.hookDurationSeconds * 1000);
@@ -178,7 +168,6 @@ export default class Pescador extends Class {
             return;
         }
 
-        // 1. Move o inimigo pescado em direção ao mouse
         const cx = this.hookedEnemy.coordinates.x + this.hookedEnemy.size.width / 2;
         const cy = this.hookedEnemy.coordinates.y + this.hookedEnemy.size.height / 2;
         const dx = mouseCoordinates.x - cx;
@@ -189,38 +178,36 @@ export default class Pescador extends Class {
 
         if (dist > 10) {
             const dir = new Vector2D(dx, dy).normalizeMut();
-            const pullSpeed = 12; // Velocidade de arrasto
+            const pullSpeed = 12;
             this.hookedEnemy.coordinates.x += dir.x * pullSpeed;
             this.hookedEnemy.coordinates.y += dir.y * pullSpeed;
             
             this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `[Pescador] Inimigo forçado para as cordenadas: X=${Math.floor(this.hookedEnemy.coordinates.x)}, Y=${Math.floor(this.hookedEnemy.coordinates.y)}`, params: [] });
             
-            // Sincroniza a hitbox do inimigo forçadamente para o loop do ObjectElementManager não errar
+            //? Sincroniza a hitbox do alvo imediatamente com a nova posição para evitar atraso no ObjectElementManager.
             this.hookedEnemy.hitboxes?.forEach((hb: HitBox) => hb.updatePosition({ 
                 x: this.hookedEnemy!.coordinates.x + this.hookedEnemy!.size.width / 2, 
                 y: this.hookedEnemy!.coordinates.y + this.hookedEnemy!.size.height / 2 
             }));
             
-            // Zera a velocidade física base para ele parar de seguir a IA própria enquanto pescado
+            //? Zera a velocidade física base para sobrepor o steering da IA durante o puxão.
             if (this.hookedEnemy.velocity && typeof this.hookedEnemy.velocity.resetMut === 'function') {
                 this.hookedEnemy.velocity.resetMut();
             }
         }
 
-        // 2. Dano de colisão com outros inimigos (Bola de Demolição)
+        //? Mecânica de Bola de Demolição: causa dano por colisão em inimigos adjacentes durante o arrasto.
         const now = Date.now();
-        if (now - this.lastDamageTick > 250) { // Cooldown para não dar 60 instâncias de dano por segundo!
+        //? Throttling de dano de colisão a cada 250ms para evitar spikes de dano por frame.
+        if (now - this.lastDamageTick > 250) {
             this.lastDamageTick = now;
             
             this.eventManager.dispatch('requestNeighbors', {
                 requester: this.hookedEnemy,
-                radius: this.hookedEnemy.size.width + 16, // Raio de colisão estendido
+                radius: this.hookedEnemy.size.width + 16,
                 callback: (neighbors) => {
                     neighbors.forEach(neighbor => {
-                        // Duck Typing seguro no lugar do instanceof!
                         if (neighbor.id !== this.hookedEnemy!.id && 'takeDamage' in neighbor && (neighbor as any).attributes && neighbor.id !== this.player.id) {
-                            
-                            // Causa dano no vizinho atropelado
                             const damage = 20 + Math.floor(this.player.attributes.strength * 1.5);
                             const attack = new Attack(this.player as any, damage, 'physical', []);
                             
@@ -229,12 +216,11 @@ export default class Pescador extends Class {
                                 neighbor.coordinates.y - this.hookedEnemy!.coordinates.y
                             );
                             
-                            if (knockbackDir.x === 0 && knockbackDir.y === 0) knockbackDir.x = 1; // Proteção contra NaN
+                            //? Proteção contra divisão por zero e vetor NaN quando as coordenadas coincidem.
+                            if (knockbackDir.x === 0 && knockbackDir.y === 0) knockbackDir.x = 1;
                             knockbackDir.normalizeMut();
 
                             attack.execute(neighbor as any, knockbackDir);
-                            
-                            // Acumula o dano para ser descontado no final!
                             this.accumulatedDamage += damage; 
                             this.eventManager.dispatch('particle', { effect: 'bloodSplatter', x: neighbor.coordinates.x, y: neighbor.coordinates.y });
                         }
@@ -249,8 +235,7 @@ export default class Pescador extends Class {
 
         this.eventManager.dispatch('log', { channel: 'classes:pescador', message: `[Pescador] releaseEnemy acionado.`, params: [] });
 
-        // Salva referências e limpa o estado ANTES de despachar os eventos
-        // Isso blinda a engine contra um Event Loop Infinito (Stack Overflow) síncrono!
+        //! Limpa o estado interno antes de despachar eventos para evitar stack overflow em listeners reentrantes.
         const target = this.hookedEnemy;
         const damage = this.accumulatedDamage;
 
@@ -265,7 +250,7 @@ export default class Pescador extends Class {
             target.activeStatuses.delete('stun');
         }
 
-        // 3. Ao final dos 3 segundos, o pescado toma todo o dano que ele causou (Retribuição!)
+        //? Retribuição: ao soltar o alvo, aplica o dano total acumulado como true damage.
         if (target && target.attributes && target.attributes.hp > 0 && damage > 0) {
             const finalAttack = new Attack(this.player as any, damage, 'true', []);
             finalAttack.execute(target, new Vector2D(0, 0));
@@ -277,7 +262,6 @@ export default class Pescador extends Class {
             this.eventManager.dispatch('particle', { effect: 'criticalStrike', x: cx, y: cy });
         }
         
-        // Avisa à linha de pesca que acabou a brincadeira
         this.eventManager.dispatch('releaseFishingHook', { playerId: this.player.id });
     }
 
@@ -297,7 +281,6 @@ export default class Pescador extends Class {
             this.lastLeviataTime = now;
             (this.player as any).setSkillCooldown?.(skillId, this.leviataCooldown);
 
-            // Leviatã dá dano mágico maciço em área (a hitbox já é 128x128 no Leviata.ts)
             const damage = 150 + Math.floor(this.player.attributes.wisdom * 5);
             const leviataAttack = new Attack(this.player as any, damage, 'magical', []);
 
@@ -319,7 +302,6 @@ export default class Pescador extends Class {
             this.lastNetTime = now;
             (this.player as any).setSkillCooldown?.(skillId, this.netCooldown);
             
-            // Visual da rede mágica lançada
             this.eventManager.dispatch('spawnVisual', {
                 type: 'fishing-net',
                 coordinates: { x: mouseCoordinates.x - 48, y: mouseCoordinates.y - 48 },
@@ -327,10 +309,8 @@ export default class Pescador extends Class {
                 size: { width: 96, height: 96 }
             });
 
-            // Enraíza/stun em área
             const radius = 96;
             const damage = 20 + Math.floor(this.player.attributes.strength);
-            // OnHitAction aplica StunStatus por 3 segundos
             const rootAction = (attacker: Entity, target: Entity) => {
                 target.activeStatuses.set('stun', new StunStatus(3) as any);
             };
@@ -343,7 +323,8 @@ export default class Pescador extends Class {
                     let hitCount = 0;
                     neighbors.forEach(n => {
                         if (n.id !== this.player.id && 'takeDamage' in n) {
-                            const dir = new Vector2D(0, 0); // Sem knockback, apenas root
+                            //? Vetor nulo para manter o alvo imobilizado sem knockback.
+                            const dir = new Vector2D(0, 0);
                             netAttack.execute(n, dir);
                             this.eventManager.dispatch('particle', { effect: 'waterSplash', x: n.coordinates.x, y: n.coordinates.y });
                             hitCount++;

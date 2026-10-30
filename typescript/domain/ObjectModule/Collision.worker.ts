@@ -8,14 +8,14 @@ import Quadtree from "../shared/QuadTree";
 type BoundedElement = {
     id: number;
     type: number;
-    x: number; y: number; // TopLeft bounding box for QuadTree
+    x: number; y: number;
     width: number; height: number;
     radius?: number;
     cx?: number; cy?: number;
     points?: {x: number, y: number}[];
 }
 
-// ======================= LÓGICA SAT DE ALTA PERFORMANCE =======================
+//? ======================= LÓGICA SAT DE ALTA PERFORMANCE =======================
 function isSeparatingAxis(axis: {x:number,y:number}, polyA: {x:number,y:number}[], polyB: {x:number,y:number}[]) {
     let minA = Infinity, maxA = -Infinity;
     for (let i = 0; i < polyA.length; i++) {
@@ -68,11 +68,10 @@ function checkPolyCircle(poly: {x:number,y:number}[], cx: number, cy: number, r:
     if (isSeparatingAxisCircle({ x: closestVertex.x - cx, y: closestVertex.y - cy }, poly, cx, cy, r)) return false;
     return true;
 }
-// ==============================================================================
 
-// Pools em memória global do Worker para evitar alocações a cada mensagem (Zero-GC)
+//! Pools estáticos em memória global do Worker para evitar alocações a cada mensagem (Zero-GC)
 const collidingPairs: number[] = [];
-const processedPairs: Set<number> = new Set(); // Usaremos chaves matemáticas!
+const processedPairs: Set<number> = new Set();
 const elementsPool: BoundedElement[] = [];
 const elements: BoundedElement[] = [];
 
@@ -105,13 +104,13 @@ if (typeof self !== 'undefined') {
         element.id = id;
         element.type = type;
 
-        if (type === 0) { // Circle
+        if (type === 0) {
             const cx = hitboxData[offset++]!; const cy = hitboxData[offset++]!; const radius = hitboxData[offset++]!;
             element.cx = cx; element.cy = cy; element.radius = radius;
             element.x = cx - radius; element.y = cy - radius; 
             element.width = radius * 2; element.height = radius * 2;
             elements.push(element); collisionTree.insert(element);
-        } else if (type === 1) { // Polygon
+        } else if (type === 1) {
             const pointCount = hitboxData[offset++]!;
             if (!element.points) element.points = [];
             element.points.length = pointCount;
@@ -142,14 +141,14 @@ if (typeof self !== 'undefined') {
         if (!elB) continue;
         if (elA.id === elB.id) continue;
 
-        // Função de emparelhamento de Cantor para IDs únicos (Zero String Allocation)
+        //! Função de emparelhamento de Cantor para IDs únicos numéricos (Zero String Allocation)
         const k1 = elA.id < elB.id ? elA.id : elB.id;
         const k2 = elA.id < elB.id ? elB.id : elA.id;
         const pairKey = 0.5 * (k1 + k2) * (k1 + k2 + 1) + k2;
         
         if (processedPairs.has(pairKey)) continue;
 
-        // AABB check já foi feito pela QuadTree, agora checamos com precisão SAT
+        //? AABB pré-filtrado pela QuadTree; executa teste de separação de eixos (SAT) preciso
         if (elA.type === 0 && elB.type === 0) {
             const dx = elA.cx! - elB.cx!; const dy = elA.cy! - elB.cy!;
             if (dx * dx + dy * dy <= (elA.radius! + elB.radius!) ** 2) { collidingPairs.push(elA.id, elB.id); processedPairs.add(pairKey); }
@@ -162,11 +161,6 @@ if (typeof self !== 'undefined') {
         }
     }
 }
-
-  // Logger visual para atestar o funcionamento do Worker em alta performance
-  // if (collidingPairs.length > 0 && Math.random() < 0.05) {
-  //     console.log(`[Worker Física] Processando com precisão... Identificados ${collidingPairs.length / 2} toques simultâneos entre ${elements.length} corpos.`);
-  // }
 
   self.postMessage(new Int32Array(collidingPairs));
 });

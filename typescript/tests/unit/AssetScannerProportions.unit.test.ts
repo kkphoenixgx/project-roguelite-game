@@ -19,11 +19,11 @@ describe('AssetScanner - Fidelidade de Proporções e Dimensões 1:1 (Unit)', ()
         expect(watchtower?.width).toBe(212);
         expect(watchtower?.height).toBe(340);
 
-        // road_straight_horizontal deve ser 700x164
+        // road_straight_horizontal deve ser 460x116
         const road = scanner.getAssetById('road_straight_horizontal');
         expect(road).toBeDefined();
-        expect(road?.width).toBe(700);
-        expect(road?.height).toBe(164);
+        expect(road?.width).toBe(460);
+        expect(road?.height).toBe(116);
 
         // river_straight_horizontal deve ser 468x220
         const river = scanner.getAssetById('river_straight_horizontal');
@@ -43,7 +43,7 @@ describe('AssetScanner - Fidelidade de Proporções e Dimensões 1:1 (Unit)', ()
         expect(watchtowerSize).toEqual({ width: 212, height: 340 });
 
         const roadSize = getAssetBaseSize('road_straight_horizontal');
-        expect(roadSize).toEqual({ width: 700, height: 164 });
+        expect(roadSize).toEqual({ width: 460, height: 116 });
 
         const riverSize = getAssetBaseSize('river_straight_horizontal');
         expect(riverSize).toEqual({ width: 468, height: 220 });

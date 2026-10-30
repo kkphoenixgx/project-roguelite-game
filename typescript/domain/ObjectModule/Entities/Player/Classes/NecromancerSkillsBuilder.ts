@@ -9,7 +9,6 @@ export class NecromancerSkillsBuilder {
     public static build(): Map<number, Skill> {
         const skills = new Map<number, Skill>();
 
-        // --- Tier 1 (Fundação Base) ---
         skills.set(1, new Skill(
             'n_t1_reap',
             'Colheita Sombria',
@@ -28,8 +27,6 @@ export class NecromancerSkillsBuilder {
             new AttributeBoostEffect('intelligence', 5)
         ));
 
-        // --- Ramo A: O Senhor dos Ossos (Perfuração, Lifesteal e Explosão Cáustica) ---
-        // Tier 2
         skills.set(5, new Skill(
             'n_t2_bone_spear',
             'Lança de Ossos',
@@ -49,7 +46,6 @@ export class NecromancerSkillsBuilder {
             new AttributeBoostEffect('intelligence', 6)
         ));
 
-        // Tier 3
         skills.set(8, new Skill(
             'n_t4_corpse_explosion',
             'Explosão Sombria',
@@ -69,7 +65,6 @@ export class NecromancerSkillsBuilder {
             new AttributeBoostEffect('intelligence', 10)
         ));
 
-        // Tier 4 (Ápice dos Ossos)
         skills.set(12, new Skill(
             'n_t5_dance_of_dead',
             'Dança das Almas Penadas',
@@ -79,8 +74,6 @@ export class NecromancerSkillsBuilder {
             'n_t4_death_warden'
         ));
 
-        // --- Ramo B: O Espectro Abissal (Comunhão das Almas, Garras e Pavor) ---
-        // Tier 2
         skills.set(3, new Skill(
             'n_t1_soul_leech',
             'Dreno Vital',
@@ -101,7 +94,6 @@ export class NecromancerSkillsBuilder {
             new AttributeBoostEffect('wisdom', 6)
         ));
 
-        // Tier 3
         skills.set(7, new Skill(
             'n_t3_grasp_of_dead',
             'Garras do Além',
@@ -121,7 +113,6 @@ export class NecromancerSkillsBuilder {
             new AttributeBoostEffect('wisdom', 8)
         ));
 
-        // Tier 4 (Ápice do Espectro)
         skills.set(10, new Skill(
             'n_t5_wail_of_banshee',
             'Clamor da Banshee',

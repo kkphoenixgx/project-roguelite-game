@@ -97,7 +97,7 @@ export class AssetScanner {
         const seenIds = new Set<string>();
         const seenFileNames = new Set<string>();
 
-        // 1. Primeiro: Cruza com os itens já configurados no VisualConfigMap
+        /* 1. Primeiro: Cruza com os itens já configurados no VisualConfigMap */
         for (const [key, rawConfig] of Object.entries(VisualConfigMap)) {
             const config = rawConfig as AnyVisualConfig;
             if (config.category === 'map') continue;
@@ -168,14 +168,14 @@ export class AssetScanner {
             }
         }
 
-        // 2. Segundo: Adiciona imagens que estão na pasta mas que não estão no VisualConfigMap (descoberta de pares, cenários e chunks)
+        /* 2. Segundo: Adiciona imagens que estão na pasta mas que não estão no VisualConfigMap (descoberta de pares, cenários e chunks) */
         for (const [filePath, url] of Object.entries(imageModules)) {
-            // Ignora apenas ícones de UI, SVGs e arquivos JSON para não poluir
+            //? Descarta ícones de UI, SVGs e arquivos de colisão da gaveta de assets
             if (filePath.includes('/svgs/') || filePath.includes('/icons/') || filePath.includes('/collision-layers/')) {
                 continue;
             }
 
-            // Para /maps/, inclui apenas imagens de chunks ou terrenos de chão
+            //? Para o diretório /maps/, aceita apenas texturas de terreno e chunks de chão
             const isMapFile = filePath.includes('/maps/');
             if (isMapFile && !filePath.includes('chunk_') && !filePath.includes('grass_')) {
                 continue;
@@ -193,7 +193,7 @@ export class AssetScanner {
             const itemClass = isItem ? (ITEM_KEY_TO_CLASS[fileName] || this.formatClassName(fileName)) : undefined;
             const name = this.formatName(fileName);
 
-            // Herda dimensões de VisualConfigMap, SCENERY_PRESETS ou catálogo de dimensões conhecidas
+            //? Herda dimensões pré-calibradas de VisualConfigMap ou SCENERY_PRESETS
             const basePresetKey = fileName.replace(/_clean$|_anim$/, '');
             const visualConfigEntry = (VisualConfigMap as any)[fileName] || (VisualConfigMap as any)[basePresetKey];
             const visualAnim = visualConfigEntry?.animations?.['static'] || visualConfigEntry?.animations?.['idle'] || (visualConfigEntry?.animations ? Object.values(visualConfigEntry.animations)[0] as any : undefined);
@@ -385,7 +385,7 @@ export class AssetScanner {
 
     private formatName(key: string): string {
         if (key.startsWith('chunk_')) {
-            // Ex: chunk_1_1_ground -> Chunk (1,1) Ground
+            //? Normaliza nomenclatura de chunks: chunk_1_1_ground -> Chunk (1,1) Ground
             const parts = key.split('_');
             if (parts.length >= 3 && !isNaN(Number(parts[1])) && !isNaN(Number(parts[2]))) {
                 const rest = parts.slice(3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -512,12 +512,12 @@ export class AssetScanner {
             return matchesCategory && matchesType && matchesSearch;
         });
 
-        // Ordena para que os pares do mesmo elemento apareçam lado a lado no grid de 2 colunas
+        //? Ordena pares de elementos idênticos (_clean e _anim) lado a lado na gaveta
         return filtered.sort((a, b) => {
             const baseA = a.id.replace(/_clean$|_anim$/, '').toLowerCase();
             const baseB = b.id.replace(/_clean$|_anim$/, '').toLowerCase();
             if (baseA === baseB) {
-                // PNG estático primeiro, depois Sprite animado
+                //? Ordenação secundária: imagem estática primeiro, animação em seguida
                 return (a.isSprite ? 1 : 0) - (b.isSprite ? 1 : 0);
             }
             return baseA.localeCompare(baseB);

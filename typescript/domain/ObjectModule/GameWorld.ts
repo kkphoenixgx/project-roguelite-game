@@ -56,7 +56,7 @@ export default abstract class GameWorld {
 
         if (collisionData) {
             for (const data of collisionData) {
-                // Descarta bordas legadas estáticas de 9 chunks se o mapa possuir chunks dinâmicos configurados
+    //? Descarta bordas legadas estáticas caso o mapa possua particionamento de chunks dinâmicos configurado
                 const isLegacyHardcodedBorder = this.chunks && (
                     data.id === 'border_left' ||
                     data.id === 'border_right' ||
@@ -72,10 +72,10 @@ export default abstract class GameWorld {
                     spawnedBoundaryCount++;
                 }
 
-                // A matemática absoluta do Editor já resolve o pivot
+        //? A matemática absoluta do Editor já resolve o pivot das coordenadas
                 const hitboxes = HitboxParser.parse([data], { x: 0, y: 0 }, () => {});
                 
-                // Computa o AABB (Caixa Limite) do polígono desenhado para a QuadTree/SpatialGrid do Domínio
+        //? Computa o AABB do polígono de colisão para indexação na SpatialGrid do domínio
                 let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
                 if (data.type === 'polygon' && data.points) {
                     data.points.forEach((p: any) => {
@@ -101,8 +101,7 @@ export default abstract class GameWorld {
             }
         }
 
-        // Se o mapa é baseado em chunks e nenhuma barreira dinâmica foi fornecida via collisionData,
-        // computa e gera as barreiras dinâmicas automaticamente
+    //? Gera barreiras dinâmicas de borda automaticamente quando o mapa é baseado em chunks e sem colisão estática
         if (spawnedBoundaryCount === 0 && this.chunks && this.chunks.length > 0) {
             const dynamicBoundaries = ChunkBoundaryHelper.computeBoundaries(this.chunks, this.originChunk, this.chunkSize);
             for (const b of dynamicBoundaries) {
@@ -124,7 +123,7 @@ export default abstract class GameWorld {
             }
         }
 
-        // Rastreia portais já spawnados pelas subclasses em generateCustomElements() para evitar duplicatas por posição
+    //? Rastreia portais gerados pelas subclasses para evitar duplicatas por coordenada
         const spawnedPortalCoords = new Set<string>();
         const portalSpawnTracker = (payload: any) => {
             if (payload && (payload.type === 'portalLink' || payload.type === 'portalLinkRequest') && payload.coordinates) {
@@ -133,14 +132,13 @@ export default abstract class GameWorld {
         };
         this.eventManager.on('spawn', portalSpawnTracker);
 
-        // Chama implementação específica do mundo (NPCs, inimigos, etc)
         await this.generateCustomElements();
 
         if (this.eventManager.off) {
             this.eventManager.off('spawn', portalSpawnTracker);
         }
 
-        // Spawna os portais data-driven (diretos e com confirmação [E]) registrados para este mapa
+    //? Registra portais data-driven (diretos e com confirmação [E]) mapeados para este mundo
         this.generatePortalLinks(spawnedPortalCoords);
 
         this.eventManager.dispatch('log', { channel: 'init', message: `Mundo de ${this.mapId} gerado com sucesso.`, params: [] });

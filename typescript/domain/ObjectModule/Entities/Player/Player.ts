@@ -36,7 +36,7 @@ export default class Player extends Entity implements IPlayer {
 
   public facingDirection: Vector2D = new Vector2D(1, 0);
 
-  // Delegated Brooch State inspection (Zero-GC, no state kept on Player)
+  //! Delegação de inspeção de estado de broches sem reter estado no Player (Zero-GC).
   public get activeShieldCharges(): number { return BroochRegistry.getShieldCharges(); }
   public get fortuneBuffTimer(): number { return BroochRegistry.getFortuneBuffTimer(); }
   public get berserkTimer(): number { return BroochRegistry.getBerserkTimer(); }
@@ -45,7 +45,6 @@ export default class Player extends Entity implements IPlayer {
   public get phoenixUsedThisRun(): boolean { return BroochRegistry.isPhoenixUsed(); }
   public get rerollChargesRemaining(): number { return BroochRegistry.getRerollCharges(); }
 
-  // Getters for IPlayer compatibility
   public get backpack(): Item[] { return this.inventory.backpack; }
   public get coins(): number { return this.inventory.coins; }
   public set coins(val: number) { this.inventory.coins = val; }
@@ -74,7 +73,6 @@ export default class Player extends Entity implements IPlayer {
     return this.collectedWorldItems.has(pickupId);
   }
 
-  // Component delegates
   public equipItem(backpackIndex: number) { this.equipmentManager.equipItem(backpackIndex); }
   public unequipItem(slot: string, index?: number) { this.equipmentManager.unequipItem(slot, index); }
   public unequipBag(): boolean { return this.equipmentManager.unequipBag(); }
@@ -155,7 +153,7 @@ export default class Player extends Entity implements IPlayer {
   public restoreState(state: any): void {
     if (!state) return;
 
-    // Reseta estado motor e cinético para garantir que o jogador nunca nasça morto ou travado
+    //? Reseta estado cinético e motor para garantir nascimento limpo sem inércia residual.
     this.state = 'idle';
     this.movementSinceLastUpdate = false;
     this.isDashing = false;
@@ -168,40 +166,34 @@ export default class Player extends Entity implements IPlayer {
     this.attackCooldownTimer = 0;
     BroochRegistry.resetAll();
 
-    // 1. Atributos
     if (state.attributes && typeof this.attributes.restoreState === 'function') {
       this.attributes.restoreState(state.attributes);
     } else if (state.level !== undefined && typeof this.attributes.restoreState === 'function') {
       this.attributes.restoreState(state);
     }
 
-    // Garante que o jogador nunca permaneça morto com 0 HP
+    //? Garante que o jogador nunca permaneça em estado 'dead' ao carregar o save.
     if (this.attributes.hp <= 0) {
       this.attributes.hp = this.attributes.maxHp;
     }
 
-    // 2. Moedas
     if (state.coins !== undefined) {
       this.coins = state.coins;
     }
 
-    // 3. Coordenadas
     if (state.coordinates) {
       this.coordinates.x = state.coordinates.x;
       this.coordinates.y = state.coordinates.y;
     }
 
-    // 4. Mochila
     if (state.backpack && Array.isArray(state.backpack)) {
       this.inventory.restore(state.backpack);
     }
 
-    // 5. Equipamentos
     if (state.equipment) {
       this.equipmentManager.restore(state.equipment);
     }
 
-    // 6. Classes e Árvore de Habilidades
     if (state.classes) {
       this.classManager.restore(state.classes);
     } else {
@@ -230,7 +222,6 @@ export default class Player extends Entity implements IPlayer {
       }
     }
 
-    // 7. Itens coletados no mundo
     if (state.collectedWorldItems && Array.isArray(state.collectedWorldItems)) {
       this.collectedWorldItems = new Set(state.collectedWorldItems);
     }
@@ -252,7 +243,7 @@ export default class Player extends Entity implements IPlayer {
 
     this.hitboxes = [ ...this.setHitboxes() ];
 
-    // [DECOUPLED] O Jogador escuta sozinho as intenções de UI de atributos
+    //? Desacoplamento via eventos: o Player escuta diretamente intenções de UI de distribuição de atributos.
     this.eventManager.on('attributeAction', (payload) => {
         if (payload.action === 'allocate') {
             this.allocateAttribute(payload.payload.attribute as any);
@@ -260,7 +251,6 @@ export default class Player extends Entity implements IPlayer {
     });
 
     this.eventManager.on('rewardAction', (payload) => {
-// claimLocal is now handled entirely by PlayerClassManager.ts
     });
   }
 
@@ -303,7 +293,7 @@ export default class Player extends Entity implements IPlayer {
 
     if (this.attackCooldownTimer > 0) this.attackCooldownTimer -= deltaTime;
 
-    // Delegar ciclo de vida dos broches e habilidades de classe ativas (Zero-GC)
+    //! Delegação de ciclo de vida de broches e classes ativas sob disciplina Zero-GC.
     this.classManager.update(deltaTime);
 
     this.move(deltaTime);
@@ -393,13 +383,13 @@ export default class Player extends Entity implements IPlayer {
       this.facingDirection.x = dashDir.x;
       this.facingDirection.y = dashDir.y;
 
-      // Suporte aos 8 lados de rolagem: ângulo em radianos do vetor de deslocamento
+      //? Suporte aos 8 lados de rolagem: ângulo em radianos do vetor de deslocamento.
       this.rotation = Math.atan2(dashDir.y, dashDir.x);
 
       this.accelerator.resetMut();
       this.accelerator.addMut(dashDir).multiplyMut(3);
       this.isDashing = true;
-      this.dashTimeRemaining = 0.30; // 300ms de duração física e animação do dash
+      this.dashTimeRemaining = 0.30;
       this.state = 'roll';
       this.movementSinceLastUpdate = true;
 

@@ -107,7 +107,7 @@ export class IntermapRegistry {
   }
 }
 
-// Registro default inicial correspondente ao intermapsMap.json
+  //? Registro default inicial correspondente ao catálogo de intermaps
 IntermapRegistry.register({
   id: "interior_black_default",
   name: "Interior Escuro",

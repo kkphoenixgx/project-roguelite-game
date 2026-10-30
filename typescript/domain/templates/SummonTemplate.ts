@@ -11,7 +11,7 @@ export interface SummonConfig {
   readonly name: string;
   readonly maxHp: number;
   readonly speed: number;
-  readonly duration: number; // <= 0 para infinito até morrer
+  readonly duration: number; //? Tempo de permanência do lacaio; <= 0 indica persistência contínua até ser abatido
   readonly behavior: SummonBehaviorMode;
   readonly attackCooldownMs: number;
   readonly attackRange: number;
@@ -124,13 +124,12 @@ export class SummonEntity extends Entity {
       return;
     }
 
-    // Calcula distância até o mestre
     const dx = this._master.coordinates.x - this.coordinates.x;
     const dy = this._master.coordinates.y - this.coordinates.y;
     const distSq = dx * dx + dy * dy;
     const leashSq = this._config.leashDistance * this._config.leashDistance;
 
-    // Se estiver muito longe do mestre, prioriza seguir o mestre imediatamente
+    //? Prioriza reagrupamento imediato com o invocador caso ultrapasse o raio máximo permitido
     if (distSq > leashSq) {
       this._dirCache.x = dx;
       this._dirCache.y = dy;
@@ -141,12 +140,10 @@ export class SummonEntity extends Entity {
       return;
     }
 
-    // Se estiver no raio aceitável, busca alvos se agressivo ou defensivo
     if (this._config.behavior === 'aggressive' || this._config.behavior === 'defensive') {
       this.tryAttackNearby();
     } else {
-      // Modo follow suave: fica próximo ao mestre
-      if (distSq > 3600) { // > 60px
+      if (distSq > 3600) { //? Distância superior a 60px inicia movimentação de aproximação ao mestre
         this._dirCache.x = dx;
         this._dirCache.y = dy;
         this._dirCache.normalizeMut();
@@ -171,7 +168,7 @@ export class SummonEntity extends Entity {
       callback: (neighbors: any[]) => {
         if (!neighbors || neighbors.length === 0) return;
 
-        // Procura primeiro inimigo válido (não sendo o mestre nem outra invocação aliada)
+    //? Busca alvo hostil mais próximo ignorando o invocador e lacaios aliados
         let target: any = null;
         for (let i = 0; i < neighbors.length; i++) {
           const n = neighbors[i]!;

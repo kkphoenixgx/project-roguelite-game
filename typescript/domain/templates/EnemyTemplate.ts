@@ -42,10 +42,7 @@ export default class TemplateEnemyTemplate extends Enemy {
   ) {
     super(id, level, baseXp, coordinates, objectId, attributes, eventManager, "waiting");
 
-    // Vida inicial total
     this.attributes.hp = this.attributes.maxHp;
-
-    // Configuração de HitBox circular canônica
     this.hitboxes = [this.createHitbox()];
   }
 
@@ -56,16 +53,15 @@ export default class TemplateEnemyTemplate extends Enemy {
     const level = payload.level || 1;
     const baseXp = payload.baseXp || 25;
     
-    // Atributos base equilibrados para a criatura
     const attrs = new Attributes(
-      8,             // hpBase
-      level,         // level
-      10,            // strength
-      10,            // dexterity
-      10,            // constitution
-      8,             // intelligence
-      8,             // wisdom
-      8              // charisma
+      8,
+      level,
+      10,
+      10,
+      10,
+      8,
+      8,
+      8
     );
 
     return new TemplateEnemyTemplate(
@@ -83,21 +79,18 @@ export default class TemplateEnemyTemplate extends Enemy {
    * Ciclo de Atualização por Frame (Hot Path - Atenção ao Zero-GC!)
    */
   public update(deltaTime: number, player?: any): void {
-    // 1. Atualiza debuffs, DoTs e controle de grupo
     this.updateStatuses(deltaTime);
 
-    // Se estiver atordoado, não executa IA cinemática
+    //? Entidade atordoada suspende a execução da IA cinemática e steering.
     if (this.activeStatuses.has('stun') || this.activeStatuses.has('freeze')) {
       return;
     }
 
-    // 2. Registra a posição do jogador
     if (player) {
       this.targetPos.x = player.coordinates.x + player.size.width / 2;
       this.targetPos.y = player.coordinates.y + player.size.height / 2;
     }
 
-    // 3. Atualiza hitbox no centro da entidade
     const centerX = this.coordinates.x + this.size.width / 2;
     const centerY = this.coordinates.y + this.size.height / 2;
 
@@ -107,7 +100,7 @@ export default class TemplateEnemyTemplate extends Enemy {
       }
     }
 
-    // 4. Query espacial assíncrona para Flocking / Evitar encavalar
+    //? Query espacial de vizinhança para repulsão de flocking e prevenção de aglomeração.
     this.eventManager.dispatch('requestNeighbors', {
       requester: this,
       radius: this.size.width * 1.5,
@@ -122,7 +115,6 @@ export default class TemplateEnemyTemplate extends Enemy {
     const centerX = this.coordinates.x + this.size.width / 2;
     const centerY = this.coordinates.y + this.size.height / 2;
 
-    // Vetor em direção ao alvo
     const dx = this.targetPos.x - centerX;
     const dy = this.targetPos.y - centerY;
     const dist = Math.hypot(dx, dy);
@@ -131,7 +123,6 @@ export default class TemplateEnemyTemplate extends Enemy {
       let vx = (dx / dist) * this.attributes.speed * this.speedMultiplier;
       let vy = (dy / dist) * this.attributes.speed * this.speedMultiplier;
 
-      // Dispersão de outros inimigos próximos (Prevenção de Stack)
       for (let i = 0; i < neighbors.length; i++) {
         const other = neighbors[i]!;
         if (other.id === this.id) continue;
@@ -147,7 +138,7 @@ export default class TemplateEnemyTemplate extends Enemy {
         }
       }
 
-      // Aplica movimentação (In-Place Mutation)
+      //! Mutação in-place de coordenadas para manter alocação Zero-GC no loop de movimento.
       this.coordinates.x += vx * deltaTime;
       this.coordinates.y += vy * deltaTime;
       this.rotation = Math.atan2(vy, vx);
@@ -167,7 +158,6 @@ export default class TemplateEnemyTemplate extends Enemy {
       0,
       radius,
       (other: ObjectElement) => {
-        // Se colidir com o jogador, desfere o ataque físico de contato
         if (other && 'takeDamage' in other && other.id !== this.id && other.objectId === 'player') {
           const attack = this.onStrike();
           if (attack) {

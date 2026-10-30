@@ -117,8 +117,7 @@ export default class GameAdapter {
   private async handleMapTransition(targetMapId: string, spawnCoords?: { x: number; y: number }): Promise<void> {
     logger.log('domain', `[GameAdapter] Iniciando transição para o mapa: ${targetMapId}`);
 
-    // Sincroniza definições de Intermaps em tempo de execução no Domínio (catálogo do disco e edições no Assets Adapter)
-    // Executa sincronicamente antes de qualquer yield/await para garantir que o Domínio use as definições atualizadas
+    //? Sincroniza definições de Intermaps em runtime no Domínio antes de awaits
     try {
       if (intermapsMap && typeof intermapsMap === 'object') {
         for (const [id, def] of Object.entries(intermapsMap)) {
@@ -153,7 +152,7 @@ export default class GameAdapter {
       logger.log('error', `[GameAdapter] Erro ao sincronizar IntermapRegistry: ${err}`);
     }
 
-    // Consulta a API do Vite para capturar chunks e intermaps editados em tempo real no Assets Editor
+    //? Consulta a API do Vite para capturar chunks e intermaps editados em tempo real no Assets Editor
     try {
       if (typeof fetch === 'function') {
         const intermapsRes = await fetch('/api/assets-adapter?target=intermaps').catch(() => null);
@@ -194,19 +193,16 @@ export default class GameAdapter {
       logger.log('error', `[GameAdapter] Erro ao carregar dados de colisão para ${targetMapId}: ${err}`);
     }
 
-    // 1. Chamar transição no Domínio
     await this.domain.transitionWorld(targetMapId, spawnCoords, collisionData);
 
-    // 2. Atualizar a referência do mapa no renderizador
     this.map?.dispose();
     this.map = new GameMap(targetMapId);
 
-    // 3. Limpar entidades residuais do SceneManager (efeitos transitórios, balões de fala órfãos)
+    //? Limpa entidades residuais do SceneManager na transição de mapa
     this.sceneManager.clearTransientVisuals();
     this.uiManager.clearTransientDialogues();
     this.uiManager.clearFloatingBubbles();
 
-    // 4. Sincronizar imediatamente o estado visual para o novo mapa
     this.currentFrameState = this.domain.getRenderState();
     if (this.currentFrameState) {
       this.sceneManager.syncRenderables(this.currentFrameState.renderables);
@@ -233,7 +229,9 @@ export default class GameAdapter {
       (attribute: string) => this.eventManager.dispatch('attributeAction', { action: 'allocate', payload: { attribute } }),
       () => {
         logger.log('domain', 'Restarting game via UI command...');
-        window.location.href = window.location.pathname; // Força recarregamento limpo escapando do Vite
+        //? Recarregamento limpo escapando do estado em memória do Vite
+
+        window.location.href = window.location.pathname;
       },
       (index: number) => this.eventManager.dispatch('inventoryAction', { action: 'delete', payload: { index } }),
       dialogueAdapter,
@@ -293,7 +291,7 @@ export default class GameAdapter {
           logger.log('error', `[GameAdapter] Erro ao salvar antes de quitar: ${e}`);
         }
         if (typeof window !== 'undefined' && window.location && typeof window.location.reload === 'function') {
-          window.location.reload(); // Simple reload to go back to main menu
+          window.location.reload();
         }
       },
       async () => {
@@ -303,31 +301,28 @@ export default class GameAdapter {
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.isGameStarted) {
-        // 1. Se as configurações internas do PauseMenu estiverem abertas, fecha o painel de configurações
+    //? Hierarquia de fechamento de menus em cascata com a tecla Esc
         if (this.pauseMenuGui.isOpen && this.pauseMenuGui.isSettingsOpen()) {
           this.pauseMenuGui.closeSettings();
           return;
         }
 
-        // 2. Se o PauseMenu estiver aberto, fecha o PauseMenu e despausa o jogo
         if (this.pauseMenuGui.isOpen) {
           this.pauseMenuGui.hide();
           togglePauseGame();
           return;
         }
 
-        // 3. Se qualquer outro menu do jogo estiver aberto (Skill Tree, Character Menu, Diálogo, Recompensa, etc.), fecha-o
         if (this.uiManager.closeAnyOpenMenu()) {
           return;
         }
 
-        // 4. Se nenhum menu estiver aberto, abre o PauseMenu e pausa o jogo
         this.pauseMenuGui.show();
         togglePauseGame();
       }
     });
 
-    // Encerramento do jogo: notifica o Domínio para AutoSave imediato antes de fechar
+    //? Notifica o Domínio para AutoSave imediato antes de fechar
     window.addEventListener('beforeunload', () => {
       try {
         (this.eventManager as any).dispatch('gameClosing', {});
@@ -336,7 +331,6 @@ export default class GameAdapter {
       }
     });
 
-    // Feedback visual do salvamento automático in-game
     (this.eventManager as any).on('autoSaveCompleted', (payload: any) => {
       if (payload?.slot) {
         this.activeSlotIndex = payload.slot;
@@ -346,12 +340,11 @@ export default class GameAdapter {
     });
   }
   private async checkIsNoGpuRequested(): Promise<boolean> {
-    // 1. Injeção direta pelo bundler Vite (via npm run dev -- --no-gpu)
+    //? Modos de detecção de aceleração GPU (--no-gpu via Vite, URL, LocalStorage, Tauri ou globalThis)
     if (typeof __CLI_NO_GPU__ !== 'undefined' && __CLI_NO_GPU__) {
       return true;
     }
 
-    // 2. Parâmetro de URL (ex: http://localhost:5173/?no-gpu ou ?nogpu)
     if (typeof window !== 'undefined' && window.location?.search) {
       const params = new URLSearchParams(window.location.search);
       if (params.has('no-gpu') || params.has('nogpu') || params.get('gpu') === 'false') {
@@ -359,14 +352,12 @@ export default class GameAdapter {
       }
     }
 
-    // 3. Flag persistida em LocalStorage
     try {
       if (typeof localStorage !== 'undefined' && localStorage.getItem('rpg_no_gpu') === 'true') {
         return true;
       }
     } catch (e) {}
 
-    // 4. Argumentos de linha de comando no ambiente nativo Tauri
     try {
       if (typeof window !== 'undefined' && ((window as any).__TAURI_INTERNALS__ || (window as any).__TAURI__)) {
         const isNativeNoGpu = await safeInvoke<boolean>('is_no_gpu');
@@ -374,7 +365,6 @@ export default class GameAdapter {
       }
     } catch (e) {}
 
-    // 5. Flag global injetada via window/globalThis
     if (typeof (globalThis as any).__NO_GPU__ !== 'undefined' && (globalThis as any).__NO_GPU__) {
       return true;
     }
@@ -426,7 +416,6 @@ export default class GameAdapter {
     new MainMenuGui(this.domain, async (mapId, activeLoadout, passiveLoadout, checkpoint) => {
       logger.log('init', `Map selected: ${mapId}. Instructing domain to generate world...`);
 
-      // Carrega as dependências em runtime para não misturar os dados JSON puros neste arquivo.
       const VisualConfigMap = (await import('../shared/VisualConfigMap')).VisualConfigMap;
       const mapConfig = (VisualConfigMap as any)[mapId];
       let collisionData: any[] | undefined = undefined;
@@ -441,7 +430,6 @@ export default class GameAdapter {
           logger.log('error', `[Data-Driven] Falha ao carregar JSON de colisões: ${err}`);
         }
       }
-      // Sincroniza definições de Intermaps em tempo de execução no Domínio (catálogo do disco e edições no Assets Adapter)
       try {
         if (intermapsMap && typeof intermapsMap === 'object') {
           for (const [id, def] of Object.entries(intermapsMap)) {
@@ -467,7 +455,7 @@ export default class GameAdapter {
 
       await (this.domain as any).loadWorld(mapId, collisionData);
 
-      // Aplica o checkpoint (se houver) e em seguida o loadout salvo no Menu ao Player do Domínio
+    //? Aplica checkpoint e loadout salvo no Menu ao Player do Domínio
       const player = (this.domain as any).player;
       if (player) {
           if (checkpoint && (checkpoint.metaProgressionState || checkpoint.playerState || checkpoint.player)) {
@@ -526,7 +514,7 @@ export default class GameAdapter {
               logger.log('init', `[Checkpoint] Partida restaurada com sucesso! Nível ${currentLvl}, HP: ${currentHp}/${maxHp}`);
           }
 
-          // Aplica o loadout do Menu com precedência sobre o save restaurado
+    //? Aplica o loadout do Menu com precedência sobre o save restaurado
           activeLoadout.forEach((id, i) => {
               if (!id) return;
               if (id.startsWith('brooch_')) {
@@ -554,7 +542,7 @@ export default class GameAdapter {
       }
       this.currentCycle = checkpoint?.cycle ?? checkpoint?.metaProgressionState?.treeGenerationCount ?? 1;
 
-      // Notifica o Domínio que uma nova run começou para AutoSave
+    //? Notifica o Domínio sobre o início de uma nova run para AutoSave
       try {
         (this.eventManager as any).dispatch('gameRunStarted', {
           saveId: checkpoint?.saveId || `run_${Date.now()}`,
@@ -659,7 +647,7 @@ export default class GameAdapter {
     Telemetry.activeEntities = renderables.length;
     Telemetry.profiler.end('Engine Update Total');
 
-    // Checkpoint periódico da partida para recuperação após falhas/crashes
+    //? Checkpoint periódico da partida para recuperação após falhas
     if (!isGamePaused() && this.isGameStarted) {
       this.checkpointTimer += deltaTime;
       if (this.checkpointTimer >= 5) {
@@ -668,7 +656,6 @@ export default class GameAdapter {
       }
     }
 
-    // --- Telemetry Adapter ---
     this.telemetryAdapter.setActiveEntities(renderables.length);
     this.telemetryAdapter.setSpatialInfo({
       mapId: this.currentFrameState?.world?.mapId || 'vilgem',
@@ -719,7 +706,6 @@ export default class GameAdapter {
         coins: player.coins
       };
     } else {
-      // Garantir compatibilidade com leitores de campos na raiz
       if (playerData.attributes) {
         playerData.level = playerData.attributes.level;
         playerData.hp = playerData.attributes.hp;
@@ -788,7 +774,7 @@ export default class GameAdapter {
 
     const jsonStr = JSON.stringify(slotPayload);
 
-    // Persistência em arquivos JSON no backend nativo Tauri via IPC seguro
+    //? Persistência em arquivos JSON no backend nativo Tauri via IPC seguro
     try {
       await safeInvoke('save_game_slot', { slot, payload: jsonStr }).catch(() => {});
     } catch (e) {}
@@ -861,8 +847,7 @@ export default class GameAdapter {
 
     if (shouldDrawWorld) {
       if (this.renderer instanceof WebGPURenderer) {
-        // Lógica para WebGPU
-        // Filtra entidades puramente colisionadoras/invisíveis reutilizando buffer pré-alocado (Zero-GC)
+    //! Filtra entidades puramente colisionadoras reutilizando buffer pré-alocado (Zero-GC)
         this.webGpuRenderBuffer.length = 0;
         const rawRenderables = domainState.renderables;
         for (let i = 0; i < rawRenderables.length; i++) {
@@ -872,12 +857,11 @@ export default class GameAdapter {
           }
         }
 
-        // Adiciona os efeitos transientes para WebGPU
         for (const visual of this.sceneManager.transientVisuals.values()) {
           this.webGpuRenderBuffer.push(visual.state);
         }
 
-        // Aplica ordenação espacial (Y-Sorting) para criar ilusão de profundidade (pseudo-3D)
+    //? Aplica ordenação espacial Y-Sorting para profundidade pseudo-3D
         this.webGpuRenderBuffer.sort(GameAdapter.ySortComparator);
 
         const webGpuDomainState = { world: domainState.world, renderables: this.webGpuRenderBuffer };
@@ -885,25 +869,23 @@ export default class GameAdapter {
         this.lastCulledEntities = Math.max(0, domainState.renderables.length - this.webGpuRenderBuffer.length);
         await this.renderer.drawFrame(webGpuDomainState, cameraTarget, this.sceneManager.animationManagers);
       } else {
-        // Lógica para Canvas 2D
         const cameraTargetRenderable = cameraTarget ? this.sceneManager.renderables.get(cameraTarget.id) : undefined;
         if (cameraTargetRenderable) this.camera.setTarget(cameraTargetRenderable);
 
         this.renderer.clear();
 
-        // Reutiliza o buffer pré-alocado para evitar GC Thrashing no fallback Canvas2D
+    //! Reutiliza buffer pré-alocado para evitar GC thrashing no fallback Canvas 2D
         this.canvasRenderBuffer.length = 0;
         for (const r of this.sceneManager.renderables.values()) this.canvasRenderBuffer.push(r);
         for (const v of this.sceneManager.transientVisuals.values()) if (v.renderable) this.canvasRenderBuffer.push(v.renderable);
 
-        // Aplica ordenação espacial (Y-Sorting) para criar ilusão de profundidade (pseudo-3D)
+    //? Aplica ordenação espacial Y-Sorting para profundidade pseudo-3D
         this.canvasRenderBuffer.sort(GameAdapter.ySortComparator);
 
-        // Adiciona elementos que devem estar sempre no topo (Partículas e Debug)
+    //? Adiciona elementos de renderização sempre no topo (partículas e hitboxes de debug)
         this.canvasRenderBuffer.push(this.sceneManager.particleOrchestrator);
         if (this.sceneManager.isDebugModeActive) for (const d of this.sceneManager.debugRenderables.values()) this.canvasRenderBuffer.push(d);
 
-        // Passa a lista de objetos visuais (IRenderableObject) para o renderer antigo.
         const canvasDomainState = { world: domainState.world, renderables: this.canvasRenderBuffer };
         await (this.renderer as Renderer).drawFrame(canvasDomainState, cameraTarget, undefined, this.map);
 
@@ -912,7 +894,7 @@ export default class GameAdapter {
       }
       this.renderThrottlePolicy.notifyFrameDrawn();
     } else {
-      // Frame do mundo ignorado intencionalmente para liberar 100% da CPU/GPU para a interface gráfica
+      //? Pausa o frame de mundo para liberar ciclos de CPU/GPU à interface gráfica
       this.lastDrawCalls = 0;
     }
     Telemetry.profiler.end('GPU Render Pipeline');

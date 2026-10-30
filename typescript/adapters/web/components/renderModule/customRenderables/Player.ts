@@ -53,7 +53,7 @@ export default class Player extends LayeredGameObjectElement {
       return;
     }
 
-    // Suporte aos 8 lados de rolagem
+    //? Suporte à rotação e espelhamento direcional durante o rolamento (8 direções)
     ctx.save();
     const baseConfig = this.composedLayers[0]!.config;
     const pivotX = this.coordinates.x + this.size.width / 2;
@@ -61,7 +61,7 @@ export default class Player extends LayeredGameObjectElement {
 
     const cosTheta = Math.cos(this.rotation);
     const flipX = cosTheta < -0.01;
-    // Ângulo ajustado no espaço espelhado quando flipX está ativo
+    //? Ajusta ângulo no espaço espelhado quando flipX está ativo para preservar orientação visual
     const drawAngle = flipX 
       ? Math.atan2(Math.sin(this.rotation), -Math.cos(this.rotation))
       : this.rotation;

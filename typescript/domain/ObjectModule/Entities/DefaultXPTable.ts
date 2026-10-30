@@ -2,18 +2,17 @@ import type IXPTable from "./IXPTable";
 import type { ProgressionReward } from "./IXPTable";
 
 export default class DefaultXPTable implements IXPTable {
-    public fixedBase = 100; // Base menor para fisgar o jogador com progressão ultra-rápida no início
-    public levelScale = 1.3; // Curva mais gentil para evitar o "grind wall"
+    public fixedBase = 100; //? Experiência base necessária para alcançar o nível 2
+    public levelScale = 1.3; //? Fator de escala exponencial da progressão de experiência por nível
 
     public getRewardsForLevel(level: number): ProgressionReward[] {
         const rewards: ProgressionReward[] = [];
         
-        // ESQUEMA DE RAZÃO VARIÁVEL (Jackpot Dopaminérgico)
-        // Níveis múltiplos de 5 oferecem um salto massivo de poder (3 atributos!)
+        //? Níveis múltiplos de 5 concedem recompensa ampliada de 3 pontos de atributo
         if (level % 5 === 0) rewards.push('attribute_point', 'attribute_point', 'attribute_point');
-        else rewards.push('attribute_point'); // Nível normal
+        else rewards.push('attribute_point');
 
-        if (level % 2 === 0) { // Nos níveis pares, o jogador tem o direito de ganhar uma habilidade de classe
+        if (level % 2 === 0) { //? Níveis pares concedem pontos de habilidade de classe
             rewards.push('class_skill');
         }
         return rewards;

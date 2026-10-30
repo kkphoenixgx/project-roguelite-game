@@ -35,7 +35,7 @@ export class EditorApp {
     private currentMap: SelectedMapConfig;
 
     constructor() {
-        // Higienização preventiva de localStorage contra corrupção de mundos raiz
+        //? Higienização preventiva de localStorage contra corrupção de mundos raiz
         if (typeof localStorage !== 'undefined') {
             try {
                 const rawIntermaps = localStorage.getItem('rpg_assets_adapter_intermaps');
@@ -68,7 +68,6 @@ export class EditorApp {
         this.chunkSync = new ChunkSync();
         this.currentMap = this.initCurrentMap('vilgem');
 
-        // 1. Canvas Central (Área do Mapa)
         this.canvas = new MapCanvas(
             'canvas-container',
             this.currentMap,
@@ -82,7 +81,6 @@ export class EditorApp {
         );
         this.canvas.getAssetDefinition = (id: string) => this.scanner.getAssetById(id);
 
-        // 2. Modal do Gerenciador de Chunks & Terreno
         this.chunkManagerModal = new ChunkManagerModal(
             this.currentMap,
             (updatedMap) => {
@@ -96,7 +94,6 @@ export class EditorApp {
             () => this.canvas.placedAssets
         );
 
-        // 3. Coluna Direita (Propriedades)
         this.propertiesPanel = new PropertiesPanel(
             'properties-panel',
             this.canvas,
@@ -107,14 +104,11 @@ export class EditorApp {
             (mapToOpen) => this.openMapInEditor(mapToOpen)
         );
 
-        // 3. Coluna Esquerda (Gaveta de Assets Dinâmica)
         this.drawer = new AssetDrawer(
             this.scanner,
             (selectedAsset) => {
-                // Ao clicar no asset da gaveta, guarda no window para facilitar stamp ou drag
                 (window as any).__draggedAssetData = selectedAsset;
-                // Se o Pincel de Textura de Chunk estiver ativo ou o usuário clicar num asset de terreno/chunk/estrada/água,
-                // atualiza a textura ativa do pincel
+                //? Atualiza a textura ativa do pincel de chunk ao selecionar asset de terreno ou estrada
                 if (
                     this.canvas.isChunkBrushMode ||
                     selectedAsset.category === 'chunks' ||
@@ -127,7 +121,6 @@ export class EditorApp {
             }
         );
 
-        // 4. Redimensionamento Interativo dos Painéis Laterais (Splitters/Resizers)
         this.panelResizer = new PanelResizer({
             drawerId: 'asset-drawer',
             drawerResizerId: 'drawer-resizer',
@@ -138,12 +131,10 @@ export class EditorApp {
             }
         });
 
-        // 5. Modal para Definir Novos Sprites
         this.spriteDefModal = new SpriteDefinitionModal(
             this.scanner,
             (newAsset) => {
                 this.drawer.refresh();
-                // Adiciona uma instância no centro da visualização atual
                 const centerWorld = this.canvas.screenToWorld(
                     this.canvas['canvas'].width / 2,
                     this.canvas['canvas'].height / 2
@@ -152,14 +143,12 @@ export class EditorApp {
             }
         );
 
-        // 6. Modal de Seleção de Mapa ("Selecione o mapa")
         this.mapSelectorModal = new MapSelectorModal(async (selectedMap) => {
             await this.openMapInEditor(selectedMap);
         });
 
         this.bindGlobalToolbarEvents();
 
-        // 7. Carrega automaticamente chunks e assets reais do código do mapa
         this.loadMapChunks(this.currentMap.id);
         this.loadWorldAssets(this.currentMap.id);
         this.updateTopBarTitle();
@@ -266,7 +255,7 @@ export class EditorApp {
 
     private triggerAutoSave(): void {
         if (this.currentMap.id === 'blank_project') {
-            // No projeto em branco, o objetivo é compor e exportar imagem de fundo (sem gravar entidades no VilgemWorld)
+            //? Projeto em branco: compor e exportar imagem de fundo sem persistência de entidades
             this.updateSyncBadge('saved', `🎨 Textura Fixa pronta (${this.canvas.placedAssets.length} elementos)`);
             return;
         }
@@ -276,7 +265,7 @@ export class EditorApp {
             return;
         }
 
-        // Sincroniza Double-Bind automático para portais posicionados
+        //? Sincroniza Double-Bind automático para portais posicionados
         const portals = this.canvas.placedAssets.filter(a => a.isPortal || a.presetId.includes('portal'));
         for (const p of portals) {
             InnerMapManager.getInstance().syncDoubleBind(p, this.currentMap);
@@ -369,7 +358,6 @@ export class EditorApp {
             updateHitboxButtonState();
         });
 
-        // Alternar referência visual do Player Idle no canto inferior
         const btnTogglePlayerRef = document.getElementById('btn-quick-toggle-player-ref');
         const playerRefText = document.getElementById('player-ref-text');
         const updatePlayerRefButtonState = () => {
@@ -386,7 +374,6 @@ export class EditorApp {
             updatePlayerRefButtonState();
         });
 
-        // Alternar Modo Carimbo / Pincel Contínuo
         const btnToggleStamp = document.getElementById('btn-quick-stamp-mode');
         const stampText = document.getElementById('stamp-status-text');
         const updateStampButtonState = () => {
@@ -409,7 +396,6 @@ export class EditorApp {
             this.propertiesPanel.render();
         };
 
-        // Alternar Pincel de Textura de Chunk (Chunk Texture Brush Tool - Tecla T)
         const btnToggleChunkBrush = document.getElementById('btn-quick-chunk-brush');
         const chunkBrushText = document.getElementById('chunk-brush-status-text');
         const updateChunkBrushButtonState = () => {
@@ -434,7 +420,6 @@ export class EditorApp {
             this.propertiesPanel.render();
         };
 
-        // Atualiza o estado dos botões na toolbar se teclas de atalho forem pressionadas
         window.addEventListener('keydown', (e) => {
             if (e.key === 'F2') {
                 updateHitboxButtonState();
@@ -458,7 +443,6 @@ export class EditorApp {
     }
 }
 
-// Inicializa a aplicação ao carregar o DOM
 window.addEventListener('DOMContentLoaded', () => {
     (window as any).editorApp = new EditorApp();
 });

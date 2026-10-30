@@ -69,9 +69,7 @@ export class GuiBuilder {
         super(id, html, css);
       }
 
-      protected setupElements(): void {
-        // Inicialização genérica dos nós se necessário
-      }
+      protected setupElements(): void {}
 
       protected bindEvents(): void {
         for (const action of actions) {

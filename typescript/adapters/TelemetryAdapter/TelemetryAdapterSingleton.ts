@@ -6,7 +6,7 @@ import type { ITelemetryAdapter, TelemetrySpatialInfo } from './ITelemetryAdapte
 export class TelemetryAdapter implements ITelemetryAdapter {
   private static instance: TelemetryAdapter;
 
-  // Frame Timing & FPS
+  /* Frame Timing & FPS */
   private lastFrameTime: number = 0;
   private currentFrameStartTime: number = 0;
   private readonly sampleSize: number = 60;
@@ -16,26 +16,26 @@ export class TelemetryAdapter implements ITelemetryAdapter {
   private totalFramesSampled: number = 0;
   private currentFps: number = 60;
 
-  // Subsystem Timings (ms)
+  /* Subsystem Timings (ms) */
   private domainTimeMs: number = 0;
   private renderTimeMs: number = 0;
   private syncTimeMs: number = 0;
   private uiTimeMs: number = 0;
   private rendererType: string = 'Canvas 2D';
 
-  // Granular File Timings (Zero-GC)
+  /* Granular File Timings (Zero-GC) */
   private fileTimingsMap: Map<string, FilePerformanceMetric> = new Map();
   private topFilesScratch: FilePerformanceMetric[] = [];
   private topDomainScratch: FilePerformanceMetric[] = [];
   private topAdapterScratch: FilePerformanceMetric[] = [];
 
-  // Thread & Event Loop Health
+  /* Thread & Event Loop Health */
   private eventLoopLagMs: number = 0;
   private eventLoopTimer: any = null;
   private longTasksCount: number = 0;
   private observer: any = null;
 
-  // Memory & GC Health
+  /* Memory & GC Health */
   private lastHeapBytes: number = 0;
   private peakHeapBytes: number = 0;
   private gcCount: number = 0;
@@ -43,12 +43,12 @@ export class TelemetryAdapter implements ITelemetryAdapter {
   private lastAllocHeapBytes: number = 0;
   private currentAllocRateMbSec: number = 0;
 
-  // Draw & Rendering Metrics
+  /* Draw & Rendering Metrics */
   private drawCalls: number = 0;
   private culledEntities: number = 0;
   private textureCacheCount: number = 0;
 
-  // Spatial & World
+  /* Spatial & World */
   private mapId: string = 'vilgem';
   private playerCoords: { x: number; y: number } = { x: 0, y: 0 };
   private currentChunk: { x: number; y: number } = { x: 0, y: 0 };
@@ -56,14 +56,14 @@ export class TelemetryAdapter implements ITelemetryAdapter {
   private cameraZoom: number = 1.0;
   private activeParticles: number = 0;
 
-  // Counters
+  /* Counters */
   private collisionChecksCounter: number = 0;
   private resolvedCollisionsCounter: number = 0;
   private eventThroughputCounter: number = 0;
   private activeEntitiesCounter: number = 0;
   private errorCount: number = 0;
 
-  // Circular log buffer
+  /* Circular log buffer */
   private readonly maxLogs: number = 50;
   private recentLogsBuffer: string[] = new Array(this.maxLogs).fill('');
   private logHead: number = 0;
@@ -123,7 +123,7 @@ export class TelemetryAdapter implements ITelemetryAdapter {
 
     if (this.lastFrameTime > 0) {
       const delta = now - this.lastFrameTime;
-      // Filtra pausas de segundo plano ou congelamento de navegador (> 2000ms) para não distorcer estatísticas
+    //? Filtra pausas de segundo plano ou congelamento (>2000ms) para não distorcer estatísticas
       if (delta > 0 && delta < 2000) {
         this.frameDeltas[this.frameDeltaIndex] = delta;
         this.frameDeltaIndex = (this.frameDeltaIndex + 1) % this.sampleSize;
@@ -137,18 +137,18 @@ export class TelemetryAdapter implements ITelemetryAdapter {
     this.lastFrameTime = now;
     this.currentFrameStartTime = now;
 
-    // Reseta métricas de subsistemas por frame para evitar acúmulo residual quando pausado
+    //! Reseta métricas de subsistemas por frame para evitar acúmulo residual quando pausado
     this.domainTimeMs = 0;
     this.renderTimeMs = 0;
     this.syncTimeMs = 0;
     this.uiTimeMs = 0;
 
-    // Reseta os contadores efêmeros por frame
+    //! Reseta contadores efêmeros por frame
     this.collisionChecksCounter = 0;
     this.resolvedCollisionsCounter = 0;
     this.eventThroughputCounter = 0;
 
-    // Reseta métricas granulares de arquivos por frame (Zero-GC)
+    //! Reseta métricas granulares de arquivos por frame (Zero-GC)
     for (const metric of this.fileTimingsMap.values()) {
       metric.durationMs = 0;
       metric.pct = 0;
@@ -167,7 +167,7 @@ export class TelemetryAdapter implements ITelemetryAdapter {
       this.longTasksCount++;
     }
 
-    // Estatísticas da janela móvel de frames (últimos 60 frames)
+    //? Estatísticas da janela móvel de frames (últimos 60 frames)
     let sumDeltas = 0;
     let maxDelta = 0;
     const count = this.totalFramesSampled;
@@ -182,7 +182,7 @@ export class TelemetryAdapter implements ITelemetryAdapter {
       if (frameTime > maxDelta) maxDelta = frameTime;
       const avgDelta = sumDeltas / count;
 
-      // Ordena scratch buffer para percentis P95 e P99 (Zero-GC)
+    //! Ordena scratch buffer para percentis P95 e P99 sem alocações (Zero-GC)
       const activeSorted = this.sortScratch.subarray(0, count);
       activeSorted.sort();
 
@@ -191,7 +191,7 @@ export class TelemetryAdapter implements ITelemetryAdapter {
       const p95 = activeSorted[p95Idx] ?? frameTime;
       const p99 = activeSorted[p99Idx] ?? frameTime;
 
-      // Jitter (desvio padrão) e frames caídos (>16.7ms e >33.3ms)
+    //? Jitter (desvio padrão) e contagem de frames caídos (>16.7ms e >33.3ms)
       let varianceSum = 0;
       let droppedCount = 0;
       let jankSpikes = 0;
@@ -239,7 +239,7 @@ export class TelemetryAdapter implements ITelemetryAdapter {
     this.snapshotState.eventLoopLagMs = this.eventLoopLagMs;
     this.snapshotState.rendererType = this.rendererType;
 
-    // Cálculo em tempo real do breakdown de recursos consumidos (% do tempo total dos módulos)
+    //? Cálculo em tempo real do percentual de tempo consumido por módulo
     const trackedTotal = this.domainTimeMs + this.renderTimeMs + this.syncTimeMs + this.uiTimeMs;
     const baseBudget = trackedTotal > 0 ? trackedTotal : Math.max(0.001, frameTime);
 
@@ -250,11 +250,10 @@ export class TelemetryAdapter implements ITelemetryAdapter {
       { name: 'UI / HUD Updates', durationMs: this.uiTimeMs, pct: Math.min(100, Math.round((this.uiTimeMs / baseBudget) * 100)) }
     ];
 
-    // Ordena decrescente: do módulo que mais consome para o que menos consome
     breakdown.sort((a, b) => b.durationMs - a.durationMs);
     this.snapshotState.moduleBreakdown = breakdown;
 
-    // Cálculo em tempo real dos Top Arquivos Mais Pesados (% do tempo do frame e da própria camada)
+    //? Cálculo em tempo real dos arquivos mais pesados por camada e frame
     this.topFilesScratch.length = 0;
     this.topDomainScratch.length = 0;
     this.topAdapterScratch.length = 0;
@@ -300,19 +299,16 @@ export class TelemetryAdapter implements ITelemetryAdapter {
     this.snapshotState.topDomainFilesBreakdown = this.topDomainScratch.slice(0, 10);
     this.snapshotState.topAdapterFilesBreakdown = this.topAdapterScratch.slice(0, 10);
 
-    // Métricas de render e cena
     this.snapshotState.drawCalls = this.drawCalls;
     this.snapshotState.culledEntities = this.culledEntities;
     this.snapshotState.textureCacheCount = this.textureCacheCount;
 
-    // Métricas espaciais
     this.snapshotState.mapId = this.mapId;
     this.snapshotState.playerCoords = this.playerCoords;
     this.snapshotState.currentChunk = this.currentChunk;
     this.snapshotState.activeChunksCount = this.activeChunksCount;
     this.snapshotState.cameraZoom = this.cameraZoom;
 
-    // Entidades e física
     this.snapshotState.activeEntities = this.activeEntitiesCounter;
     this.snapshotState.activeParticles = this.activeParticles;
     this.snapshotState.collisionChecks = this.collisionChecksCounter;
@@ -322,7 +318,6 @@ export class TelemetryAdapter implements ITelemetryAdapter {
     this.snapshotState.errorCount = this.errorCount;
     this.snapshotState.gcCount = this.gcCount;
 
-    // Métricas de Heap e Detecção de GC
     if (typeof performance !== 'undefined' && (performance as any).memory) {
       const mem = (performance as any).memory;
       const usedBytes = mem.usedJSHeapSize;
@@ -336,12 +331,12 @@ export class TelemetryAdapter implements ITelemetryAdapter {
       }
       this.snapshotState.memoryPeakMb = Math.round((this.peakHeapBytes / (1024 * 1024)) * 10) / 10;
 
-      // Se a memória usada caiu mais de 200KB, o Garbage Collector realizou uma coleta
+      //! Queda de memória >200KB indica coleta efetuada pelo Garbage Collector
       if (this.lastHeapBytes > 0 && usedBytes < this.lastHeapBytes - 200 * 1024) {
         this.gcCount++;
       }
 
-      // Taxa de Alocação de Heap (MB/s)
+      //? Taxa de alocação de Heap em MB/s
       if (this.lastAllocCheckTime === 0) {
         this.lastAllocCheckTime = now;
         this.lastAllocHeapBytes = usedBytes;
@@ -485,7 +480,7 @@ export class TelemetryAdapter implements ITelemetryAdapter {
           this.observer.observe({ entryTypes: ['longtask'] });
         }
       } catch (e) {
-        // Fallback silencioso em ambientes sem suporte
+      //? Fallback silencioso em ambientes sem suporte à API de memória
       }
     }
   }

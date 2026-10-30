@@ -21,7 +21,7 @@ export class HitboxParser {
             if (data.type === 'circle' && data.radius !== undefined) {
                 return new HitBoxCircle({ x: data.coordinates.x, y: data.coordinates.y }, data.rotation || 0, data.radius, onCollisionCallback);
             } else if (data.type === 'polygon' && data.points) {
-                // Envia as hitboxes e atrela o pivot exato do Sprite (ex: bottom-left de 64x64)
+    //? Vincula as hitboxes calculadas com o pivot do sprite
                 return new HitBoxPolygon({ x: 0, y: 0 }, 0, data.points, pivot, onCollisionCallback);
             }
             throw new Error(`Invalid hitbox data or unsupported type: ${data.type}`);

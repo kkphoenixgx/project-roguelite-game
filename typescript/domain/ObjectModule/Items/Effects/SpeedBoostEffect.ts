@@ -7,7 +7,7 @@ export default class SpeedBoostEffect extends Effect {
     }
 
     public apply(target: Entity): void {
-        target.attributes.speed = this.amount; // Setter the _bonusSpeed
+        target.attributes.speed = this.amount; //? Modificador aditivo de velocidade
         
         const attackerAny = target as any;
         if (attackerAny.eventManager) {

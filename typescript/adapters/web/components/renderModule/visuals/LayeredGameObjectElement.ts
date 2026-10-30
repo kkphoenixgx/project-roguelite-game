@@ -50,7 +50,7 @@ export default class LayeredGameObjectElement extends GameObjectElement {
 
     protected override updateAnimation(): void {
         if (this.composedLayers.length > 0) {
-            const baseConfig = this.composedLayers[0]!.config; // Guia a animação pelo elemento base
+            const baseConfig = this.composedLayers[0]!.config;
             this.frameCounter++;
             if (this.frameCounter >= baseConfig.animationSpeed) {
                 this.frameCounter = 0;
@@ -104,7 +104,7 @@ export default class LayeredGameObjectElement extends GameObjectElement {
             const sourceX = (layerFrame % columns) * layer.config.frameWidth;
             const sourceY = Math.floor(layerFrame / columns) * layer.config.frameHeight;
             
-            // Descobre a proporção real caso a HitBox (this.size) não seja 32x32 e aplica visualScale
+            //? Calcula proporção e escala visual baseando-se no frame base da hitbox
             const baseFrameWidth = this.composedLayers[0]!.config.frameWidth;
             const baseFrameHeight = this.composedLayers[0]!.config.frameHeight;
             const scaleX = (this.size.width / baseFrameWidth) * scale;
@@ -116,7 +116,7 @@ export default class LayeredGameObjectElement extends GameObjectElement {
             const logicalWidth = layer.config.renderSize?.width ?? layer.config.frameWidth;
             const logicalHeight = layer.config.renderSize?.height ?? layer.config.frameHeight;
 
-            // Ancoragem bottom-center preservada
+            //? Preserva ancoragem bottom-center ao calcular coordenadas de destino
             const destX = (this.coordinates.x - drawOffsetX) + currentOffset.x * scaleX;
             const destY = (this.coordinates.y - drawOffsetY) + currentOffset.y * scaleY;
             const destWidth = logicalWidth * scaleX;
@@ -125,7 +125,7 @@ export default class LayeredGameObjectElement extends GameObjectElement {
             ctx.drawImage(layer.image, sourceX, sourceY, layer.config.frameWidth, layer.config.frameHeight, destX, destY, destWidth, destHeight);
         }
 
-        // Aplicação do visualTint via blend mode Canvas 2D (source-atop com 35-45% opacidade, sem alocação de GC)
+        //! Aplicação de visualTint via blend mode Canvas 2D source-atop sem alocações de GC
         if (this.visualTint) {
             ctx.save();
             ctx.globalCompositeOperation = 'source-atop';
@@ -135,7 +135,6 @@ export default class LayeredGameObjectElement extends GameObjectElement {
             ctx.restore();
         }
 
-        // Aura Elemental (Ar ou Luz)
         this.drawElementalAura(ctx, pivotX, pivotY, this.size.width * scale, this.size.height * scale);
 
         ctx.restore();

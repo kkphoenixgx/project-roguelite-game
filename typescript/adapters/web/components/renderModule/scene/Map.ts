@@ -90,7 +90,7 @@ export default class GameMap {
       this.height = intermap.height ?? 1024;
       this.backgroundColor = intermap.backgroundColor ?? '#000000';
 
-      // 1. Prioridade absoluta para intermaps: os chunks vivos definidos no catálogo de intermaps
+      /* 1. Prioridade absoluta para intermaps: os chunks vivos definidos no catálogo de intermaps */
       if (intermap.chunks && Array.isArray(intermap.chunks) && intermap.chunks.length > 0) {
         this.config = {
           category: 'map',
@@ -106,7 +106,7 @@ export default class GameMap {
         }
       }
 
-      // 2. Se houver edições salvas no localStorage pelo Assets Adapter, aplica imediatamente
+      //? Sincroniza em runtime quaisquer edições dinâmicas do Assets Adapter salvas em localStorage
       if (typeof localStorage !== 'undefined') {
         try {
           const intermapsRaw = localStorage.getItem('rpg_assets_adapter_intermaps');
@@ -162,7 +162,7 @@ export default class GameMap {
     this.config = config as MapVisualConfig;
     this.chunkSize = this.config.chunkSize || 1024;
 
-    // Se houver chunks editados salvos no localStorage pelo Assets Adapter, aplica imediatamente
+    //? Sincroniza chunks do mapa persistidos dinamicamente via Assets Adapter no localStorage
     if (typeof localStorage !== 'undefined') {
       try {
         const cachedRaw = localStorage.getItem(`assets_adapter_chunks_${mapId}`);
@@ -192,11 +192,11 @@ export default class GameMap {
   public updateActiveWindow(targetX: number, targetY: number): void {
     if (!this.config) return;
 
-    // Converte coordenadas mundiais (que têm o Spawn como (0, 0)) para índices da matriz de chunks
+    //? Converte coordenadas mundiais (Spawn = 0,0) para índices da matriz de chunks
     const signedChunkX = Math.floor(targetX / this.chunkSize);
     const signedChunkY = Math.floor(targetY / this.chunkSize);
 
-    // Otimização Zero-GC: Se o alvo permaneceu no mesmo chunk assinado, o 3x3 é idêntico. Saída imediata O(1)!
+    //! Otimização Zero-GC: Se o alvo permaneceu no mesmo chunk assinado, o 3x3 é idêntico. Saída imediata O(1)!
     if (signedChunkX === this.lastChunkX && signedChunkY === this.lastChunkY) {
       return;
     }
@@ -204,11 +204,11 @@ export default class GameMap {
     this.lastChunkX = signedChunkX;
     this.lastChunkY = signedChunkY;
 
-    // Mapeia para o índice central da matriz somando a origem
+    //? Mapeia para o índice central da matriz somando a origem do mapa
     const centerCol = signedChunkX + this.originChunk.cx;
     const centerRow = signedChunkY + this.originChunk.cy;
 
-    // 1. Identifica os 9 chunks da vizinhança 3x3
+    /* 1. Identifica os 9 chunks da vizinhança 3x3 */
     const targetKeys = new Set<string>();
     const toLoad: { x: number; y: number; key: string; imageUrl: string }[] = [];
 
@@ -235,14 +235,14 @@ export default class GameMap {
       }
     }
 
-    // 2. Descarrega chunks obsoletos que saíram da vizinhança 3x3
+    /* 2. Descarrega chunks obsoletos que saíram da vizinhança 3x3 */
     for (const [key, chunk] of this.activeChunks.entries()) {
       if (!targetKeys.has(key)) {
         this.unloadChunk(key, chunk);
       }
     }
 
-    // 3. Carrega novos chunks que entraram na vizinhança 3x3
+    /* 3. Carrega novos chunks que entraram na vizinhança 3x3 */
     for (let i = 0; i < toLoad.length; i++) {
       const item = toLoad[i]!;
       this.loadChunk(item.x, item.y, item.key, item.imageUrl);
@@ -270,7 +270,7 @@ export default class GameMap {
         const chunkPosX = (chunk.x - this.originChunk.cx) * this.chunkSize;
         const chunkPosY = (chunk.y - this.originChunk.cy) * this.chunkSize;
 
-        // Frustum Culling: ignora chunks que não interceptam a viewport visível da câmera
+        //! Frustum Culling: ignora chunks que não interceptam a viewport visível da câmera
         if (camera && !camera.isInViewport(chunkPosX, chunkPosY, this.chunkSize, this.chunkSize, 0)) {
           continue;
         }
@@ -327,8 +327,7 @@ export default class GameMap {
     if (cached) {
       cached.refCount--;
       if (cached.refCount <= 0) {
-        // Ninguém mais na janela 3x3 utiliza esta imagem:
-        // Desvincula listeners e descarrega a textura para liberar a memória da GPU e do navegador
+        //! Garbage Collection manual de textura: desvincula listeners e zera src para liberar VRAM/GPU
         cached.image.onload = null;
         cached.image.onerror = null;
         cached.image.src = '';

@@ -59,7 +59,6 @@ export class AutoSaveService {
     }
 
     private registerEventSubscriptions(): void {
-        // Início da jornada
         this.eventManager.on('gameRunStarted', (payload) => {
             if (payload.saveId) {
                 this.activeSaveId = payload.saveId;
@@ -70,7 +69,7 @@ export class AutoSaveService {
             this.logger.log('domain', `[AutoSaveService] Jornada iniciada: Slot ${this.activeSlot}, SaveID ${this.activeSaveId}`);
         });
 
-        // Eventos frequentes (com debounce)
+    //? Debounce de autosave para eventos frequentes de gameplay
         this.eventManager.on('itemAddedToBackpack', () => {
             this.scheduleAutoSave('itemAddedToBackpack', false);
         });
@@ -107,7 +106,7 @@ export class AutoSaveService {
             this.scheduleAutoSave('worldItemCollected', false);
         });
 
-        // Eventos críticos (flush imediato / urgente)
+    //? Flush imediato de autosave para eventos críticos (ex: transição de mapa ou morte)
         this.eventManager.on('playerDied', () => {
             this.scheduleAutoSave('playerDied', true);
         });

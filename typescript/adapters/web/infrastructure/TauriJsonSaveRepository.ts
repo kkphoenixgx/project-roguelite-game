@@ -47,9 +47,7 @@ export class TauriJsonSaveRepository implements ISaveRepository {
   public async deleteSlot(slot: number): Promise<void> {
     try {
       await safeInvoke('delete_game_slot', { slot });
-    } catch {
-      // Ignora erro se não estiver no ambiente Tauri
-    }
+    } catch {}
     this.inMemorySlots.delete(slot);
   }
 

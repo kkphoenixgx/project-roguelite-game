@@ -12,11 +12,16 @@ export interface BeamHitContext {
 export interface IChanneledBeamDefinition {
   readonly id: string;
   readonly name: string;
-  readonly length: number; // comprimento do raio em pixels
-  readonly width: number;  // largura da linha de impacto
-  readonly tickIntervalSec: number; // intervalo entre pulsos de dano (ex: 0.15s)
-  readonly maxChannelSec: number; // duração máxima de canalização (<= 0 para infinito até soltar tecla)
-  readonly turnRateRadPerSec: number; // velocidade máxima que o feixe consegue girar acompanhando o mouse
+  /** Comprimento do raio em pixels. */
+  readonly length: number;
+  /** Largura da linha de impacto. */
+  readonly width: number;
+  /** Intervalo entre pulsos de dano (ex: 0.15s). */
+  readonly tickIntervalSec: number;
+  /** Duração máxima de canalização (<= 0 para infinito até soltar tecla). */
+  readonly maxChannelSec: number;
+  /** Velocidade máxima que o feixe consegue girar acompanhando o mouse. */
+  readonly turnRateRadPerSec: number;
   readonly particleEffect?: string | undefined;
   readonly particleColor?: string | undefined;
   readonly attackFactory: (owner: Entity) => Attack;
@@ -84,7 +89,6 @@ export class ActiveChanneledBeam {
       }
     }
 
-    // Rotação suave em direção ao ângulo alvo
     this.smoothRotate(deltaTime);
 
     this._timeUntilNextTick -= deltaTime;
@@ -111,7 +115,6 @@ export class ActiveChanneledBeam {
     const cx = this.owner.coordinates.x + this.owner.size.width / 2;
     const cy = this.owner.coordinates.y + this.owner.size.height / 2;
 
-    // Dispara partículas ao longo da linha do raio
     if (this.definition.particleEffect) {
       for (let dist = 32; dist <= this.definition.length; dist += 48) {
         const px = cx + dist * Math.cos(this.currentAngle);
@@ -126,7 +129,7 @@ export class ActiveChanneledBeam {
       }
     }
 
-    // Busca vizinhos no raio total e filtra por projeção de segmento linear
+    //? Projeção ortogonal de segmento linear para detecção precisa de contato ao longo do feixe.
     this.eventManager.dispatch('requestNeighbors', {
       coordinates: { x: cx, y: cy },
       radius: this.definition.length,
@@ -142,20 +145,17 @@ export class ActiveChanneledBeam {
           if (!target || target.id === this.owner.id || target.objectId === this.owner.objectId) continue;
           if (!('attributes' in target) || target.attributes.hp <= 0 || typeof target.takeDamage !== 'function') continue;
 
-          // Projeção vetorial do alvo na linha do feixe
           const tcx = target.coordinates.x + target.size.width / 2;
           const tcy = target.coordinates.y + target.size.height / 2;
           const toTargetX = tcx - cx;
           const toTargetY = tcy - cy;
 
-          // Produto escalar (projeção linear)
+          //? Produto escalar e distância perpendicular à reta do feixe.
           const dot = toTargetX * beamDirX + toTargetY * beamDirY;
           if (dot < 0 || dot > this.definition.length) continue;
 
-          // Distância perpendicular até a reta do feixe
           const perpDist = Math.abs(toTargetX * (-beamDirY) + toTargetY * beamDirX);
           if (perpDist <= halfWidth + (target.size.width / 2)) {
-            // Atingido pelo raio!
             this._dirCache.x = beamDirX;
             this._dirCache.y = beamDirY;
 
@@ -196,7 +196,7 @@ export default class ChanneledBeamAttackTemplate {
   private _width: number = 20;
   private _tickIntervalSec: number = 0.15;
   private _maxChannelSec: number = 5.0;
-  private _turnRateRadPerSec: number = Math.PI * 2; // 360 graus por segundo
+  private _turnRateRadPerSec: number = Math.PI * 2;
   private _particleEffect?: string | undefined;
   private _particleColor?: string | undefined;
   private _attackFactory: (owner: Entity) => Attack;

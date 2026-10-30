@@ -136,7 +136,6 @@ export class AssetDrawer {
     }
 
     private bindEvents(): void {
-        // 1. Toggle recolher gaveta
         const btnToggle = this.container.querySelector('#btn-toggle-drawer');
         btnToggle?.addEventListener('click', (e) => {
             e.preventDefault();
@@ -144,14 +143,12 @@ export class AssetDrawer {
             this.toggleCollapse();
         });
 
-        // 2. Busca em tempo real
         const searchInput = this.container.querySelector('#asset-search-input') as HTMLInputElement;
         searchInput?.addEventListener('input', (e) => {
             this.searchTerm = (e.target as HTMLInputElement).value;
             this.updateGridOnly();
         });
 
-        // 3. Toggle Fold / Unfold de Tags
         const btnToggleFold = this.container.querySelector('#btn-toggle-tags-fold');
         btnToggleFold?.addEventListener('click', () => {
             this.isTagsFolded = !this.isTagsFolded;
@@ -165,7 +162,6 @@ export class AssetDrawer {
             }
         });
 
-        // 4. Categorias
         const catTabs = this.container.querySelectorAll('.cat-tab');
         catTabs.forEach(tab => {
             tab.addEventListener('click', () => {
@@ -176,7 +172,6 @@ export class AssetDrawer {
             });
         });
 
-        // 4. Sub-filtro de tipo (Tudo / Estáticos / Sprites)
         const typePills = this.container.querySelectorAll('.type-pill');
         typePills.forEach(pill => {
             pill.addEventListener('click', () => {
@@ -187,7 +182,6 @@ export class AssetDrawer {
             });
         });
 
-        // 5. Drag and Drop dos Cards de Imagem
         this.bindDragAndDropEvents();
     }
 
@@ -198,7 +192,6 @@ export class AssetDrawer {
             const asset = this.scanner.getAssetById(assetId || '');
             if (!asset) return;
 
-            // Drag Start (HTML5 drag and drop)
             card.addEventListener('dragstart', (e: Event) => {
                 const dragEvent = e as DragEvent;
                 card.classList.add('is-dragging');
@@ -212,7 +205,6 @@ export class AssetDrawer {
                 card.classList.remove('is-dragging');
             });
 
-            // Clique direto (seleciona ou ativa)
             card.addEventListener('click', () => {
                 this.onAssetSelectedCallback?.(asset);
                 cards.forEach(c => c.classList.remove('selected'));
@@ -231,7 +223,6 @@ export class AssetDrawer {
         const countBadge = this.container.querySelector('.asset-count-badge');
         if (countBadge) countBadge.textContent = `${assets.length} itens`;
 
-        // Atualiza contadores nas pills de tipo
         const pillAll = this.container.querySelector('.type-pill[data-type="all"]');
         if (pillAll) pillAll.textContent = `Tudo (${allInCategory.length})`;
         const pillStatic = this.container.querySelector('.type-pill[data-type="static"]');

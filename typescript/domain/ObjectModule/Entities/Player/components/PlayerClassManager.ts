@@ -76,11 +76,10 @@ export default class PlayerClassManager {
     if (!this.player.attributes) return;
     const attr = this.player.attributes;
     
-    // Fallback amount para compatibilidade, o correto agora é o frontend enviar o value
+    //? Fallback para compatibilidade com eventos legados onde payload continha amount em vez de value.
     const finalAmount = amount || 1; 
     
     switch(rewardId) {
-      // Base Attributes
       case 'stat_str': attr.strength += finalAmount; break;
       case 'stat_con': attr.constitution += finalAmount; break;
       case 'stat_int': attr.intelligence += finalAmount; break;
@@ -88,7 +87,7 @@ export default class PlayerClassManager {
       case 'stat_cha': attr.charisma += finalAmount; break;
       case 'stat_wis': attr.wisdom += finalAmount; break;
       
-      // Derived Stats (setters in Attributes ADD to the bonus)
+      //? Setters em Attributes acumulam bônus percentuais aditivos.
       case 'der_speed': attr.speed = finalAmount; break;
       case 'der_crit_chance': attr.critChance = finalAmount; break;
       case 'der_crit_dmg': attr.critDamage = finalAmount; break;
@@ -104,13 +103,13 @@ export default class PlayerClassManager {
       case 'der_vigor': attr.vigor = finalAmount; break;
       case 'der_insight': attr.insight = finalAmount; break;
       
-      // Max HP needs direct manipulation since it has no setter
+      //? maxHp requer manipulação direta por não possuir setter de acúmulo relativo.
       case 'der_maxhp': 
         (attr as any)._maxHp += finalAmount; 
         attr.hp += finalAmount; 
         break;
 
-      // Legacy / Integration Test aliases
+      //? Aliases de compatibilidade para suítes de testes legadas.
       case 'local_speed': attr.speed = amount !== undefined ? amount : 10; break;
       case 'local_crit': attr.critChance = amount !== undefined ? amount : 5; break;
       case 'local_heal': attr.hp = attr.maxHp; break;
@@ -235,10 +234,7 @@ export default class PlayerClassManager {
           return;
       }
 
-      // Permite usar a habilidade se ela pertencer:
-      // 1. À classe ativa atual
-      // 2. À classe da arma equipada na mão principal (mainHand)
-      // 3. À classe da arma equipada na mão secundária (secondHand)
+      //? Resolução de permissão de skill: aceita se pertencer à classe ativa atual ou às classes das armas em mainHand/secondHand.
       const equipment = (this.player as any).equipment;
       const mainHandClass = equipment?.mainHand?.unlocksClass;
       const secondHandClass = equipment?.secondHand?.unlocksClass;
@@ -437,7 +433,6 @@ export default class PlayerClassManager {
   }
 
   private possibleLocalRewards = [
-      // Base Attributes
       { id: 'stat_str', name: 'Força', description: 'Melhora Escalonamento Físico', baseAmount: 1, type: 'stat' },
       { id: 'stat_con', name: 'Constituição', description: 'Aumenta Vida Máxima e Regen', baseAmount: 1, type: 'stat' },
       { id: 'stat_int', name: 'Inteligência', description: 'Melhora Mana e Escalonamento Mágico', baseAmount: 1, type: 'stat' },
@@ -445,22 +440,21 @@ export default class PlayerClassManager {
       { id: 'stat_cha', name: 'Carisma', description: 'Melhora Sorte Mágica', baseAmount: 1, type: 'stat' },
       { id: 'stat_wis', name: 'Sabedoria', description: 'Melhora XP e Sorte', baseAmount: 1, type: 'stat' },
       
-      // Derived Stats
       { id: 'der_speed', name: 'Velocidade', description: 'Aumenta Velocidade de Movimento', baseAmount: 5, type: 'stat' },
-      { id: 'der_crit_chance', name: 'Chance Crítica', description: 'Chance Crítica Extra', baseAmount: 3, type: 'stat' }, // %
-      { id: 'der_crit_dmg', name: 'Dano Crítico', description: 'Dano Crítico Extra', baseAmount: 10, type: 'stat' }, // %
-      { id: 'der_splash', name: 'Splash Damage', description: 'Dano em Área Extra', baseAmount: 5, type: 'stat' }, // %
+      { id: 'der_crit_chance', name: 'Chance Crítica', description: 'Chance Crítica Extra', baseAmount: 3, type: 'stat' },
+      { id: 'der_crit_dmg', name: 'Dano Crítico', description: 'Dano Crítico Extra', baseAmount: 10, type: 'stat' },
+      { id: 'der_splash', name: 'Splash Damage', description: 'Dano em Área Extra', baseAmount: 5, type: 'stat' },
       { id: 'der_def', name: 'Defesa', description: 'Defesa Extra', baseAmount: 2, type: 'stat' },
-      { id: 'der_dodge', name: 'Esquiva', description: 'Esquiva Extra', baseAmount: 2, type: 'stat' }, // %
+      { id: 'der_dodge', name: 'Esquiva', description: 'Esquiva Extra', baseAmount: 2, type: 'stat' },
       { id: 'der_luck', name: 'Sorte', description: 'Sorte Extra', baseAmount: 1, type: 'stat' },
       { id: 'der_pierce', name: 'Perfuração', description: 'Atravessa mais inimigos', baseAmount: 1, type: 'stat' },
       { id: 'der_maxhp', name: 'Vida Máxima', description: 'Aumenta a Vida Máxima', baseAmount: 10, type: 'stat' },
-      { id: 'der_lifesteal', name: 'Roubo de Vida', description: 'Cura parte do dano causado', baseAmount: 2, type: 'stat' }, // %
-      { id: 'der_area', name: 'Área de Efeito', description: 'Aumenta tamanho e área dos ataques', baseAmount: 5, type: 'stat' }, // %
-      { id: 'der_recharge', name: 'Recarga', description: 'Reduz recarga de habilidades', baseAmount: 3, type: 'stat' }, // %
-      { id: 'der_tenacity', name: 'Tenacidade', description: 'Reduz tempo de controle de grupo', baseAmount: 5, type: 'stat' }, // %
-      { id: 'der_vigor', name: 'Vigor', description: 'Aumenta cura recebida', baseAmount: 5, type: 'stat' }, // %
-      { id: 'der_insight', name: 'Percepção', description: 'Aumenta ganho de experiência', baseAmount: 5, type: 'stat' }, // %
+      { id: 'der_lifesteal', name: 'Roubo de Vida', description: 'Cura parte do dano causado', baseAmount: 2, type: 'stat' },
+      { id: 'der_area', name: 'Área de Efeito', description: 'Aumenta tamanho e área dos ataques', baseAmount: 5, type: 'stat' },
+      { id: 'der_recharge', name: 'Recarga', description: 'Reduz recarga de habilidades', baseAmount: 3, type: 'stat' },
+      { id: 'der_tenacity', name: 'Tenacidade', description: 'Reduz tempo de controle de grupo', baseAmount: 5, type: 'stat' },
+      { id: 'der_vigor', name: 'Vigor', description: 'Aumenta cura recebida', baseAmount: 5, type: 'stat' },
+      { id: 'der_insight', name: 'Percepção', description: 'Aumenta ganho de experiência', baseAmount: 5, type: 'stat' },
   ];
 
   private processLevelUp(level: number): void {
@@ -499,7 +493,7 @@ export default class PlayerClassManager {
               name: c.name,
               type: c.type as 'stat' | 'skill',
               rarity: rarity.name as any,
-              value: finalAmount, // Enviamos o finalAmount para a UI devolver
+              value: finalAmount,
               description: `+${finalAmount} ${c.name} (${c.description})`
           };
       });

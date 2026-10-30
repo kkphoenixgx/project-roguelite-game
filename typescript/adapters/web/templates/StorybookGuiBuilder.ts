@@ -111,7 +111,6 @@ export class StorybookGuiBuilder<TGui = any> {
     return {
       title,
       render: () => {
-        // Limpa possíveis instâncias anteriores presas ao document.body
         if (containerSelector) {
           document.querySelectorAll(containerSelector).forEach(el => {
             if (el.parentElement === document.body) el.remove();
@@ -130,7 +129,6 @@ export class StorybookGuiBuilder<TGui = any> {
 
         const gui = factory();
 
-        // Se houver um seletor ou container gerado pela GUI, anexa ao wrapper
         if (containerSelector) {
           const guiEl = document.querySelector(containerSelector);
           if (guiEl) wrapper.appendChild(guiEl);

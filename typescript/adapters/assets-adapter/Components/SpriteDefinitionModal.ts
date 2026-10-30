@@ -162,7 +162,6 @@ export class SpriteDefinitionModal {
         btnClose?.addEventListener('click', () => this.close());
         btnCancel?.addEventListener('click', () => this.close());
 
-        // Upload de Imagem
         const dropzone = this.modalElement.querySelector('#sprite-dropzone');
         const fileInput = this.modalElement.querySelector('#sprite-file-input') as HTMLInputElement;
         const previewImg = this.modalElement.querySelector('#sprite-preview-img') as HTMLImageElement;
@@ -174,7 +173,7 @@ export class SpriteDefinitionModal {
         const assetTypeSelect = this.modalElement.querySelector('#def-asset-type') as HTMLSelectElement;
         const categorySelect = this.modalElement.querySelector('#def-category') as HTMLSelectElement;
 
-        // Auto-reajusta frameWidth ao mudar frameCount
+        //? Recalcula frameWidth proporcionalmente ao alterar o frameCount
         frameCountInput?.addEventListener('input', () => {
             const fc = Math.max(1, parseInt(frameCountInput.value, 10) || 1);
             if (this.naturalImgWidth > 0) {
@@ -206,14 +205,12 @@ export class SpriteDefinitionModal {
             }
         });
 
-        // Suporte a URL direta
         urlInput.addEventListener('input', () => {
             if (urlInput.value.trim().length > 5) {
                 this.setImagePreview(urlInput.value.trim(), previewImg, dropContent, widthInput, heightInput, frameCountInput);
             }
         });
 
-        // Botão de Confirmação
         const btnConfirm = this.modalElement.querySelector('#btn-confirm-sprite');
         btnConfirm?.addEventListener('click', async () => {
             const presetId = (this.modalElement.querySelector('#def-preset-id') as HTMLInputElement).value.trim();
@@ -258,7 +255,7 @@ export class SpriteDefinitionModal {
 
             this.scanner.registerCustomAsset(newAsset);
 
-            // Sincroniza dinamicamente com o VisualConfigMap.ts em disco
+            //? Sincroniza dinamicamente com o VisualConfigMap.ts em disco
             await this.visualConfigSync.syncToDisk([newAsset]);
 
             this.onSpriteCreatedCallback?.(newAsset);

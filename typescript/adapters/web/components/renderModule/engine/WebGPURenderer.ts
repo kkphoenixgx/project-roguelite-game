@@ -18,7 +18,6 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
   public canvas: Canvas;
   private camera: Camera;
 
-  // Propriedades da WebGPU
   private device!: GPUDevice;
   private context!: GPUCanvasContext;
   private presentationFormat!: GPUTextureFormat;
@@ -29,21 +28,18 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
   private cameraMatrix!: Float32Array;
   private cameraBuffer!: GPUBuffer;
 
-  // Buffers e Bind Groups para instancing
   private instanceBuffer!: GPUBuffer;
   private instanceData!: Float32Array;
-  private readonly MAX_INSTANCES = 1000; // Máximo de objetos que podemos desenhar de uma vez
+  private readonly MAX_INSTANCES = 1000; //? Teto de instâncias por draw call em WebGPU
 
-  // Recursos para o Texture Atlas
   private atlasTexture!: GPUTexture;
   private atlasBindGroup!: GPUBindGroup;
   private sampler!: GPUSampler;
   private atlasSize = { width: 0, height: 0 };
 
-  // Cache memoizado para abolir as instâncias descartáveis do VisualComposer no GameLoop
+  //! Cache memoizado para abolir instâncias efêmeras no GameLoop (Zero-GC)
   private composedLayersCache = new Map<number, { hash: string, layers: { config: SpriteConfig, zIndex: number }[] }>();
 
-  // Obtém as configurações dinâmicas geradas pelos Decorators
   private spriteConfigs: Map<string, SpriteConfig> = RenderRegistry.spriteConfigs;
 
   constructor(canvas: Canvas, camera: Camera) {
@@ -86,8 +82,6 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
   }
 
   public clear(): void {
-    // No-op: Clearing is handled by the render pass descriptor in drawFrame.
-    // This method exists to satisfy the IRenderer interface.
   }
 
   /**
@@ -95,10 +89,10 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
    * Por enquanto, apenas limpa a tela com uma cor sólida.
    */
   public async drawFrame(domainState: { world: any, renderables: readonly EntityRenderableState[] }, cameraTarget: EntityRenderableState | undefined, animationManagers?: Map<number, AnimationManager>): Promise<void> {
-    // Previne crash fatal do WebGPU quando a janela do Tauri é minimizada (tamanho 0x0)
+    //? Previne crash fatal do WebGPU quando a janela é minimizada (tamanho 0x0)
     if (this.canvas.element.width === 0 || this.canvas.element.height === 0) return;
 
-    // Previne o pânico do WebGPU reconfigurando o SwapChain se a janela foi maximizada/redimensionada
+    //? Reconfigura o SwapChain após redimensionamento da janela
     if (this.canvas.element.width !== this.canvasWidth || this.canvas.element.height !== this.canvasHeight) {
       this.context.configure({
         device: this.device,
@@ -115,13 +109,12 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
     const renderPassDescriptor: GPURenderPassDescriptor = {
       colorAttachments: [{
         view: textureView,
-        clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }, // Cor de fundo preta fora dos chunks
+        clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
         loadOp: 'clear',
         storeOp: 'store',
       }],
     };
 
-    // Atualiza a matriz da câmera uma vez por frame
     this.updateCamera(cameraTarget);
 
     const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
@@ -131,7 +124,7 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
 
     if (renderables.length > 0) {
       const instanceCount = this.updateInstanceBuffer(renderables, animationManagers);
-      if (instanceCount > 0) passEncoder.draw(6, instanceCount, 0, 0); // Desenha 6 vértices, N instâncias em camadas
+      if (instanceCount > 0) passEncoder.draw(6, instanceCount, 0, 0);
     }
 
 
@@ -145,18 +138,16 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
     const viewWidth = width / zoom;
     const viewHeight = height / zoom;
 
-    // Posição da câmera centralizada no alvo
     const camX = target ? (target.coordinates.x + target.size.width / 2) - viewWidth / 2 : 0;
     const camY = target ? (target.coordinates.y + target.size.height / 2) - viewHeight / 2 : 0;
 
-    // Matriz de Projeção Ortográfica
     const left = camX;
     const right = camX + viewWidth;
     const top = camY;
     const bottom = camY + viewHeight;
 
     const sx = 2.0 / (right - left);
-    const sy = 2.0 / (top - bottom); // Invertido para WebGPU
+    const sy = 2.0 / (top - bottom); //? Invertido para convenção de eixos do WebGPU
     const tx = -(right + left) / (right - left);
     const ty = -(top + bottom) / (top - bottom);
 
@@ -171,7 +162,6 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
   }
 
     private loadSpriteConfigs(): void {
-      // No-op: O RenderRegistry já executa o bind dinamicamente via Vite.
   }
 
   public getSpriteConfig(type: objectTypeId, state?: string): SpriteConfig | undefined {
@@ -188,7 +178,7 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
       const currentFrame = animationManagers?.get(state.id)?.currentFrame || 0;
       const baseConfig = this.getSpriteConfig(state.entityTypeId, state.state);
       
-      // Cria um Hash simples e rápido em string baseado no estado mutável da entidade
+    //? Gera hash determinístico baseado no estado visual mutável da entidade
       const equipHash = state.equipment ? Object.values(state.equipment).map((e: any) => e?.iconId).join('-') : '';
       const activeBroochHash = Array.isArray(state.globalActiveLoadout) ? state.globalActiveLoadout.join(',') : '';
       const passiveBroochHash = Array.isArray(state.passiveLoadout) ? state.passiveLoadout.join(',') : '';
@@ -273,15 +263,15 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
   }
 
   private async setupRendering(): Promise<void> {
-    const vertices = new Float32Array([ // Agora os vértices são relativos ao centro (0,0)
-      // Triângulo 1 (Posição | UV)
-      -0.5,  0.5, 0, 0, // Top-left (X, Y, U, V)
-      -0.5, -0.5, 0, 1, // Bottom-left (X, Y, U, V)
-       0.5, -0.5, 1, 1, // Bottom-right (X, Y, U, V)
-      // Triângulo 2 (Posição | UV)
-      -0.5,  0.5, 0, 0, // Top-left
-       0.5, -0.5, 1, 1, // Bottom-right
-       0.5,  0.5, 1, 0, // Top-right
+    const vertices = new Float32Array([
+      /* Triângulo 1 (Posição | UV) */
+      -0.5,  0.5, 0, 0,
+      -0.5, -0.5, 0, 1,
+       0.5, -0.5, 1, 1,
+      /* Triângulo 2 (Posição | UV) */
+      -0.5,  0.5, 0, 0,
+       0.5, -0.5, 1, 1,
+       0.5,  0.5, 1, 0,
     ]);
 
     this.vertexBuffer = this.device.createBuffer({
@@ -291,8 +281,7 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
     });
     this.device.queue.writeBuffer(this.vertexBuffer, 0, vertices);
 
-    // Buffer para os dados de todas as instâncias
-    // Inst(pos,scale,rot)(8) + Anim(idx,count,offset,size)(8) = 16 floats
+    //! Buffer de instâncias: Inst(pos,scale,rot)(8) + Anim(idx,count,offset,size)(8) = 16 floats
     const INSTANCE_SIZE_IN_FLOATS = 8 + 8;
     this.instanceData = new Float32Array(this.MAX_INSTANCES * INSTANCE_SIZE_IN_FLOATS);
     this.instanceBuffer = this.device.createBuffer({
@@ -301,14 +290,12 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
 
-    // Buffer para a matriz da câmera
     this.cameraBuffer = this.device.createBuffer({
       label: "Camera Uniform Buffer",
-      size: 16 * 4, // mat4x4<f32>
+      size: 16 * 4,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
-    // Shaders (WGSL) - Atualizados para instancing
     const shaderModule = this.device.createShaderModule({
       label: 'Simple Quad Shader',
       code: `
@@ -323,11 +310,11 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
           rot: f32,
           anchor_x: f32,
           anchor_y: f32,
-          pad1: f32, // WGSL Padding Explícito (Força o offset para 32 bytes)
-          anim_data: vec2<f32>, // frameIndex, totalFrames
+          pad1: f32, //? WGSL Padding Explícito para alinhamento em 32 bytes
+          anim_data: vec2<f32>,
           atlas_offset: vec2<f32>,
           sprite_size: vec2<f32>,
-          pad2: vec2<f32>, // Mantém o tamanho da struct em 64 bytes exatos (16 floats)
+          pad2: vec2<f32>, //? Padding explícito para manter tamanho de 64 bytes (16 floats)
         };
 
         @group(0) @binding(0) var mySampler: sampler;
@@ -346,29 +333,23 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
           var output: VertexOutput;
           let instance = instances[instance_idx];
 
-          // Matriz de Rotação
           let cos_rot = cos(instance.rot);
           let sin_rot = sin(instance.rot);
           let rot_matrix = mat2x2<f32>(cos_rot, -sin_rot, sin_rot, cos_rot);
           
-          // Calcula o pivô real no mundo Canvas (Y cresce para baixo)
           let canvas_anchor_offset = vec2<f32>(instance.anchor_x, instance.anchor_y);
           let pivot_world = instance.pos + (instance.scale / 2.0) + (canvas_anchor_offset * instance.scale);
           
-          // Converte o anchor para o espaço WGSL (Y cresce para cima) invertendo o Y
           let wgsl_anchor_offset = vec2<f32>(instance.anchor_x, -instance.anchor_y);
           let pos_relative = pos - wgsl_anchor_offset;
           let rotated_pos = rot_matrix * (pos_relative * instance.scale);
 
-          // Aplica o vetor rotacionado ao pivô.
-          // ATENÇÃO: Como o rotated_pos.y está no WGSL (Y para cima), aplicamos invertendo o Y no Canvas!
+            //? Inversão do eixo Y no cálculo de pivô para compatibilizar espaço de tela com coordenadas WGSL
           var transformed_pos = pivot_world + vec2<f32>(rotated_pos.x, -rotated_pos.y);
 
-          // Calcula UVs da animação a partir do Atlas
           let frame_index = floor(instance.anim_data.x);
           let total_frames = instance.anim_data.y;
           
-          // Normaliza o tamanho do sprite em relação ao atlas
           let sprite_uv_size = instance.sprite_size / atlas_size;
           let frame_uv_size = vec2<f32>(sprite_uv_size.x / total_frames, sprite_uv_size.y);
           
@@ -394,14 +375,14 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
         entryPoint: 'vs_main',
         buffers: [
           {
-            arrayStride: 4 * 4, // 4 floats (X, Y, U, V), 4 bytes cada
+            arrayStride: 4 * 4, //? 4 floats (X, Y, U, V) com 4 bytes cada
             attributes: [{
-              shaderLocation: 0, // Corresponde ao @location(0) no shader
+              shaderLocation: 0,
               offset: 0,
               format: 'float32x2',
             }, {
-              shaderLocation: 1, // Corresponde ao @location(1) no shader (uv)
-              offset: 2 * 4, // Pula os 2 primeiros floats (X, Y)
+              shaderLocation: 1,
+              offset: 2 * 4,
               format: 'float32x2',
             }],
           },
@@ -414,15 +395,12 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
       },
     });
 
-    // Sampler global
     this.sampler = this.device.createSampler({
-      magFilter: 'nearest', // Mantém os pixels nítidos ao ampliar
-      minFilter: 'nearest', // Mantém os pixels nítidos ao reduzir
+      magFilter: 'nearest',
+      minFilter: 'nearest',
     });
 
-    // Carrega a textura do Atlas
-    // TODO: Substituir por uma URL real de um atlas combinado
-    const atlasUrl = new URL('../../assets/maps/map.jpeg', import.meta.url).href; // Usando o mapa como placeholder
+    const atlasUrl = new URL('../../assets/maps/map.jpeg', import.meta.url).href;
     const response = await fetch(atlasUrl);
     const imageBitmap = await createImageBitmap(await response.blob());
 
@@ -435,17 +413,15 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
     });
     this.device.queue.copyExternalImageToTexture({ source: imageBitmap }, { texture: this.atlasTexture }, [this.atlasSize.width, this.atlasSize.height]);
 
-    // Buffer para o tamanho do atlas
     const atlasSizeBuffer = this.device.createBuffer({
-      size: 2 * 4, // vec2<f32>
+      size: 2 * 4,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     this.device.queue.writeBuffer(atlasSizeBuffer, 0, new Float32Array([this.atlasSize.width, this.atlasSize.height]));
 
-    // Bind Group único para o Atlas
     this.atlasBindGroup = this.device.createBindGroup({
       label: `Atlas Bind Group`,
-      layout: this.renderPipeline.getBindGroupLayout(0), // Pega o layout do grupo 0 do pipeline
+      layout: this.renderPipeline.getBindGroupLayout(0),
       entries: [
         { binding: 0, resource: this.sampler },
         { binding: 1, resource: this.atlasTexture.createView() },

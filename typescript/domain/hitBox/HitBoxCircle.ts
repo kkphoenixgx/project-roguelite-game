@@ -1,4 +1,3 @@
-// Em HitBoxCircle.ts (Assumindo que Vector2D tem os métodos necessários)
 import { HitBox } from './HitBox';
 import type { HitboxDebugShape } from '../ports/domain-contracts'; 
 import Vector2D from '../shared/Vector2D';
@@ -38,9 +37,6 @@ export class HitBoxCircle extends HitBox {
             return distanceSquared <= (radiiSum * radiiSum);
         }
         
-        // if (other instanceof HitBoxPolygon) {
-        //     return this.checkCircleVsPolygon(other);
-        // }
         
         return false;
     }

@@ -35,19 +35,19 @@ export default class Attack implements IAtack {
 
     const isCritical = Math.random() * 100 < this._attacker.attributes.critChance;
 
-    let totalDamage = this.baseDamage; // Começa com o dano base
+    let totalDamage = this.baseDamage;
 
     if (this.damageType === 'physical') {
-      totalDamage += this._attacker.attributes.strength * 0.5; // Escalonamento de dano físico reduzido
+      totalDamage += this._attacker.attributes.strength * 0.5;
     } else if (this.damageType === 'magical') {
-      totalDamage += this._attacker.attributes.intelligence * 0.5; // Escalonamento de dano mágico reduzido
+      totalDamage += this._attacker.attributes.intelligence * 0.5;
     }
 
     if (isCritical) {
       totalDamage *= (this._attacker.attributes.critDamage / 100);
     }
 
-    // Aplica multiplicador dinâmico de dano concedido por broches/buffs (ex: Berserk)
+    //? Multiplicador dinâmico de dano provido por broches/buffs (ex: Berserk).
     if ((this._attacker as any).classManager?.broochManager) {
       totalDamage *= (this._attacker as any).classManager.broochManager.getDamageMultiplier();
     }
@@ -60,36 +60,35 @@ export default class Attack implements IAtack {
       attacker: this._attacker,
     });
 
-    // Se o alvo foi derrotado e o atacante é o jogador, concede o XP.
     if (target.attributes.hp <= 0 && this._attacker.objectId === 'player') {
       if ('xpGiven' in target) {
         (this._attacker as any).gainXp((target as any).xpGiven);
       }
     }
 
-    // Dispara hooks pós-ataque de broches equipados (ex: Dente do Vampiro, Núcleo Piromante)
+    //? Despacha hooks pós-ataque para broches e habilidades passivas do atacante.
     if ((this._attacker as any).classManager?.broochManager) {
       (this._attacker as any).classManager.broochManager.onAfterAttack(target, isCritical, damageDealt);
     }
 
-    // Vampirismo (Lifesteal) - Cura a entidade atacante baseada no dano real causado!
+    //? Vampirismo (Lifesteal): cura proporcional ao dano líquido efetivamente desferido.
     const lifestealPercent = this._attacker.attributes.lifesteal;
     if (lifestealPercent > 0 && damageDealt > 0) {
       const healAmount = damageDealt * (lifestealPercent / 100);
-      this._attacker.attributes.hp += healAmount; // Setter barra cura extra limitando ao maxHp
+      this._attacker.attributes.hp += healAmount;
       
       const attackerAny = this._attacker as any;
       if (attackerAny.eventManager) {
         const cx = this._attacker.coordinates.x + this._attacker.size.width / 2;
         const cy = this._attacker.coordinates.y + this._attacker.size.height / 2;
-        attackerAny.eventManager.dispatch('particle', { effect: 'magicAura', x: cx, y: cy, color: '#ff2a2a' }); // Gotículas de sangue voltando
+        attackerAny.eventManager.dispatch('particle', { effect: 'magicAura', x: cx, y: cy, color: '#ff2a2a' });
       }
     }
 
-    // Executa as ações de impacto sem instanciar literais (Zero-GC)
+    //! Execução de onHitActions sob disciplina Zero-GC.
     this.onHitActions.forEach(action => action(this._attacker, target, damageDealt));
 
-    // Lâmina Anti-Magia: purga até 1 buff mágico (Tier <= 3) do alvo atingido
+    //? Efeito de purga: remove até 1 buff mágico do alvo atingido.
     if (this._attacker.hasAntiMagicBlade && target.activeStatusesList && target.activeStatusesList.length > 0) {
       for (let i = target.activeStatusesList.length - 1; i >= 0; i--) {
         const status = target.activeStatusesList[i]!;

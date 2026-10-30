@@ -1,18 +1,6 @@
 # Notas para fazer quando volto a programar o jogo
 
-- [Requisito] 
+- [x] Correção de Unhandled Promise Rejection para mapas sem configuração visual (`cemii` e `alun`):
+  - Criar e registrar entradas com chunks válidos em `VisualConfigMap.ts` para os mapas de biomas secundários (`cemii` e `alun`) ou usar fallback seguro com chunks repetidos para evitar quebra no `GameMap`.
 
-
-[CRASH REPORT]
-Context: Unhandled Promise Rejection
-Message: Configuração visual não encontrada para o mapa: cemii
-Stack:
-GameMap@http://localhost:5173/typescript/adapters/web/components/renderModule/scene/Map.ts:123:22
-@http://localhost:5173/typescript/adapters/web/components/GameAdapter.ts:493:31
-
-[CRASH REPORT]
-Context: Unhandled Promise Rejection
-Message: Configuração visual não encontrada para o mapa: alun
-Stack:
-GameMap@http://localhost:5173/typescript/adapters/web/components/renderModule/scene/Map.ts:123:22
-@http://localhost:5173/typescript/adapters/web/components/GameAdapter.ts:493:31
+- [Requisito]

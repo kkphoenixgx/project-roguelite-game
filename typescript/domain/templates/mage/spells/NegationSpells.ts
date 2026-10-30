@@ -38,14 +38,13 @@ export const axiomaticFizzleDynamicRule: DynamicSpellRule = {
     const hasNegation = ctx.elements.includes('negation');
     if (!hasNegation) return false;
 
-    // Se for um encantamento válido de Lâmina Anti-Magia (Self + Potência + Negação + Magia), não causa fizzle
+    //? Combinação Self + Potência + Negação + Magia forma o encantamento de Lâmina Anti-Magia sem fizzle
     const isSelfInfusion = ctx.forms.includes('self') &&
       (ctx.elements.includes('potencia') || (ctx.grammar.rawElements.includes('magic') && ctx.grammar.rawElements.includes('fire'))) &&
       (ctx.elements.includes('magic') || ctx.grammar.rawElements.includes('magic'));
     if (isSelfInfusion) return false;
 
-    // Elementos materiais proibidos quando combinados com Negação
-    // Apenas 'magic' é o vetor conceitual permitido para Dispel/Anti-Magia
+    //? Elementos materiais proibidos em conjunção com a runa de Negação
     const forbiddenElements = [
       'fire', 'water', 'ground', 'dark', 'light', 'potencia', 'ice',
       'life', 'caos', 'ordem', 'air', 'magma', 'infernous', 'thunder',
@@ -58,7 +57,6 @@ export const axiomaticFizzleDynamicRule: DynamicSpellRule = {
   execute: (ctx) => {
     const { player, eventManager, manaCost, spawnCoordinates } = ctx;
 
-    // Dispara partícula de fumaça cinzenta/falha
     eventManager.dispatch('particle', {
       effect: 'magicAura' as any,
       x: spawnCoordinates.x,
@@ -71,7 +69,7 @@ export const axiomaticFizzleDynamicRule: DynamicSpellRule = {
       params: []
     });
 
-    // O atrito da anulação interna consome o mana
+    //? Consome mana integralmente mesmo em caso de falha mágica por atrito de anulação
     player.attributes.mana = Math.max(0, (player.attributes.mana || 0) - manaCost);
     return false;
   }
@@ -97,7 +95,6 @@ export const bladeInfusionAntiMagicDynamicRule: DynamicSpellRule = {
     const { player, eventManager, manaCost } = ctx;
     const duration = 5;
 
-    // Ativa flag de lâmina anti-magia no jogador
     (player as any).hasAntiMagicBlade = true;
 
     player.applyStatus?.({
@@ -152,7 +149,7 @@ export const selfCleanseDynamicRule: DynamicSpellRule = {
   execute: (ctx) => {
     const { player, eventManager, manaCost } = ctx;
 
-    // Purga até 1 debuff/status mágico ativo no próprio jogador de Tier <= 3
+    //? Purga até um debuff mágico de Tier <= 3 ativo no conjurador
     let purged = false;
     if (player.activeStatusesList && player.activeStatusesList.length > 0) {
       for (let i = player.activeStatusesList.length - 1; i >= 0; i--) {

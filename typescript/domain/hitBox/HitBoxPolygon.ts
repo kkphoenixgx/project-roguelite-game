@@ -26,7 +26,7 @@ export default class HitBoxPolygon extends HitBox {
     }
 
     public getRotatedPoints(): {x: number, y: number}[] {
-        // Memoization rigorosa para evitar realocações (Zero-GC)
+  //! Memoization rigorosa para evitar realocações dinâmicas de vértices (Zero-GC)
         if (this.rotation === this.lastRot && this.coordinates.x === this.lastX && this.coordinates.y === this.lastY) {
             return this.rotatedPoints;
         }
@@ -53,8 +53,7 @@ export default class HitBoxPolygon extends HitBox {
         this.debugShape.coordinates.x = this.coordinates.x;
         this.debugShape.coordinates.y = this.coordinates.y;
         this.debugShape.rotation = this.rotation;
-        // this.debugShape.points já referencia this.rotatedPoints no construtor
-        this.getRotatedPoints(); // Computa ou puxa do cache
+        this.getRotatedPoints(); //! Computa ou obtém vértices do cache memoizado
         return this.debugShape;
     }
 }

@@ -40,28 +40,28 @@ export interface GameEventMap {
   bdiAction: { agent: string; action: string; [key: string]: any };
   panteaoError: { message: string, data?: any };
 
-  // Map & Intermap Transitions
+  //? Map & Intermap Transitions
   mapTransitionRequested: { targetMapId: string; targetCoordinates?: { x: number; y: number } };
   mapTransitionCompleted: { mapId: string; coordinates: { x: number; y: number } };
   portalPromptShow: { portalId: number; targetMapId: string; text: string; actionKey: string; coordinates: { x: number; y: number } };
   portalPromptHide: { portalId: number };
   portalInteract: { portalId?: number };
 
-  // World & Chunk Navigation
+  //? World & Chunk Navigation
   activeChunkChanged: {
     previousChunk: import("../ports/domain-contracts").ChunkCoordDTO;
     currentChunk: import("../ports/domain-contracts").ChunkCoordDTO;
     activeChunks: import("../ports/domain-contracts").ChunkCoordDTO[];
   };
   
-  // Asset & Scenery State Triggers (Interações no Mundo, Abertura de Portões, etc.)
+  //? Asset & Scenery State Triggers (Interações no Mundo, Abertura de Portões, etc.)
   triggerAssetState: import("../ports/domain-contracts").TriggerAssetStateDTO;
   assetStateChanged: import("../ports/domain-contracts").AssetStateChangedDTO;
   
-  // Meta-Progression
+  //? Meta-Progression
   featAchieved: { featId: string; name: string; essenceReward: number };
 
-  // Tools & Belt (Paperdoll Storage Secundário e Ações Sandbox)
+  //? Tools & Belt (Paperdoll Storage Secundário e Ações Sandbox)
   toolEquippedInBelt: { beltSlotIndex: number; tool: any };
   toolUnequippedFromBelt: { beltSlotIndex: number; tool: any };
   activeToolChanged: { activeIndex: number; tool: any | null };
@@ -74,7 +74,7 @@ export interface GameEventMap {
   };
   toolActionResult: { success: boolean; message: string; reason?: string; modifiedTile?: any };
   
-  // Semantic UI Actions (Decoupled from Facade)
+  //? Semantic UI Actions (Decoupled from Facade)
   inventoryAction: { 
     action: 'equip' | 'unequip' | 'consume' | 'delete' | 'equipTool' | 'unequipTool' | 'selectTool' | 'swapWeapons'; 
     payload: { index?: number; slot?: string; beltSlotIndex?: number } 
@@ -83,22 +83,22 @@ export interface GameEventMap {
   attributeAction: { action: 'allocate', payload: { attribute: string } };
   rewardAction: { action: 'claimLocal', payload: { rewardId: string; amount?: number; rarity?: string } };
   
-  // Cooldowns
+  //? Cooldowns
   skillCooldownStarted: { skillId: string; totalMs: number; remainingMs: number };
   
-  // State Updates for UI
+  //? State Updates for UI
   inventoryUpdated: { backpack: any[], equipment: any };
   skillTreeUpdated: { skills: any[], loadout: any, passiveLoadout?: any[], globalActiveLoadout?: any[] };
   
-  // LLM / AI Modding & Preset Event
+  //? LLM / AI Modding & Preset Event
   llmPresetChanged: { preset: import("../ports/domain-contracts").CustomLLMPresetDTO };
 
-  // Narrative & Class Evolution Events
+  //? Narrative & Class Evolution Events
   storyMilestoneUnlocked: { milestoneId: string; title?: string | undefined; description?: string | undefined };
   classStageAscended: { className: string; oldStage: number; newStage: number; stageTitle: string; visualTint?: string | undefined };
   classRegistered: { className: string; autoUnlocked: boolean };
 
-  // Auto-Save Service Events
+  //? Auto-Save Service Events
   itemAddedToBackpack: { item: any };
   skillPointSpent: { skillId: string; remainingPoints?: number };
   attributeAllocated: { attribute: string };

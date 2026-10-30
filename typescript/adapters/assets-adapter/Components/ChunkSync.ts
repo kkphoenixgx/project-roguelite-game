@@ -25,7 +25,7 @@ export class ChunkSync {
                 if (!cell || cell.trim() === '') {
                     rowEntries.push(`        ''`);
                 } else if (cell.includes('/assets/')) {
-                    // Normaliza caminho relativo ao VisualConfigMap
+                    //? Normaliza caminho relativo ao módulo VisualConfigMap
                     const relativePath = cell.includes('../assets/') 
                         ? cell 
                         : cell.substring(cell.indexOf('/assets/')).replace('/assets/', '../assets/');
@@ -50,7 +50,7 @@ export class ChunkSync {
      * Sincroniza a nova matriz de chunks e as dimensões calculadas do mundo em disco via API do Vite e no localStorage.
      */
     public async syncChunksToDisk(mapId: string, chunks: string[][], width: number, height: number, originChunk?: { cx: number; cy: number }): Promise<boolean> {
-        // Salva imediatamente no localStorage (persistência imediata sem risco de perda no reload)
+        //? Persistência síncrona no localStorage para prevenir perda de estado em reloads
         if (typeof localStorage !== 'undefined') {
             try {
                 localStorage.setItem(`assets_adapter_chunks_${mapId}`, JSON.stringify({ 
@@ -126,7 +126,6 @@ export class ChunkSync {
                 const data = await res.json();
                 if (data.chunks && Array.isArray(data.chunks)) {
                     const originChunk = data.originChunk || (mapId === 'vilgem' ? { cx: 1, cy: 1 } : { cx: 0, cy: 0 });
-                    // Atualiza cache local
                     if (typeof localStorage !== 'undefined') {
                         try {
                             localStorage.setItem(`assets_adapter_chunks_${mapId}`, JSON.stringify({
@@ -145,9 +144,7 @@ export class ChunkSync {
                     };
                 }
             }
-        } catch {
-            // Em caso de erro de rede ou offline, utiliza o cache local
-        }
+        } catch {}
         return cached;
     }
 }

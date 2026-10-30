@@ -13,7 +13,6 @@ export default class Gunslinger extends Class {
 
     constructor(xpTable: IXPTable, player: IPlayer, eventManager: IEventManager) {
         super('Gunslinger', xpTable, player, eventManager);
-        // A identidade da classe: Define QUAIS skills são entregues aos ganchos de nível
         this.skillsByLevel.set(1, new Skill('gs_t1_quickdraw', 'Saque Rápido', 'Reduz drasticamente o cooldown do tiro principal.', 'essential', 1, undefined, undefined, undefined, undefined, true));
         this.skillsByLevel.set(4, new Skill('gs_t2_fanhammer', 'Fan the Hammer', 'Descarrega o tambor da arma causando dano explosivo em área.', 'active', 2, 'gs_t1_quickdraw', undefined, undefined, undefined, true));
         this.skillsByLevel.set(6, new Skill('gs_t3_deadeye', 'Caminho do Franco-Atirador', 'Especialize-se na Subclasse Franco-Atirador para dano crítico avassalador.', 'rare', 3, 'gs_t2_fanhammer'));
@@ -42,7 +41,7 @@ export default class Gunslinger extends Class {
             
             for (let i = 0; i < 6; i++) {
                 setTimeout(() => {
-                    const angleOffset = (Math.random() - 0.5) * 0.5; // Espalhamento
+                    const angleOffset = (Math.random() - 0.5) * 0.5; //? Dispersão angular aleatória simulando recuo
                     const cos = Math.cos(angleOffset);
                     const sin = Math.sin(angleOffset);
                     const dir = new Vector2D(

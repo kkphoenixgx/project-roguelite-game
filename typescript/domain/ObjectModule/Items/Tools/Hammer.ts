@@ -15,7 +15,7 @@ export default class Hammer extends Tool {
     }
 
     public canUseInZone(zoneType: 'city' | 'wilderness' | 'farmland'): boolean {
-        // Martelo para construção/personalização residencial só é permitido em cidades/vilas
+    //? Martelo restrito para uso residencial em cidades e vilas
         return zoneType === 'city';
     }
 }

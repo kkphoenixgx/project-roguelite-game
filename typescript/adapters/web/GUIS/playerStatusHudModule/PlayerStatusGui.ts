@@ -120,7 +120,7 @@ export default class PlayerStatusGui {
         const hpPercentage = data.maxHp > 0 ? Math.max(0, Math.min(100, (data.hp / data.maxHp) * 100)) : 0;
         const manaPercentage = data.maxMana > 0 ? Math.max(0, Math.min(100, (data.mana / data.maxMana) * 100)) : 0;
 
-        // Reação Visual da Barra de HP aos Status Elementais (Dirty Checking Estrito)
+        //? Dirty checking de status elementais para customizar estilização da barra de HP
         if (data.activeStatuses) {
             let isPoisoned = false;
             let isBurning = false;
@@ -148,8 +148,7 @@ export default class PlayerStatusGui {
                 const isDamage = hpPercentage < this.lastHpPercentage;
                 const diff = Math.abs(hpPercentage - this.lastHpPercentage);
                 
-                // Otimização de CPU: Só aplica as transições caras se for um chunk de dano (> 1%).
-                // Se for dano/cura contínua (ex: Veneno) a cada frame, desliga a transição.
+                //? Otimização de CPU: desativa transição CSS cara em danos/curas contínuas menores que 1%
                 if (diff > 1.0) {
                     if (isDamage) {
                         this.hpBarFill.style.transition = 'width 0.1s ease-out';
@@ -191,12 +190,12 @@ export default class PlayerStatusGui {
         if (manaStr !== this.lastManaText) { this.manaText.textContent = manaStr; this.lastManaText = manaStr; }
 
         if (this.statusContainer && data.activeStatuses) {
-            // Otimização Zero-GC: Evita criar novos Sets e Arrays a cada frame
+            //! Otimização Zero-GC: iteração reversa direta em children sem alocação de Sets e Arrays temporários
             const children = this.statusContainer.children;
             for (let i = children.length - 1; i >= 0; i--) {
                 const child = children[i] as HTMLElement;
                 if (!child) continue;
-                const statusId = child.id.slice(7); // remove 'status-'
+                const statusId = child.id.slice(7);
                 let exists = false;
                 for (let j = 0; j < data.activeStatuses.length; j++) {
                     if (data.activeStatuses[j]?.id === statusId) { exists = true; break; }

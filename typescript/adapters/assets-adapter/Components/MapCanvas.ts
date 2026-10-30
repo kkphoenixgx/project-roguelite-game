@@ -18,21 +18,18 @@ export class MapCanvas {
     private ctx: CanvasRenderingContext2D;
     private container: HTMLElement;
 
-    // Configuração do Mapa Atual
     private mapConfig: SelectedMapConfig;
     private chunkImages: Map<string, HTMLImageElement> = new Map();
     private spriteImages: Map<string, HTMLImageElement> = new Map();
 
-    // Transformações da Câmera (Pan & Zoom)
     public panX: number = 0;
     public panY: number = 0;
-    public zoom: number = 0.5; // Começa vendo uma boa área do mapa
+    public zoom: number = 0.5; //? Zoom inicial de visualização ampla do mapa
     private isPanning: boolean = false;
     private panStartX: number = 0;
     private panStartY: number = 0;
     private isSpacePressed: boolean = false;
 
-    // Assets posicionados no mapa
     public placedAssets: PlacedAssetModel[] = [];
     public selectedAsset: PlacedAssetModel | null = null;
     public selectedAssets: PlacedAssetModel[] = [];
@@ -44,7 +41,6 @@ export class MapCanvas {
     private dragStartWorldY: number = 0;
     private dragInitialPositions: Map<string, { x: number; y: number }> = new Map();
 
-    // Seleção em Área tipo Desktop (Marquee Box Selection)
     public isBoxSelecting: boolean = false;
     public boxSelectStartScreenX: number = 0;
     public boxSelectStartScreenY: number = 0;
@@ -52,61 +48,53 @@ export class MapCanvas {
     public boxSelectCurrentScreenY: number = 0;
     public lastMouseWorldPos: { x: number; y: number } = { x: 0, y: 0 };
 
-    // Redimensionamento interativo pelas alças (Handles)
     private isResizingAsset: boolean = false;
     private activeResizeHandle: 'nw' | 'ne' | 'se' | 'sw' | null = null;
     private resizeStartWorldX: number = 0;
     private resizeStartWorldY: number = 0;
     private initialAssetRect: { x: number; y: number; width: number; height: number } | null = null;
 
-    // Pan com Touchpad (Dois Dedos) e Touch Screens
     private isTouchPanning: boolean = false;
     private touchStartPanX: number = 0;
     private touchStartPanY: number = 0;
     private touchInitialDist: number = 0;
     private touchInitialZoom: number = 1;
 
-    // Configurações de Exibição (Posicionamento 100% livre pixel a pixel por padrão)
     public showGrid: boolean = false;
     public gridSize: number = 32;
     public snapToGrid: boolean = false;
     public showChunkBorders: boolean = true;
-    public showHitboxes: boolean = false; // Tecla F2: Exibição visual de hitboxes
-    public showPlayerReference: boolean = true; // Referência visual do player idle no canto direito inferior (Tecla P)
-    public playerRefFollowZoom: boolean = true; // Segue o zoom da câmera para manter proporção real com os chunks
+    public showHitboxes: boolean = false; //? Alternância de exibição visual de hitboxes
+    public showPlayerReference: boolean = true; //? Exibição do player idle de referência proporcional
+    public playerRefFollowZoom: boolean = true; //? Segue o zoom da câmera para manter proporção 1:1 com os chunks
     public getAssetDefinition?: ((presetId: string) => AssetDefinition | undefined) | undefined;
     private dynamicHitboxCatalog: Record<string, any> | null = null;
     public mapCollisionLayers: any[] = [];
     private loadedMapCollisionId: string = '';
 
-    // Ghost Preview durante Drag & Drop externo
     private ghostAsset: { asset: AssetDefinition, worldX: number, worldY: number } | null = null;
     private animationTime: number = 0;
 
-    // Modo Carimbo / Pincel Contínuo (Stamp Tool - Tecla B)
     public isStampMode: boolean = false;
     public activeStampAsset: AssetDefinition | null = null;
     public onStampModeChanged?: ((active: boolean, asset?: AssetDefinition | null) => void) | undefined;
 
-    // Pincel de Textura de Chunk (Chunk Texture Brush Tool - Tecla T)
     public isChunkBrushMode: boolean = false;
-    public chunkBrushRadius: number = 48; // Raio em pixels no mundo (8px a 256px)
-    public chunkBrushSoftness: number = 0.25; // Suavidade da borda radial (0 = dura, 0..1 = suave)
-    public chunkBrushOpacity: number = 1.0; // Opacidade da pincelada (0.1 a 1.0)
+    public chunkBrushRadius: number = 48; //? Raio da área de pintura em pixels no mundo
+    public chunkBrushSoftness: number = 0.25; //? Fator de suavidade radial da borda do pincel
+    public chunkBrushOpacity: number = 1.0; //? Opacidade da pincelada de textura
     public activeBrushTextureUrl: string = '/assets/maps/vilgem/grass_seamless_base.png';
     public activeBrushTextureName: string = 'Grama Nativa de Vilgem (Sem Emendas)';
-    public mergeBrushStrokes: boolean = true; // Acumula pinceladas consecutivas na mesma área pintada
+    public mergeBrushStrokes: boolean = true; //? Mesclagem de pinceladas consecutivas na mesma área
     public activePaintedAsset: PlacedAssetModel | null = null;
     private isPaintingBrushStroke: boolean = false;
     private lastBrushWorldPoint: { x: number; y: number } | null = null;
     private paintedLayerCanvases: Map<string, HTMLCanvasElement> = new Map();
     public onChunkBrushModeChanged?: ((active: boolean) => void) | undefined;
 
-    // Histórico para Undo/Redo
     private history: PlacedAssetModel[][] = [];
     private historyIndex: number = -1;
 
-    // Callbacks
     private onAssetSelectedCallback?: ((asset: PlacedAssetModel | null) => void) | undefined;
     private onAssetChangedCallback?: (() => void) | undefined;
 
@@ -314,7 +302,6 @@ export class MapCanvas {
         const centerX = (-originCx * chunkSize) + mw / 2;
         const centerY = (-originCy * chunkSize) + mh / 2;
 
-        // Ajusta o zoom inicial para caber com folga
         this.zoom = Math.min(cw / (mw * 1.1), ch / (mh * 1.1), 0.7);
         this.panX = cw / 2 - centerX * this.zoom;
         this.panY = ch / 2 - centerY * this.zoom;
@@ -330,10 +317,6 @@ export class MapCanvas {
         this.centerMap();
     }
 
-    // =========================================================================
-    // EVENTOS E INTERAÇÃO
-    // =========================================================================
-
     private bindEvents(): void {
         if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
             window.addEventListener('resize', () => {
@@ -342,7 +325,7 @@ export class MapCanvas {
             });
         }
 
-        // 1. Navegação no Mapa: Pan Fluido com Dois Dedos no Touchpad / Wheel e Zoom com Ctrl ou Pinch
+    //? Navegação no mapa: pan bidimensional fluido e zoom centrado no cursor
         this.canvas.addEventListener('wheel', (e) => {
             e.preventDefault();
 
@@ -350,7 +333,6 @@ export class MapCanvas {
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
 
-            // Alt + Scroll no Modo Pincel de Chunk: ajusta dinamicamente o raio do pincel
             if (this.isChunkBrushMode && e.altKey) {
                 const deltaRadius = e.deltaY < 0 ? 4 : -4;
                 this.setChunkBrushRadius(this.chunkBrushRadius + deltaRadius);
@@ -358,12 +340,11 @@ export class MapCanvas {
                 return;
             }
 
-            // Zoom com Ctrl pressionado (gesto de pinça do touchpad no navegador ou Ctrl + scroll)
             if (e.ctrlKey || e.metaKey) {
                 const zoomFactor = e.deltaY < 0 ? 1.05 : 0.95;
                 const newZoom = Math.max(0.08, Math.min(5.0, this.zoom * zoomFactor));
 
-                // Mantém o ponto mundial sob o cursor estático na tela
+        //? Preserva o ponto mundial sob o cursor estático durante alteração de zoom
                 this.panX = mouseX - (mouseX - this.panX) * (newZoom / this.zoom);
                 this.panY = mouseY - (mouseY - this.panY) * (newZoom / this.zoom);
                 this.zoom = newZoom;
@@ -372,7 +353,6 @@ export class MapCanvas {
                 return;
             }
 
-            // Shift + Scroll: Pan prioritariamente horizontal
             if (e.shiftKey) {
                 const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
                 this.panX -= delta;
@@ -380,22 +360,18 @@ export class MapCanvas {
                 return;
             }
 
-            // Touchpad com 2 dedos (rolagem livre bidimensional) ou scroll padrão:
-            // Move o mapa com sensibilidade 1:1 fluida e natural
             this.panX -= e.deltaX;
             this.panY -= e.deltaY;
             this.render();
         }, { passive: false });
 
         if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-            // 2. Teclado (Pan, Seleção, Clipboard Ctrl+C/Ctrl+V, Ctrl+A, Del, Ctrl+D, Ctrl+Z/Y)
             window.addEventListener('keydown', (e) => {
                 if (e.code === 'Space' && !this.isSpacePressed) {
                     this.isSpacePressed = true;
                     this.canvas.style.cursor = 'grab';
                 }
 
-                // Clipboard & Seleção Global
                 if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && !this.isTypingInInput()) {
                     e.preventDefault();
                     this.copySelected();
@@ -430,7 +406,6 @@ export class MapCanvas {
                     e.preventDefault();
                     this.redo();
                 }
-                // Espelhamento com H (Horizontal) e V (Vertical)
                 if (e.key.toLowerCase() === 'h' && hasSelection && !this.isTypingInInput()) {
                     e.preventDefault();
                     this.flipSelectedX();
@@ -439,54 +414,44 @@ export class MapCanvas {
                     e.preventDefault();
                     this.flipSelectedY();
                 }
-                // Naturalizar com N (Deslocamento aleatório em raio pequeno e leve variação de escala)
                 if (e.key.toLowerCase() === 'n' && hasSelection && !this.isTypingInInput()) {
                     e.preventDefault();
                     this.naturalizeSelected();
                 }
-                // Centralizar com o Chunk com C (apenas quando não pressionado com Ctrl/Cmd para não conflitar com cópia)
                 if (e.key.toLowerCase() === 'c' && !e.ctrlKey && !e.metaKey && hasSelection && !this.isTypingInInput()) {
                     e.preventDefault();
                     this.centerSelectedInChunk();
                 }
-                // Girar com R (+90°) ou Shift+R (-90°)
                 if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.metaKey && hasSelection && !this.isTypingInInput()) {
                     e.preventDefault();
                     this.rotateSelectedBy(e.shiftKey ? -90 : 90);
                 }
-                // Tecla F2: Alternar exibição visual de hitboxes
                 if (e.key === 'F2' && !this.isTypingInInput()) {
                     e.preventDefault();
                     this.toggleHitboxes();
                 }
-                // Tecla P: Alternar referência do Player Idle no canto inferior
                 if (e.key.toLowerCase() === 'p' && !e.ctrlKey && !e.metaKey && !this.isTypingInInput()) {
                     e.preventDefault();
                     this.togglePlayerReference();
                 }
-                // Tecla L: Alternar Bloqueio (Lock) dos assets selecionados
                 if (e.key.toLowerCase() === 'l' && !e.ctrlKey && !e.metaKey && hasSelection && !this.isTypingInInput()) {
                     e.preventDefault();
                     this.toggleLockSelected();
                 }
-                // Tecla B: Alternar Modo Carimbo (Stamp Tool)
                 if (e.key.toLowerCase() === 'b' && !e.ctrlKey && !e.metaKey && !this.isTypingInInput()) {
                     e.preventDefault();
                     this.toggleStampMode();
                 }
-                // Tecla T: Alternar Pincel de Textura de Chunk (Chunk Brush Tool)
                 if (e.key.toLowerCase() === 't' && !e.ctrlKey && !e.metaKey && !this.isTypingInInput()) {
                     e.preventDefault();
                     this.toggleChunkBrushMode();
                 }
-                // Teclas [ e ] para ajustar o raio do Pincel de Chunk quando ativo
                 if (this.isChunkBrushMode && (e.key === '[' || e.key === ']') && !this.isTypingInInput()) {
                     e.preventDefault();
                     const step = e.shiftKey ? 16 : 6;
                     this.setChunkBrushRadius(this.chunkBrushRadius + (e.key === ']' ? step : -step));
                     this.onAssetChangedCallback?.();
                 }
-                // Tecla Escape: Cancelar Chunk Brush Mode, Stamp Mode ou desselecionar assets
                 if (e.key === 'Escape' && !this.isTypingInInput()) {
                     e.preventDefault();
                     if (this.isChunkBrushMode) {
@@ -497,7 +462,6 @@ export class MapCanvas {
                         this.selectAsset(null);
                     }
                 }
-                // Movimentação fina com as setas para todos os selecionados
                 if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && hasSelection && !this.isTypingInInput()) {
                     e.preventDefault();
                     const step = e.shiftKey ? 10 : (this.snapToGrid ? this.gridSize : 1);
@@ -522,13 +486,11 @@ export class MapCanvas {
             });
         }
 
-        // 3. Mouse Down (Pan ou Seleção / Arraste de Asset)
         this.canvas.addEventListener('mousedown', (e) => {
             const rect = this.canvas.getBoundingClientRect();
             const mouseScreenX = e.clientX - rect.left;
             const mouseScreenY = e.clientY - rect.top;
 
-            // Pan com botão do meio (1) ou espaço + botão esquerdo (0)
             if (e.button === 1 || (e.button === 0 && this.isSpacePressed)) {
                 this.isPanning = true;
                 this.panStartX = mouseScreenX - this.panX;
@@ -537,7 +499,6 @@ export class MapCanvas {
                 return;
             }
 
-            // Clique sobre a Referência do Player no Canto Inferior Direito: Alterna modo de escala (Zoom vs 1x)
             if (e.button === 0 && this.showPlayerReference) {
                 const refRect = this.getPlayerReferenceRect();
                 if (
@@ -552,18 +513,15 @@ export class MapCanvas {
                 }
             }
 
-            // Botão Esquerdo: Pincel de Textura de Chunk ou Carimbo ou Resize Handle ou Seleção
             if (e.button === 0) {
                 const worldPos = this.screenToWorld(mouseScreenX, mouseScreenY);
                 this.lastMouseWorldPos = { x: worldPos.x, y: worldPos.y };
 
-                // -1. Modo Pincel de Textura de Chunk (Chunk Texture Brush Tool)
                 if (this.isChunkBrushMode) {
                     this.startBrushStroke(worldPos.x, worldPos.y);
                     return;
                 }
 
-                // 0. Modo Carimbo Contínuo (Stamp Tool): posiciona réplica com clique direto
                 if (this.isStampMode && this.activeStampAsset) {
                     let placeX = worldPos.x - this.activeStampAsset.width / 2;
                     let placeY = worldPos.y - this.activeStampAsset.height / 2;
@@ -598,7 +556,6 @@ export class MapCanvas {
                     return;
                 }
 
-                // 1. Verifica primeiro se clicou em uma alça de redimensionamento (apenas se for seleção única)
                 if (this.selectedAssets.length <= 1) {
                     const handle = this.findResizeHandleAtWorldPos(worldPos.x, worldPos.y);
                     if (handle && this.selectedAsset && !this.selectedAsset.locked) {
@@ -616,7 +573,6 @@ export class MapCanvas {
                     }
                 }
 
-                // 2. Se não clicou na alça, seleciona ou desseleciona asset com prioridade por Z-Index
                 const hit = this.findAssetAtWorldPos(worldPos.x, worldPos.y);
 
                 if (hit) {
@@ -624,7 +580,6 @@ export class MapCanvas {
                     if (isModifier) {
                         this.toggleAssetSelection(hit);
                     } else {
-                        // Se o asset clicado não faz parte da seleção múltipla atual, seleciona apenas ele
                         if (!this.selectedAssets.some(a => a.uid === hit.uid)) {
                             this.selectAsset(hit);
                         } else {
@@ -632,7 +587,6 @@ export class MapCanvas {
                         }
                     }
 
-                    // Inicia arraste de todos os assets selecionados em conjunto
                     this.isDraggingAsset = true;
                     this.dragStartWorldX = worldPos.x;
                     this.dragStartWorldY = worldPos.y;
@@ -644,7 +598,6 @@ export class MapCanvas {
                         this.dragInitialPositions.set(a.uid, { x: a.x, y: a.y });
                     });
                 } else {
-                    // Clicou no vazio: Inicia caixa de seleção em área tipo Desktop (Marquee)
                     if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
                         this.selectAsset(null);
                     }
@@ -658,7 +611,6 @@ export class MapCanvas {
             }
         });
 
-        // 4. Mouse Move
         this.canvas.addEventListener('mousemove', (e) => {
             const rect = this.canvas.getBoundingClientRect();
             const mouseScreenX = e.clientX - rect.left;
@@ -666,7 +618,6 @@ export class MapCanvas {
             const worldPos = this.screenToWorld(mouseScreenX, mouseScreenY);
             this.lastMouseWorldPos = { x: worldPos.x, y: worldPos.y };
 
-            // Pan em andamento
             if (this.isPanning) {
                 this.panX = mouseScreenX - this.panStartX;
                 this.panY = mouseScreenY - this.panStartY;
@@ -674,7 +625,6 @@ export class MapCanvas {
                 return;
             }
 
-            // Modo Pincel de Textura de Chunk: pinta continuamente se o botão estiver pressionado ou atualiza o círculo do cursor
             if (this.isChunkBrushMode) {
                 this.canvas.style.cursor = 'crosshair';
                 if (this.isPaintingBrushStroke) {
@@ -685,7 +635,6 @@ export class MapCanvas {
                 return;
             }
 
-            // Modo Carimbo Contínuo: atualiza o preview fantasma (Ghost Preview) acompanhando o cursor
             if (this.isStampMode && this.activeStampAsset) {
                 let gx = worldPos.x - this.activeStampAsset.width / 2;
                 let gy = worldPos.y - this.activeStampAsset.height / 2;
@@ -703,7 +652,6 @@ export class MapCanvas {
                 return;
             }
 
-            // Seleção em Área tipo desktop em andamento
             if (this.isBoxSelecting) {
                 this.boxSelectCurrentScreenX = mouseScreenX;
                 this.boxSelectCurrentScreenY = mouseScreenY;
@@ -712,7 +660,6 @@ export class MapCanvas {
                 return;
             }
 
-            // Redimensionamento do asset selecionado
             if (this.isResizingAsset && this.selectedAsset && this.initialAssetRect && this.activeResizeHandle) {
                 let dx = worldPos.x - this.resizeStartWorldX;
                 let dy = worldPos.y - this.resizeStartWorldY;
@@ -725,7 +672,8 @@ export class MapCanvas {
                 const init = this.initialAssetRect;
                 const minSize = 16;
                 const aspect = (init.width && init.height) ? (init.width / init.height) : 1;
-                const lockAspect = e.shiftKey; // Shift trava proporção 1:1; sem Shift permite ajuste livre
+                //? Shift restringe redimensionamento para proporção 1:1
+                const lockAspect = e.shiftKey;
 
                 let newX = init.x;
                 let newY = init.y;
@@ -733,21 +681,21 @@ export class MapCanvas {
                 let newH = init.height;
 
                 switch (this.activeResizeHandle) {
-                    case 'se': // Canto inferior direito
+                    case 'se':
                         newW = Math.max(minSize, init.width + dx);
                         newH = lockAspect ? Math.max(minSize, Math.round(newW / aspect)) : Math.max(minSize, init.height + dy);
                         break;
-                    case 'sw': // Canto inferior esquerdo
+                    case 'sw':
                         newW = Math.max(minSize, init.width - dx);
                         newH = lockAspect ? Math.max(minSize, Math.round(newW / aspect)) : Math.max(minSize, init.height + dy);
                         newX = init.x + (init.width - newW);
                         break;
-                    case 'ne': // Canto superior direito
+                    case 'ne':
                         newW = Math.max(minSize, init.width + dx);
                         newH = lockAspect ? Math.max(minSize, Math.round(newW / aspect)) : Math.max(minSize, init.height - dy);
                         newY = init.y + (init.height - newH);
                         break;
-                    case 'nw': // Canto superior esquerdo
+                    case 'nw':
                         newW = Math.max(minSize, init.width - dx);
                         newH = lockAspect ? Math.max(minSize, Math.round(newW / aspect)) : Math.max(minSize, init.height - dy);
                         newX = init.x + (init.width - newW);
@@ -766,7 +714,7 @@ export class MapCanvas {
                 return;
             }
 
-            // Arraste de múltiplos assets selecionados em conjunto
+            //? Arraste de múltiplos assets selecionados em conjunto
             if (this.isDraggingAsset) {
                 let dx = worldPos.x - this.dragStartWorldX;
                 let dy = worldPos.y - this.dragStartWorldY;
@@ -791,7 +739,6 @@ export class MapCanvas {
                 return;
             }
 
-            // Atualização dinâmica do Cursor quando em hover sobre alças ou elementos
             if (!this.isPanning && !this.isDraggingAsset && !this.isResizingAsset && !this.isBoxSelecting) {
                 if (this.showPlayerReference) {
                     const refRect = this.getPlayerReferenceRect();
@@ -824,7 +771,6 @@ export class MapCanvas {
             }
         });
 
-        // 5. Mouse Up
         if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
             window.addEventListener('mouseup', () => {
                 if (this.isPaintingBrushStroke) {
@@ -863,7 +809,7 @@ export class MapCanvas {
             });
         }
 
-        // 5.5 Double Click no Asset: Se hitboxes estiverem ativas (F2), abre o Hitbox Editor para o asset
+        //? Double-click com hitboxes ativas (F2): abre o PolygonWebEditor para o asset selecionado
         this.canvas.addEventListener('dblclick', (e) => {
             if (!this.showHitboxes) return;
             const rect = this.canvas.getBoundingClientRect();
@@ -877,7 +823,7 @@ export class MapCanvas {
             }
         });
 
-        // 5.6 Botão Direito no Canvas: cancela Chunk Brush Mode ou Stamp Mode se ativo
+        //? Botão direito cancela Chunk Brush Mode ou Stamp Mode ativo
         this.canvas.addEventListener('contextmenu', (e) => {
             if (this.isChunkBrushMode) {
                 e.preventDefault();
@@ -890,7 +836,6 @@ export class MapCanvas {
             }
         });
 
-        // 6. Suporte a Drag and Drop Nativo da Gaveta
         this.canvas.addEventListener('dragover', (e) => {
             e.preventDefault();
             if (e.dataTransfer) {
@@ -909,7 +854,6 @@ export class MapCanvas {
                 wy = Math.round(wy / this.gridSize) * this.gridSize;
             }
 
-            // Renderiza indicador de coordenadas no canvas
             this.ghostAsset = {
                 asset: (window as any).__draggedAssetData || { width: 64, height: 64, imageSrc: '' },
                 worldX: wx,
@@ -943,7 +887,6 @@ export class MapCanvas {
                 const mouseScreenY = e.clientY - rect.top;
                 const worldPos = this.screenToWorld(mouseScreenX, mouseScreenY);
 
-                // Centraliza o asset sob o cursor ao soltar
                 let finalX = worldPos.x - assetData.width / 2;
                 let finalY = worldPos.y - assetData.height / 2;
 
@@ -956,7 +899,6 @@ export class MapCanvas {
             }
         });
 
-        // 7. Navegação Touch com Dois Dedos (Pan Bidimensional e Zoom por Pinça)
         this.canvas.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
                 e.preventDefault();
@@ -988,11 +930,10 @@ export class MapCanvas {
                 const midX = (t1.clientX + t2.clientX) / 2 - rect.left;
                 const midY = (t1.clientY + t2.clientY) / 2 - rect.top;
 
-                // 1. Pan com 2 dedos
                 this.panX = midX - this.touchStartPanX;
                 this.panY = midY - this.touchStartPanY;
 
-                // 2. Zoom por pinça (se a distância dos dedos variar significativamente)
+                //? Zoom por pinça quando a distância dos dedos varia significativamente
                 if (this.touchInitialDist > 0) {
                     const currentDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
                     const scaleFactor = currentDist / this.touchInitialDist;
@@ -1020,9 +961,6 @@ export class MapCanvas {
         this.canvas.addEventListener('touchcancel', endTouch);
     }
 
-    // =========================================================================
-    // MÉTODOS DE MANIPULAÇÃO DE ASSETS
-    // =========================================================================
     public addAssetToMap(asset: AssetDefinition, worldX: number, worldY: number): PlacedAssetModel {
         const isPortal = asset.id.includes('portal') || asset.category === 'portals';
         const isItem = Boolean(asset.isItem || asset.category === 'items');
@@ -1150,7 +1088,7 @@ export class MapCanvas {
             const ay1 = asset.y;
             const ay2 = asset.y + asset.height;
 
-            // Teste de intersecção AABB entre caixa de seleção e bounds do asset
+            //? Teste de intersecção AABB entre caixa de seleção e bounds do asset
             const overlaps = ax1 < maxX && ax2 > minX && ay1 < maxY && ay2 > minY;
             if (overlaps) {
                 matchedUids.add(asset.uid);
@@ -1184,7 +1122,6 @@ export class MapCanvas {
     public paste(): void {
         if (this.clipboardAssets.length === 0) return;
 
-        // Bounding box dos assets originais no clipboard
         let minX = Infinity;
         let minY = Infinity;
         for (const a of this.clipboardAssets) {
@@ -1195,7 +1132,7 @@ export class MapCanvas {
         let offsetX = 32;
         let offsetY = 32;
 
-        // Se o mouse estiver posicionado no mapa, cola alinhado ao cursor
+        //? Cola alinhado ao cursor se o mouse estiver posicionado no mapa
         if (this.lastMouseWorldPos && (this.lastMouseWorldPos.x !== 0 || this.lastMouseWorldPos.y !== 0)) {
             offsetX = this.lastMouseWorldPos.x - minX;
             offsetY = this.lastMouseWorldPos.y - minY;
@@ -1205,7 +1142,6 @@ export class MapCanvas {
             }
         }
 
-        // Desmarca seleção anterior
         this.placedAssets.forEach(a => a.selected = false);
         this.selectedAssets = [];
 
@@ -1341,7 +1277,7 @@ export class MapCanvas {
         targets.forEach(asset => {
             if (asset.locked) return;
 
-            // 1. Deslocamento radial aleatório (ângulo uniforme 0 a 2PI e distância 1 a maxRadius)
+            //? Deslocamento radial aleatório uniforme no raio configurado
             const angle = Math.random() * Math.PI * 2;
             const distance = 1 + Math.random() * Math.max(1, maxRadius - 1);
             const dx = Math.round(Math.cos(angle) * distance);
@@ -1350,8 +1286,7 @@ export class MapCanvas {
             asset.x += dx;
             asset.y += dy;
 
-            // 2. Variação leve de escala proporcional (ex: 0.90x a 1.10x)
-            // Mantém a proporção de aspecto (aspect ratio) estrita do asset
+            //? Variação suave de escala preservando a proporção de aspecto estrita
             const scaleFactor = 1 + ((Math.random() * 2 - 1) * maxScaleVariation);
             const aspect = (asset.width && asset.height) ? (asset.width / asset.height) : 1;
 
@@ -1467,7 +1402,7 @@ export class MapCanvas {
                     a.y = minY;
                     break;
                 case 'bottom':
-                    // Alinhamento na base inferior (plano de chão do 2.5D)
+                    //? Alinhamento na base inferior (plano de chão do 2.5D)
                     a.y = maxY - a.height;
                     break;
                 case 'center-v':
@@ -1598,7 +1533,6 @@ export class MapCanvas {
             this.activeStampAsset = null;
             this.ghostAsset = null;
         } else {
-            // Inicializa ghost preview na posição atual do mouse se conhecida
             if (this.lastMouseWorldPos && this.activeStampAsset) {
                 let gx = this.lastMouseWorldPos.x - this.activeStampAsset.width / 2;
                 let gy = this.lastMouseWorldPos.y - this.activeStampAsset.height / 2;
@@ -1617,10 +1551,6 @@ export class MapCanvas {
         this.onStampModeChanged?.(this.isStampMode, this.activeStampAsset);
         this.render();
     }
-
-    // =========================================================================
-    // PINCEL DE TEXTURA DE CHUNK (CHUNK TEXTURE BRUSH TOOL - TECLA T)
-    // =========================================================================
 
     /**
      * Alterna o modo Pincel de Textura de Chunk (Tecla T).
@@ -1671,7 +1601,6 @@ export class MapCanvas {
         if (textureName) {
             this.activeBrushTextureName = textureName;
         }
-        // Pré-carrega a textura nos caches
         this.getSpriteImage(textureUrl);
         if (!this.chunkImages.has(textureUrl) && typeof Image !== 'undefined') {
             const img = new Image();
@@ -1679,7 +1608,7 @@ export class MapCanvas {
             img.onload = () => this.render();
             this.chunkImages.set(textureUrl, img);
         }
-        // Se mudou a textura, inicia um novo objeto pintado na próxima pincelada
+        //? Mudança de textura inicia uma nova camada pintada na próxima pincelada
         if (textureChanged) {
             this.activePaintedAsset = null;
         }
@@ -1736,7 +1665,7 @@ export class MapCanvas {
                 return c;
             }
         }
-        // Fallback mock para ambiente de teste sem Canvas 2D nativo
+        //? Fallback mock para ambiente de teste sem Canvas 2D nativo
         return {
             width: w,
             height: h,
@@ -1846,7 +1775,7 @@ export class MapCanvas {
                 }
             }
         } catch {
-            // Ignora falhas de tainted canvas em ambientes restritos
+            //? Ignora falhas de tainted canvas em ambientes restritos de teste/CORS
         }
     }
 
@@ -1861,7 +1790,6 @@ export class MapCanvas {
         const dabMaxX = Math.ceil(wx + radius);
         const dabMaxY = Math.ceil(wy + radius);
 
-        // Verifica se reutilizamos o activePaintedAsset atual ou criamos um novo
         let asset = this.activePaintedAsset;
         if (
             !asset ||
@@ -1876,7 +1804,7 @@ export class MapCanvas {
             const layerCanvas = this.createOffscreenCanvas(initW, initH);
             this.paintedLayerCanvases.set(uid, layerCanvas);
 
-            // Calcula o menor zIndex para que a pintura de terreno fique no chão (abaixo das árvores/casas)
+            //? Z-index no piso inferior para pintura de terreno ficar abaixo de props/casas
             asset = {
                 uid,
                 presetId: 'painted_chunk_layer',
@@ -1902,7 +1830,7 @@ export class MapCanvas {
             this.activePaintedAsset = asset;
         }
 
-        // Verifica se o dab extrapola os limites atuais do canvas da camada pintada
+        //? Expande os limites da camada se a pincelada extrapolar o bounding box atual
         let layerCanvas = this.paintedLayerCanvases.get(asset.uid);
         if (!layerCanvas) {
             layerCanvas = this.createOffscreenCanvas(asset.width, asset.height);
@@ -1941,7 +1869,6 @@ export class MapCanvas {
             asset.baseHeight = newH;
         }
 
-        // Desenha o círculo com a textura alinhada ao mundo dentro do layerCanvas
         const lCtx = layerCanvas.getContext('2d');
         if (lCtx) {
             const localCx = wx - asset.x;
@@ -1949,7 +1876,7 @@ export class MapCanvas {
             this.drawTexturedBrushCircleOnLayer(lCtx, localCx, localCy, radius, asset.x, asset.y);
         }
 
-        // Atualiza imageSrc imediatamente se for o primeiro ponto para que nunca fique vazio
+        //? Atualiza imageSrc no primeiro ponto para evitar canvas vazio
         if (asset.imageSrc.length < 120) {
             this.syncPaintedAssetDataUrl(asset);
         }
@@ -1976,8 +1903,7 @@ export class MapCanvas {
         layerCtx.save();
         layerCtx.globalAlpha = this.chunkBrushOpacity;
 
-        // Se houver suavidade de borda (softness > 0) e estivermos em ambiente browser com canvas real,
-        // compomos o dab num mini-canvas com máscara radial para bordas orgânicas suaves
+        //? Suavidade de borda (softness > 0): compõe máscara radial com gradiente de transparência
         const dabCanvas = this.createOffscreenCanvas(diam, diam);
         const dabCtx = dabCanvas.getContext('2d');
 
@@ -2005,7 +1931,7 @@ export class MapCanvas {
             dabCtx.restore();
             layerCtx.drawImage(dabCanvas, localCx - radius, localCy - radius);
         } else {
-            // Fallback direto com clip circular no contexto alvo
+            //? Fallback direto com clip circular no contexto alvo
             layerCtx.beginPath();
             layerCtx.arc(localCx, localCy, radius, 0, Math.PI * 2);
             if (typeof layerCtx.clip === 'function') {
@@ -2060,7 +1986,7 @@ export class MapCanvas {
                 }
             }
         } else {
-            // Cor representativa enquanto a imagem carrega ou em ambiente de teste
+            //? Cor representativa enquanto a imagem carrega ou em ambiente de teste
             ctx.fillStyle = '#3b7a57';
             ctx.fillRect(destOffsetX, destOffsetY, width, height);
         }
@@ -2080,7 +2006,6 @@ export class MapCanvas {
 
         ctx.save();
 
-        // 1. Preview translúcido da textura selecionada recortada no círculo do pincel
         ctx.save();
         ctx.beginPath();
         ctx.arc(wx, wy, radius, 0, Math.PI * 2);
@@ -2101,7 +2026,6 @@ export class MapCanvas {
         );
         ctx.restore();
 
-        // 2. Anel interno de suavidade (se softness > 0)
         if (this.chunkBrushSoftness > 0.05) {
             const innerR = Math.max(2, radius * (1 - this.chunkBrushSoftness));
             ctx.beginPath();
@@ -2112,7 +2036,6 @@ export class MapCanvas {
             ctx.stroke();
         }
 
-        // 3. Círculo principal externo ao redor do mouse
         ctx.beginPath();
         ctx.arc(wx, wy, radius, 0, Math.PI * 2);
         ctx.strokeStyle = this.isPaintingBrushStroke ? '#34d399' : '#38bdf8';
@@ -2120,13 +2043,11 @@ export class MapCanvas {
         ctx.setLineDash([6 / this.zoom, 4 / this.zoom]);
         ctx.stroke();
 
-        // 4. Ponto central de mira
         ctx.beginPath();
         ctx.arc(wx, wy, Math.max(2, 3 / this.zoom), 0, Math.PI * 2);
         ctx.fillStyle = '#fbbf24';
         ctx.fill();
 
-        // 5. Etiqueta flutuante com nome da textura e raio do pincel
         const label = `🎨 Pincel: ${this.activeBrushTextureName} (R: ${radius}px)`;
         ctx.font = `bold ${Math.max(10, 12 / this.zoom)}px monospace`;
         const tw = ctx.measureText(label).width;
@@ -2182,7 +2103,6 @@ export class MapCanvas {
         const movable = targets.filter(a => !a.locked);
         if (movable.length === 0) return;
 
-        // Limite mínimo e máximo de segurança
         const clampedScale = Math.max(0.1, Math.min(10.0, targetScale));
 
         if (movable.length === 1) {
@@ -2204,7 +2124,6 @@ export class MapCanvas {
             asset.scaleY = clampedScale;
             asset.isCustomScaled = true;
         } else {
-            // Múltiplos assets: calcula centro do grupo
             let minX = Infinity;
             let maxX = -Infinity;
             let minY = Infinity;
@@ -2365,7 +2284,7 @@ export class MapCanvas {
      * Quem está mais acima na renderização (maior zIndex ou Y-Sort) recebe o clique primeiro.
      */
     private findAssetAtWorldPos(wx: number, wy: number): PlacedAssetModel | null {
-        // Ordena exatamente em ordem decrescente de renderização (quem desenha por último fica no topo do clique)
+    //? Ordena em ordem decrescente para que o elemento no topo capture o clique
         const sorted = [...this.placedAssets].sort((a, b) => {
             const zA = a.zIndex !== undefined ? a.zIndex : (a.y + a.height);
             const zB = b.zIndex !== undefined ? b.zIndex : (b.y + b.height);
@@ -2380,10 +2299,6 @@ export class MapCanvas {
         }
         return null;
     }
-
-    // =========================================================================
-    // COORDENADAS & CONVERSÕES
-    // =========================================================================
 
     public screenToWorld(sx: number, sy: number): { x: number, y: number } {
         return {
@@ -2403,10 +2318,6 @@ export class MapCanvas {
         const tag = document.activeElement?.tagName?.toLowerCase();
         return tag === 'input' || tag === 'textarea';
     }
-
-    // =========================================================================
-    // HISTÓRICO (UNDO / REDO)
-    // =========================================================================
 
     public saveState(): void {
         const snapshot = JSON.parse(JSON.stringify(this.placedAssets));
@@ -2437,10 +2348,6 @@ export class MapCanvas {
         }
     }
 
-    // =========================================================================
-    // PIPELINE DE RENDERIZAÇÃO
-    // =========================================================================
-
     private startRenderLoop(): void {
         const loop = (timestamp?: number) => {
             if (timestamp !== undefined) {
@@ -2460,7 +2367,6 @@ export class MapCanvas {
         const ctx = this.ctx;
         if (!ctx) return;
 
-        // Sincroniza dinamicamente as dimensões do canvas com o container flexível
         if (this.container && (this.canvas.width !== this.container.clientWidth || this.canvas.height !== this.container.clientHeight)) {
             if (this.container.clientWidth > 0 && this.container.clientHeight > 0) {
                 this.resize();
@@ -2473,53 +2379,42 @@ export class MapCanvas {
         ctx.translate(this.panX, this.panY);
         ctx.scale(this.zoom, this.zoom);
 
-        // 1. Desenha o fundo do mapa (Terreno com Chunks Reais)
         this.drawMapTerrain(ctx);
 
-        // 2. Grade de Alinhamento (Grid)
         if (this.showGrid) {
             this.drawGrid(ctx);
         }
 
-        // 3. Limites e identificadores de Chunks (1024px)
         if (this.showChunkBorders) {
             this.drawChunkBorders(ctx);
         }
 
-        // 4. Sprites dos Assets com Y-Sorting Isométrico
         this.drawPlacedAssets(ctx);
 
-        // 4.1. Camada de Colisão do Mapa e Barreiras Físicas (F2)
         if (this.showHitboxes) {
             this.drawMapCollisionLayers(ctx);
         }
 
-        // 4.2. Bounding Box Coletivo do Grupo Selecionado (quando múltiplos selecionados)
         if (this.selectedAssets.length > 1) {
             this.drawGroupBoundingBox(ctx);
         }
 
-        // 5. Ghost Preview durante Drag & Drop
         if (this.ghostAsset) {
             this.drawGhostPreview(ctx);
         }
 
-        // 5.1. Círculo Visual do Pincel de Textura de Chunk (Chunk Brush Cursor)
         if (this.isChunkBrushMode) {
             this.drawChunkBrushCursor(ctx);
         }
 
         ctx.restore();
 
-        // 6. HUD de Informação de Câmera na tela (Coordenadas e Zoom)
         this.drawCameraOverlay(ctx);
 
-        // 7. Retângulo de Seleção em Área tipo Desktop (Marquee)
         if (this.isBoxSelecting) {
             this.drawMarqueeSelectionBox(ctx);
         }
 
-        // 8. HUD de Referência do Player Idle no Canto Direito Inferior
         this.drawPlayerReferenceOverlay(ctx);
     }
 
@@ -2528,11 +2423,9 @@ export class MapCanvas {
         const mh = this.mapConfig.height;
 
         if (this.mapConfig.id === 'blank_project') {
-            // Fundo transparente com padrão quadriculado sutil de blueprint / canvas em branco
             ctx.fillStyle = '#11141c';
             ctx.fillRect(0, 0, mw, mh);
 
-            // Xadrez sutil para indicar transparência/área de trabalho livre
             const checkSize = 32;
             ctx.fillStyle = '#171b26';
             for (let y = 0; y < mh; y += checkSize) {
@@ -2545,7 +2438,6 @@ export class MapCanvas {
             return;
         }
 
-        // Borda e sombra do mapa total (ou cor de fundo do InnerMap)
         ctx.fillStyle = this.mapConfig.backgroundColor || (this.mapConfig.isInnerMap ? '#000000' : '#181b22');
         ctx.fillRect(0, 0, mw, mh);
 
@@ -2557,7 +2449,6 @@ export class MapCanvas {
         const minX = -originCx * chunkSize;
         const minY = -originCy * chunkSize;
 
-        // Borda e sombra do mapa total (ou cor de fundo do InnerMap)
         ctx.fillStyle = this.mapConfig.backgroundColor || (this.mapConfig.isInnerMap ? '#000000' : '#181b22');
         ctx.fillRect(minX, minY, mw, mh);
 
@@ -2632,7 +2523,6 @@ export class MapCanvas {
                     ctx.setLineDash([4, 4]);
                     ctx.strokeRect(cx, cy, chunkSize, chunkSize);
 
-                    // Rótulo de Origem / Spawn
                     ctx.fillStyle = '#fbbf24';
                     ctx.font = 'bold 16px "Segoe UI", sans-serif';
                     ctx.fillText(`⭐ Spawn (0, 0) [Origem Central]`, cx + 16, cy + 32);
@@ -2641,7 +2531,6 @@ export class MapCanvas {
                     ctx.setLineDash([8, 8]);
                     ctx.strokeRect(cx, cy, chunkSize, chunkSize);
 
-                    // Rótulo do Chunk com coordenadas assinadas
                     ctx.fillStyle = 'rgba(85, 170, 255, 0.85)';
                     ctx.font = 'bold 16px "Segoe UI", sans-serif';
                     ctx.fillText(`Chunk (${signedCx}, ${signedCy})`, cx + 16, cy + 32);
@@ -2652,7 +2541,7 @@ export class MapCanvas {
     }
 
     private drawPlacedAssets(ctx: CanvasRenderingContext2D): void {
-        // Ordenação de Profundidade Y-Sort (2.5D: quem está mais abaixo desenha por cima)
+    //? Ordenação de profundidade Y-Sort (2.5D: coordenadas Y maiores desenham por cima)
         const sorted = [...this.placedAssets].sort((a, b) => {
             const zA = a.zIndex !== undefined ? a.zIndex : (a.y + a.height);
             const zB = b.zIndex !== undefined ? b.zIndex : (b.y + b.height);
@@ -2685,7 +2574,6 @@ export class MapCanvas {
             } else if (img && img.complete && img.naturalWidth > 0) {
                 const isSprite = asset.isSprite || (asset.frameCount !== undefined && asset.frameCount > 1);
                 if (isSprite && asset.frameCount && asset.frameCount > 1) {
-                    // Velocidade em conformidade com VisualConfigMap (ticks de engine a 60 FPS por frame)
                     const animTicks = Math.max(1, asset.animationSpeed || 10);
                     const frameDurationMs = animTicks * (1000 / 60);
                     const frameIndex = Math.floor(this.animationTime / frameDurationMs) % asset.frameCount;
@@ -2703,7 +2591,6 @@ export class MapCanvas {
                     ctx.drawImage(img, -asset.width / 2, -asset.height / 2, asset.width, asset.height);
                 }
             } else {
-                // Fallback elegante
                 ctx.fillStyle = 'rgba(70, 90, 120, 0.7)';
                 ctx.fillRect(-asset.width / 2, -asset.height / 2, asset.width, asset.height);
                 ctx.fillStyle = '#fff';
@@ -2714,12 +2601,10 @@ export class MapCanvas {
 
             ctx.restore();
 
-            // Desenha Hitboxes do Asset (se tecla F2 / showHitboxes estiver ativa)
             if (this.showHitboxes) {
                 this.drawHitboxesForAsset(ctx, asset);
             }
 
-            // Desenha Bounding Box do selecionado
             if (asset.selected) {
                 this.drawSelectedBoundingBox(ctx, asset);
             }
@@ -2812,7 +2697,7 @@ export class MapCanvas {
                 ctx.fill();
                 ctx.stroke();
 
-                // ! Vértices da barreira de mapa
+        //! Vértices da barreira de mapa
                 ctx.fillStyle = '#f0abfc';
                 const vRadius = Math.max(2.5, 3.5 / this.zoom);
                 for (const p of collider.points) {
@@ -2821,7 +2706,7 @@ export class MapCanvas {
                     ctx.fill();
                 }
 
-                // ! Tag identificadora de limite de mapa
+        //! Tag identificadora de limite de mapa
                 ctx.fillStyle = '#f0abfc';
                 ctx.font = `bold ${Math.max(10, 11 / this.zoom)}px monospace`;
                 ctx.fillText(`[Map Boundary: ${collider.id}]`, ox + collider.points[0].x, oy + collider.points[0].y - (6 / this.zoom));
@@ -2835,7 +2720,7 @@ export class MapCanvas {
      * incluindo o envelope físico AABB e gatilhos de portais para evitar barreiras invisíveis.
      */
     private drawHitboxesForAsset(ctx: CanvasRenderingContext2D, asset: PlacedAssetModel): void {
-        // ! Se o asset for um portal, renderiza sua área física de gatilho/colisão
+      //? Renderização visual da área de colisão do portal
         if (asset.isPortal || asset.presetId.includes('portal') || asset.portalType) {
             this.drawPortalHitbox(ctx, asset);
         }
@@ -2863,7 +2748,7 @@ export class MapCanvas {
                     return { x: asset.x + lx, y: asset.y + ly };
                 });
 
-                // ! Calcula os limites AABB físicos do polígono
+        //? Calcula os limites AABB físicos do polígono
                 let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
                 for (const p of points) {
                     if (p.x < minX) minX = p.x;
@@ -2874,7 +2759,6 @@ export class MapCanvas {
                 const aabbW = maxX - minX;
                 const aabbH = maxY - minY;
 
-                // 1. Polígono real configurado
                 ctx.strokeStyle = '#00ffb4';
                 ctx.fillStyle = 'rgba(0, 255, 180, 0.28)';
                 ctx.beginPath();
@@ -2886,7 +2770,6 @@ export class MapCanvas {
                 ctx.fill();
                 ctx.stroke();
 
-                // 2. Envelope AABB Físico para revelar barreiras invisíveis nos cantos
                 ctx.save();
                 ctx.strokeStyle = 'rgba(245, 158, 11, 0.65)';
                 ctx.lineWidth = Math.max(1, 1.2 / this.zoom);
@@ -2901,7 +2784,6 @@ export class MapCanvas {
                 }
                 ctx.restore();
 
-                // Vértices
                 ctx.fillStyle = '#ffffff';
                 const vertexRadius = Math.max(2, 3 / this.zoom);
                 for (const p of points) {
@@ -2927,7 +2809,6 @@ export class MapCanvas {
                 ctx.fill();
                 ctx.stroke();
 
-                // Centro
                 ctx.fillStyle = '#ff3838';
                 ctx.beginPath();
                 ctx.arc(worldCenterX, worldCenterY, Math.max(2.5, 3.5 / this.zoom), 0, Math.PI * 2);
@@ -2977,7 +2858,6 @@ export class MapCanvas {
         ctx.setLineDash(isLocked ? [4 / this.zoom, 4 / this.zoom] : (isPortal ? [6 / this.zoom, 4 / this.zoom] : []));
         ctx.strokeRect(asset.x, asset.y, asset.width, asset.height);
 
-        // Pontos de ancoragem nos cantos (mostra handles de redimensionamento apenas se houver 1 objeto selecionado e não estiver bloqueado)
         if (this.selectedAssets.length <= 1) {
             if (!isLocked) {
                 const handleSize = Math.max(6, 8 / this.zoom);
@@ -2988,7 +2868,6 @@ export class MapCanvas {
                 ctx.fillRect(asset.x + asset.width - handleSize/2, asset.y + asset.height - handleSize/2, handleSize, handleSize);
             }
 
-            // Rótulo Flutuante de Coordenadas individual
             const flipTags = `${asset.flipX ? ' [FlipX]' : ''}${asset.flipY ? ' [FlipY]' : ''}`;
             const portalTag = isPortal ? ` [🌀 Portal -> ${asset.targetMapId || 'destino'}]` : '';
             const lockTag = isLocked ? ' 🔒 [Bloqueado]' : '';
@@ -3030,7 +2909,6 @@ export class MapCanvas {
         ctx.setLineDash([8 / this.zoom, 4 / this.zoom]);
         ctx.strokeRect(minX, minY, gw, gh);
 
-        // Rótulo do Grupo
         const label = `📦 ${this.selectedAssets.length} selecionados (${Math.round(gw)}x${Math.round(gh)}) - [Ctrl+C, Ctrl+V, Del]`;
         ctx.font = `bold ${Math.max(11, 13 / this.zoom)}px monospace`;
         const textWidth = ctx.measureText(label).width;
@@ -3054,17 +2932,14 @@ export class MapCanvas {
         const sh = Math.abs(this.boxSelectCurrentScreenY - this.boxSelectStartScreenY);
 
         ctx.save();
-        // Fundo translúcido moderno azul neon estilo desktop / blueprint
         ctx.fillStyle = 'rgba(56, 189, 248, 0.18)';
         ctx.fillRect(sx, sy, sw, sh);
 
-        // Borda tracejada viva
         ctx.strokeStyle = '#38bdf8';
         ctx.lineWidth = 1.5;
         ctx.setLineDash([5, 4]);
         ctx.strokeRect(sx, sy, sw, sh);
 
-        // Indicador de contagem dinâmica
         if (this.selectedAssets.length > 0) {
             ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
             const label = `📦 ${this.selectedAssets.length} objeto(s)`;
@@ -3101,7 +2976,6 @@ export class MapCanvas {
             }
         }
 
-        // Tag de coordenadas sob o cursor
         ctx.fillStyle = '#ffd700';
         ctx.font = 'bold 12px monospace';
         ctx.fillText(`Soltar em X: ${worldX}, Y: ${worldY}`, worldX, worldY - 8);
@@ -3142,7 +3016,6 @@ export class MapCanvas {
 
         ctx.save();
 
-        // 1. Sombra de chão natural sob os pés do personagem (proporcional ao zoom)
         const shadowW = Math.max(2, drawW * 0.75);
         const shadowH = Math.max(1, Math.round(drawH * 0.22));
         const shadowX = drawX + drawW / 2;
@@ -3159,7 +3032,6 @@ export class MapCanvas {
             ctx.fill();
         }
 
-        // 2. Renderização do Sprite do Player Idle (pixel art 1:1 nítido sem anti-aliasing)
         ctx.imageSmoothingEnabled = false;
 
         if (img && img.complete && img.naturalWidth > 0) {
@@ -3175,7 +3047,6 @@ export class MapCanvas {
                 drawX, drawY, drawW, drawH
             );
         } else {
-            // Fallback enquanto carrega a imagem
             ctx.fillStyle = 'rgba(56, 189, 248, 0.85)';
             ctx.fillRect(drawX, drawY, drawW, drawH);
         }
@@ -3199,7 +3070,6 @@ export class MapCanvas {
         if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
             exportCanvas = document.createElement('canvas');
         } else {
-            // Ambiente de teste/mock
             exportCanvas = {
                 width: 0,
                 height: 0,
@@ -3214,7 +3084,6 @@ export class MapCanvas {
         const offCtx = exportCanvas.getContext('2d');
         if (!offCtx) return '';
 
-        // Se transparente for falso e não for blank_project, desenha o terreno de chunks base
         if (!options.transparentBackground) {
             if (this.mapConfig.id !== 'blank_project') {
                 const mapVisual = VisualConfigMap[this.mapConfig.id] as MapVisualConfig | undefined;
@@ -3235,7 +3104,6 @@ export class MapCanvas {
             }
         }
 
-        // Renderiza todos os assets posicionados com ordenação Y-Sort e sem bounding box de seleção
         const sorted = [...this.placedAssets].sort((a, b) => {
             const zA = a.zIndex !== undefined ? a.zIndex : (a.y + a.height);
             const zB = b.zIndex !== undefined ? b.zIndex : (b.y + b.height);
@@ -3283,7 +3151,6 @@ export class MapCanvas {
 
         const dataUrl = exportCanvas.toDataURL ? exportCanvas.toDataURL('image/png') : 'data:image/png;base64,mockPng';
 
-        // Dispara o download automático no browser se chamado pelo usuário
         if (options.fileName && typeof document !== 'undefined' && typeof document.createElement === 'function') {
             const link = document.createElement('a');
             link.download = options.fileName.endsWith('.png') ? options.fileName : `${options.fileName}.png`;
@@ -3307,7 +3174,6 @@ export class MapCanvas {
                 return resolve(cached);
             }
             if (typeof Image === 'undefined') {
-                // Ambiente de teste/mock Node
                 return resolve({
                     src,
                     complete: true,
@@ -3324,7 +3190,6 @@ export class MapCanvas {
             const timer = setTimeout(() => {
                 if (!resolved) {
                     resolved = true;
-                    // Em ambientes de teste (ex: jsdom) sem carregador nativo de imagens
                     if (!img.naturalWidth) {
                         try {
                             Object.defineProperty(img, 'naturalWidth', { value: 1024, configurable: true });
@@ -3448,7 +3313,6 @@ export class MapCanvas {
             };
         }
 
-        // Valida posição de cada asset e mapeia para os chunks interceptados
         const chunkMap = new Map<string, { row: number; col: number; assets: PlacedAssetModel[] }>();
 
         for (const asset of assets) {
@@ -3491,7 +3355,6 @@ export class MapCanvas {
         for (const entry of chunkMap.values()) {
             const { row, col, assets: chunkAssets } = entry;
 
-            // Canvas Offscreen com resolução nativa do chunk
             let offCanvas: HTMLCanvasElement;
             if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
                 offCanvas = document.createElement('canvas');
@@ -3510,7 +3373,6 @@ export class MapCanvas {
                 return { success: false, message: `Falha ao inicializar contexto 2D para o chunk (${row}, ${col}).` };
             }
 
-            // Renderiza o fundo atual do chunk
             const currentBgUrl = chunks[row]![col]!;
             if (currentBgUrl && currentBgUrl.trim() !== '') {
                 const bgImg = await this.loadImageAsync(currentBgUrl);
@@ -3525,7 +3387,7 @@ export class MapCanvas {
                 offCtx.fillRect(0, 0, chunkSize, chunkSize);
             }
 
-            // Ordena estritamente por Z-Index / Y-Sort (Painter's Algorithm: menor Z-Index desenha primeiro)
+      //? Ordenação por Z-Index/Y-Sort (Painter's Algorithm: menor Z-Index desenha primeiro)
             chunkAssets.sort((a, b) => {
                 const zA = a.zIndex !== undefined ? a.zIndex : (a.y + a.height);
                 const zB = b.zIndex !== undefined ? b.zIndex : (b.y + b.height);
@@ -3535,13 +3397,11 @@ export class MapCanvas {
                 return (a.uid || '').localeCompare(b.uid || '');
             });
 
-            // Desenha os assets em ordem no chunk
             for (const asset of chunkAssets) {
                 const spriteImg = await this.loadImageAsync(asset.imageSrc);
                 this.drawAssetOnChunkContext(offCtx, asset, spriteImg, col, row, originCx, originCy, chunkSize);
             }
 
-            // Converte para DataURL e salva no backend Vite como arquivo PNG físico
             const dataUrl = offCanvas.toDataURL ? offCanvas.toDataURL('image/png') : 'data:image/png;base64,mockPng';
             const fileName = `chunk_r${row}_c${col}_baked_${Date.now()}.png`;
 
@@ -3566,7 +3426,6 @@ export class MapCanvas {
                         }
                     }
                 } catch (err) {
-                    // Fallback gracioso para dataUrl
                 }
             }
 
@@ -3581,7 +3440,6 @@ export class MapCanvas {
             affectedChunks.push({ row, col, newUrl: newChunkUrl });
         }
 
-        // Remove todos os assets incorporados da lista de assets posicionados
         const bakedUids = new Set(assets.map(a => a.uid));
         for (const uid of bakedUids) {
             this.paintedLayerCanvases.delete(uid);
@@ -3595,7 +3453,7 @@ export class MapCanvas {
         }
         this.selectedAssets = this.selectedAssets.filter(a => !bakedUids.has(a.uid));
 
-        // Persiste os chunks no disco via ChunkSync
+    //? Persiste os chunks assados no disco via ChunkSync
         const chunkSync = new ChunkSync();
         await chunkSync.syncChunksToDisk(
             this.mapConfig.id,

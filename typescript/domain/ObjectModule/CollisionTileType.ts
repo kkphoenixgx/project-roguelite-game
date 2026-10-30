@@ -4,13 +4,20 @@
  */
 
 export enum CollisionTileType {
-    NONE = 'none',           // Transparente - sem colisão
-    WALL = 'wall',           // Preto (#000000) - parede sólida
-    WATER = 'water',         // Azul (#0000FF) - água (lentidão)
-    LAVA = 'lava',           // Vermelho (#FF0000) - dano contínuo
-    GRASS = 'grass',         // Verde (#00FF00) - grama alta (lentidão leve)
-    ICE = 'ice',             // Ciano (#00FFFF) - escorregadio
-    SPIKE = 'spike',         // Magenta (#FF00FF) - espinhos (dano)
+    /** Transparente - sem colisão */
+    NONE = 'none',
+    /** Preto (#000000) - parede sólida */
+    WALL = 'wall',
+    /** Azul (#0000FF) - água (lentidão) */
+    WATER = 'water',
+    /** Vermelho (#FF0000) - dano contínuo */
+    LAVA = 'lava',
+    /** Verde (#00FF00) - grama alta (lentidão leve) */
+    GRASS = 'grass',
+    /** Ciano (#00FFFF) - escorregadio */
+    ICE = 'ice',
+    /** Magenta (#FF00FF) - espinhos (dano) */
+    SPIKE = 'spike',
 }
 
 /** Mapeia cores HEX para tipos de colisão */
@@ -36,10 +43,14 @@ export const COLLISION_TYPE_TO_COLOR: Record<CollisionTileType, string> = {
 
 /** Define comportamentos de colisão para cada tipo */
 export const COLLISION_BEHAVIORS: Record<CollisionTileType, {
-    passable: boolean;           // Pode atravessar?
-    damagePerSecond?: number;    // Dano contínuo (se aplicável)
-    speedModifier?: number;      // Modificador de velocidade (0.5 = 50% de velocidade)
-    effectType?: string;         // Tipo de efeito (ex: 'burn', 'slow', 'chill')
+    /** Indica se a entidade pode atravessar o tile */
+    passable: boolean;
+    /** Dano contínuo por segundo se aplicável */
+    damagePerSecond?: number;
+    /** Modificador de velocidade (ex: 0.5 = 50% de velocidade) */
+    speedModifier?: number;
+    /** Tipo de efeito de status aplicado (ex: burn, wet, slip, bleed) */
+    effectType?: string;
 }> = {
     [CollisionTileType.NONE]: { passable: true },
     [CollisionTileType.WALL]: { passable: false },
@@ -52,9 +63,14 @@ export const COLLISION_BEHAVIORS: Record<CollisionTileType, {
 
 export interface CollisionTileData {
     type: CollisionTileType;
-    x: number;                  // Coordenada X do tile
-    y: number;                  // Coordenada Y do tile
-    tileSize: number;           // Tamanho do tile em pixels (ex: 32px)
-    width?: number;             // Largura agregada
-    height?: number;            // Altura agregada
+    /** Coordenada X do tile no mundo */
+    x: number;
+    /** Coordenada Y do tile no mundo */
+    y: number;
+    /** Tamanho do tile em pixels (ex: 32px) */
+    tileSize: number;
+    /** Largura agregada em pixels */
+    width?: number;
+    /** Altura agregada em pixels */
+    height?: number;
 }

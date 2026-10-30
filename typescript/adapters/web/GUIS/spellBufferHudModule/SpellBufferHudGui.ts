@@ -43,9 +43,7 @@ export default class SpellBufferHudGui extends BaseGuiTemplate {
         this.runesContainer = this.query('#spell-buffer-runes');
     }
 
-    protected override bindEvents(): void {
-        // Eventos DOM autônomos se necessários no futuro
-    }
+    protected override bindEvents(): void {}
 
     /**
      * Adiciona uma runa digitada à fila em tempo real.
@@ -66,7 +64,7 @@ export default class SpellBufferHudGui extends BaseGuiTemplate {
         this.renderRunes();
         this.container.classList.add('is-active');
 
-        // Auto-Cast aos 500ms de inatividade após última runa
+        //? Auto-cast com timeout de 500ms de inatividade após inserção da última runa
         if (this.autoCastTimeout) clearTimeout(this.autoCastTimeout);
         this.autoCastTimeout = setTimeout(() => {
             this.triggerSuccess();

@@ -5,8 +5,7 @@ import Vector2D from "../../../../shared/Vector2D";
 export default class LightEffect extends Effect {
     constructor(private source: Entity) { super('Light', 'Dano explosivo extra da luz.'); }
     public apply(target: Entity): void {
-        // Pura Radiação de Luz extra que escalona com a sabedoria. 
-        // Ao chegar em Entity.takeDamage, se o alvo for esqueleto ele dobrará esse dano recebido!
+        //? Radiação de luz escala com Sabedoria e dobra o dano contra mortos-vivos
         target.takeDamage({
             totalDamage: this.source.attributes.wisdom * 1.5,
             damageType: 'light',

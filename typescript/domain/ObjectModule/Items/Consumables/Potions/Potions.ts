@@ -4,7 +4,7 @@ import type Effect from "../../Effects/Effect";
 
 export default abstract class Potion extends Consumable {
     constructor(name: string, description: string, itemId: number, rarity: ItemRarity, iconId: number, price: number, effects: Effect[]) {
-        // A categoria 'potion' é fixada para herança
+    //? Categoria 'potion' fixada para herança de consumíveis
         super(name, description, itemId, rarity, 'potion', iconId, price, effects);
     }
 }

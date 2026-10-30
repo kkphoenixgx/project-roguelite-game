@@ -95,8 +95,7 @@ export default class PortalLinkRequest extends PortalLink {
   public override update(deltaTime: number): void {
     super.update(deltaTime);
 
-    // A detecção de colisão roda em um Web Worker assíncrono: resultados não chegam em todo frame.
-    // Só consideramos que o jogador saiu após uma janela de tolerância sem colisões.
+      //? Detecção assíncrona do Worker requer tolerância de frames sem colisão para validar saída
     if (this.hasPlayerCollidedThisTick) {
       this.timeSinceLastCollision = 0;
       this.hasPlayerCollidedThisTick = false;
@@ -124,7 +123,7 @@ export default class PortalLinkRequest extends PortalLink {
     if (payload?.portalId !== undefined) {
       if (payload.portalId !== this.id) return;
     } else {
-      // Se o payload for vazio {}, garante transição atômica elegendo apenas o portal atualmente focado
+      //? Garante transição atômica elegendo apenas o portal focado quando o payload for vazio
       if (PortalLinkRequest.focusedPortalId !== null && PortalLinkRequest.focusedPortalId !== this.id) {
         return;
       }

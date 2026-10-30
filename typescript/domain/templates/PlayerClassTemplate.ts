@@ -31,7 +31,6 @@ export default class TemplatePlayerClassTemplate extends Class {
   constructor(xpTable: IXPTable, player: IPlayer, eventManager: IEventManager) {
     super('ArquetipoModelo', xpTable, player, eventManager);
 
-    // 1. Skill Nível 1: Atributo Passivo inicial
     this.skillsByLevel.set(
       1,
       new Skill(
@@ -43,7 +42,6 @@ export default class TemplatePlayerClassTemplate extends Class {
       )
     );
 
-    // 2. Skill Nível 4: Habilidade Ativa principal
     this.skillsByLevel.set(
       4,
       new Skill(
@@ -52,7 +50,9 @@ export default class TemplatePlayerClassTemplate extends Class {
         'Dispara uma onda de energia expansiva em direção ao cursor do mouse.',
         'active',
         2,
-        'tpl_t1_focus' // Pré-requisito
+        //? Pré-requisito da habilidade de nível 4
+
+        'tpl_t1_focus'
       )
     );
   }
@@ -62,7 +62,6 @@ export default class TemplatePlayerClassTemplate extends Class {
    */
   public executeSkill(skillId: string, mouseCoordinates: { x: number; y: number }): void {
     if (skillId === 'tpl_t2_burst') {
-      // 1. Verificação de Cooldown (Fail-Fast)
       if ((this.player as any).isSkillOnCooldown?.(skillId)) {
         this.eventManager.dispatch('log', {
           channel: 'domain',
@@ -79,12 +78,11 @@ export default class TemplatePlayerClassTemplate extends Class {
       this.lastSkillTime = now;
       (this.player as any).setSkillCooldown?.(skillId, this.skillCooldown);
 
-      // 2. Cálculo vetorial em direção ao mouse (Zero-GC)
+    //! Cálculo vetorial em direção ao cursor sem alocação dinâmica de objetos (Zero-GC)
       const px = this.player.coordinates.x + this.player.size.width / 2;
       const py = this.player.coordinates.y + this.player.size.height / 2;
       const dir = new Vector2D(mouseCoordinates.x - px, mouseCoordinates.y - py).normalizeMut();
 
-      // 3. Criação do Ataque via AttackBuilder
       const attack = AttackBuilder.create(this.player)
         .withBaseDamage(30)
         .asPhysical()
@@ -94,7 +92,6 @@ export default class TemplatePlayerClassTemplate extends Class {
         .withParticle(this.eventManager, 'slashSparks')
         .build();
 
-      // 4. Disparo de Projétil / Magia via Barramento de Eventos
       this.eventManager.dispatch('spawn', {
         type: 'simpleBullet',
         coordinates: { x: px, y: py },

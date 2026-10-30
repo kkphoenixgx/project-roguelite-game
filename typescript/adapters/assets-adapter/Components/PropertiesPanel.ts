@@ -1243,7 +1243,6 @@ export class PropertiesPanel {
         const nameInput = this.container.querySelector('#prop-name-input') as HTMLInputElement;
         const presetInput = this.container.querySelector('#prop-preset-input') as HTMLInputElement;
 
-        // Inputs específicos de sprite
         const frameCountInput = this.container.querySelector('#prop-frame-count-input') as HTMLInputElement;
         const animSpeedInput = this.container.querySelector('#prop-anim-speed-input') as HTMLInputElement;
         const frameWInput = this.container.querySelector('#prop-frame-w-input') as HTMLInputElement;
@@ -1251,7 +1250,6 @@ export class PropertiesPanel {
         const offsetXInput = this.container.querySelector('#prop-offset-x-input') as HTMLInputElement;
         const offsetYInput = this.container.querySelector('#prop-offset-y-input') as HTMLInputElement;
 
-        // Inputs específicos de portal
         const portalTypeInput = this.container.querySelector('#prop-portal-type-input') as HTMLSelectElement;
         const unifiedTargetSelect = this.container.querySelector('#prop-target-unified-select') as HTMLSelectElement;
         const targetMapInput = this.container.querySelector('#prop-target-map-input') as HTMLInputElement;
@@ -1262,7 +1260,6 @@ export class PropertiesPanel {
         const actionKeyInput = this.container.querySelector('#prop-action-key-input') as HTMLInputElement;
         const cooldownInput = this.container.querySelector('#prop-cooldown-input') as HTMLInputElement;
 
-        // Inputs específicos de item
         const itemClassSelect = this.container.querySelector('#prop-item-class-select') as HTMLSelectElement;
         const itemNameInput = this.container.querySelector('#prop-item-name-input') as HTMLInputElement;
         const itemDescInput = this.container.querySelector('#prop-item-desc-input') as HTMLTextAreaElement;
@@ -1716,7 +1713,6 @@ export class PropertiesPanel {
             this.render();
         });
 
-        // Abrir mapa de destino do portal
         const btnOpenTarget = this.container.querySelector('#btn-prop-open-target-map');
         btnOpenTarget?.addEventListener('click', () => {
             const targetId = asset.targetMapId || 'interior_black_default';
@@ -1757,7 +1753,7 @@ export class PropertiesPanel {
             addOption(t.label, t.url);
         }
 
-        // Adiciona texturas presentes nos chunks atuais do mapa
+        //? Adiciona texturas presentes nos chunks atuais do mapa
         const mapChunks = this.canvasRef['mapConfig']?.chunks;
         if (Array.isArray(mapChunks)) {
             for (let r = 0; r < mapChunks.length; r++) {
@@ -1773,7 +1769,7 @@ export class PropertiesPanel {
             }
         }
 
-        // Garante que a textura ativa atual esteja presente na lista
+        //? Garante que a textura ativa atual esteja presente na lista
         if (this.canvasRef.activeBrushTextureUrl) {
             addOption(this.canvasRef.activeBrushTextureName || 'Textura Selecionada', this.canvasRef.activeBrushTextureUrl);
         }
@@ -2164,7 +2160,6 @@ export class PropertiesPanel {
 
         const currentMapId = this.canvasRef['mapConfig']?.id;
 
-        // 1. Mundos Normais / Raiz
         const rootWorlds = [
             { id: 'vilgem', name: 'Alvorada de Vilgem', defaultSpawn: { x: 1536, y: 1615 }, labelPrefix: 'Spawn Central (Fonte do Despertar)' },
             { id: 'alun', name: 'Alun', defaultSpawn: { x: 500, y: 500 }, labelPrefix: 'Spawn Central / Inicial' },
@@ -2172,11 +2167,10 @@ export class PropertiesPanel {
         ];
 
         for (const rw of rootWorlds) {
-            // Não lista o próprio mapa atual se já estivermos nele, a menos que seja um retorno de InnerMap para seu pai
+            //? Não lista o próprio mapa atual se já estivermos nele, a menos que seja um retorno de InnerMap para seu pai
             const isCurrent = rw.id === currentMapId;
             if (isCurrent && !this.canvasRef['mapConfig']?.isInnerMap) continue;
 
-            // Spawn padrão do mundo raiz
             list.push({
                 category: `Mundo: ${rw.name}`,
                 mapId: rw.id,
@@ -2185,7 +2179,7 @@ export class PropertiesPanel {
                 spawnY: rw.defaultSpawn.y
             });
 
-            // Portais específicos do mundo raiz em PortalLinksMap
+            //? Portais específicos do mundo raiz em PortalLinksMap
             const portals = PortalLinksMap[rw.id] || [];
             for (const p of portals) {
                 list.push({
@@ -2198,10 +2192,8 @@ export class PropertiesPanel {
             }
         }
 
-        // 2. Interiores / Estabelecimentos (InnerMaps)
         const innerMaps = InnerMapManager.getInstance().getAll();
         for (const im of innerMaps) {
-            // Se estivermos editando o próprio InnerMap, não faz sentido listar o próprio InnerMap como destino
             if (im.id === currentMapId) continue;
 
             const defSpawn = im.defaultSpawn || { x: 512, y: 700 };
@@ -2213,11 +2205,10 @@ export class PropertiesPanel {
                 spawnY: defSpawn.y
             });
 
-            // Portais e saídas legítimas dentro do InnerMap: ao mirar no portal interno, o jogador surge na frente do portal DENTRO do InnerMap
+            //? Portais e saídas legítimas dentro do InnerMap: ao mirar no portal interno, o jogador surge na frente do portal DENTRO do InnerMap
             if (Array.isArray(im.portals)) {
                 for (let i = 0; i < im.portals.length; i++) {
                     const p = im.portals[i]!;
-                    // Coordenadas seguras em frente ao portal DENTRO do InnerMap
                     const spawnX = p.x;
                     const spawnY = Math.max(0, p.y - 40);
                     list.push({
@@ -2240,7 +2231,6 @@ export class PropertiesPanel {
     private renderAllPortalDestinationsOptions(currentTargetMapId?: string, currentSpawnX?: number, currentSpawnY?: number): string {
         const allDestinations = this.getAllPortalDestinations();
 
-        // Agrupa por categoria
         const groups: Record<string, typeof allDestinations> = {};
         for (const dest of allDestinations) {
             if (!groups[dest.category]) groups[dest.category] = [];

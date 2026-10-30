@@ -183,13 +183,13 @@ export default class WebWindowManager {
   public updateTelemetryUI(): void {
     const now = performance.now();
     if (this.isTelemetryActive && this.telemetryDiv) {
-      // Atualiza a UI a cada ~120ms (8 fps de taxa de atualização da interface para leitura confortável)
+      //? Throttling de telemetria a ~120ms (8 fps) para legibilidade estável no DOM
       if (!this.lastTelemetryUpdate || now - this.lastTelemetryUpdate >= 120) {
         this.lastTelemetryUpdate = now;
         this.telemetryAdapter.updateUI();
       }
 
-      // Emite um log resumido no console e tabela no terminal a cada 3 segundos enquanto a telemetria estiver ligada
+      //? Emissão periódica a cada 3s para o console do navegador e terminal do Tauri
       if (!this.lastConsoleLogTime || now - this.lastConsoleLogTime >= 3000) {
         this.lastConsoleLogTime = now;
         const snapshot = this.telemetryAdapter.getSnapshot();
@@ -216,7 +216,7 @@ export default class WebWindowManager {
           console.groupEnd();
         }
 
-        // Envia diretamente para o terminal do processo Tauri (Rust stdout)
+        //? Despacha tabela formatada de profiling para o stdout Rust via log_browser
         if (typeof window !== 'undefined' && ((window as any).__TAURI__ || (window as any).__TAURI_INTERNALS__)) {
           import('@tauri-apps/api/core').then(({ invoke }) => {
             invoke('log_browser', { channel: 'Performance', level: 'info', message: perfTable }).catch(() => {});

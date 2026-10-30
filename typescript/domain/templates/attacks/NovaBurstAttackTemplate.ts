@@ -14,8 +14,8 @@ export interface INovaBurstDefinition {
   readonly name: string;
   readonly startRadius: number;
   readonly maxRadius: number;
-  readonly expansionSpeed: number; // pixels por segundo
-  readonly ringThickness: number; // largura da frente de onda expansiva
+  readonly expansionSpeed: number; //? Velocidade de expansão da onda de choque em pixels por segundo
+  readonly ringThickness: number; //? Largura da frente de onda expansiva em pixels
   readonly particleEffect?: string | undefined;
   readonly particleColor?: string | undefined;
   readonly particleCount?: number | undefined;
@@ -77,7 +77,7 @@ export class ActiveNovaBurst {
       this._particleTimer += deltaTime;
       if (this._particleTimer >= this._particleInterval) {
         this._particleTimer = 0;
-        // Emite partículas na borda do anel expansivo (formato de estrela de 8 pontas)
+    //? Emite partículas na borda do anel expansivo em padrão octogonal
         const points = 8;
         const angleStep = (Math.PI * 2) / points;
         const count = this.definition.particleCount ?? 2;
@@ -122,7 +122,7 @@ export class ActiveNovaBurst {
           const dy = tcy - this.origin.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          // Verifica se está dentro da espessura do anel expansivo
+    //? Verifica se o raio do alvo intercepta a espessura do anel expansivo
           if (dist >= minR && dist <= maxR) {
             this._hitEntities.add(target.id);
 
@@ -166,7 +166,7 @@ export class ActiveNovaBurst {
 export default class NovaBurstAttackTemplate {
   private _startRadius: number = 16;
   private _maxRadius: number = 180;
-  private _expansionSpeed: number = 320; // 320 px/s
+  private _expansionSpeed: number = 320; //? Velocidade de propagação da onda em pixels por segundo
   private _ringThickness: number = 28;
   private _particleEffect?: string | undefined;
   private _particleColor?: string | undefined;

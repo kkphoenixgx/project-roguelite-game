@@ -17,12 +17,12 @@ export default class ActionManager {
 
     this.rebuildBindings();
 
-    // Escuta a troca de classes para reconstruir a árvore de inputs
+    //? Atualiza mapeamento de inputs quando a classe ativa do jogador é alterada
     this.eventManager.on('classChanged', () => {
         this.rebuildBindings();
     });
 
-    // Rastreia portais interativos ativos para simetria de interação euclidiana
+    //? Rastreia portais interativos no raio de ativação para simetria euclidiana com a tecla [E]
     this.eventManager.on('portalPromptShow', (payload: { portalId: number; coordinates: { x: number; y: number } }) => {
         this.activePortals.set(payload.portalId, payload.coordinates);
     });
@@ -45,7 +45,6 @@ export default class ActionManager {
   private rebuildBindings(): void {
       this.activeHandlers.clear();
       
-      // 1. Registra os comandos básicos do Player
       const playerBindings = ClassActionBindings.get(this.player.constructor.name);
       if (playerBindings) {
           playerBindings.forEach((methodName, actionName) => {
@@ -55,7 +54,6 @@ export default class ActionManager {
 
       this.logger.log('actions', `[ActionManager] Reconstruindo atalhos. Classe ativa do Player: '${this.player.activeClass}'`);
 
-      // 2. Registra e sobrescreve com a Classe Ativa (se houver)
       const activeClassInstance = this.player.classes.find(c => c.name === this.player.activeClass);
       if (activeClassInstance) {
           const className = activeClassInstance.constructor.name;
@@ -82,7 +80,7 @@ export default class ActionManager {
         if (handler) {
             handler(this.mouseLastCoordinates, action);
         } else {
-            // Roteamento Dinâmico para o Loadout (Deck Building) - Teclas 1 a 4 (Classe) e 5 a 8 (Broches Ativos)
+    //? Roteamento de comandos de deck: teclas 1-4 para habilidades de classe e 5-8 para broches ativos
             const loadoutMatch = action.match(/^(?:slot_|spell_)([1-8])$/);
             if (loadoutMatch) {
                 const slotNum = parseInt(loadoutMatch[1] as string);
@@ -102,7 +100,7 @@ export default class ActionManager {
                     }
                 }
             } else if (action === 'spell_f') {
-                // Se a classe não sequestrou o spell_f diretamente, aciona a habilidade primordial genérica
+      //? Aciona habilidade primordial padrão se a classe ativa não tiver interceptado a tecla F
                 if (typeof this.player.executePrimordialSkill === 'function') {
                     this.player.executePrimordialSkill(this.mouseLastCoordinates);
                 }
@@ -124,7 +122,7 @@ export default class ActionManager {
                     });
                 }
 
-                // Notifica portais interativos e gatilhos de interação no mapa com simetria de ID
+    //? Notifica portais e gatilhos interativos no raio de proximidade
                 this.eventManager.dispatch('portalInteract', closestPortalId !== undefined ? { portalId: closestPortalId } : {});
             } else {
                 this.eventManager.dispatch('log', { channel: 'actions', message: `(ActionManager) event not managed: ${action}`, params: [] });

@@ -28,10 +28,10 @@ describe('Unidade - Inicialização e Configuração do Canvas (Adaptador Web)',
         vi.restoreAllMocks();
     });
 
-    it('deve solicitar contexto 2D com opções de alta performance ({ alpha: false, desynchronized: true })', () => {
+    it('deve solicitar contexto 2D com opções de alta performance ({ alpha: false })', () => {
         const canvas = new Canvas(container, 800, 600);
 
-        expect(HTMLCanvasElement.prototype.getContext).toHaveBeenCalledWith('2d', { alpha: false, desynchronized: true });
+        expect(HTMLCanvasElement.prototype.getContext).toHaveBeenCalledWith('2d', { alpha: false });
         expect(canvas.element).toBeInstanceOf(HTMLCanvasElement);
         expect(canvas.element.width).toBe(800);
         expect(canvas.element.height).toBe(600);

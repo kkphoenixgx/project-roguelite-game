@@ -1,6 +1,5 @@
 import { logger } from "../../shared/Logger";
 
-// Importa o HTML e o CSS como strings para injeção
 import html from './xpBar.html?raw';
 import css from './xpBar.css?raw';
 
@@ -26,15 +25,12 @@ export default class XpBarGui {
      * Injeta o HTML e o CSS da UI no corpo do documento.
      */
     private injectUI(): void {
-        // Injeta o CSS em uma tag <style> no <head>
         const style = document.createElement('style');
         style.textContent = css;
         document.head.appendChild(style);
 
-        // Cria um container temporário para parsear o HTML
         const container = document.createElement('div');
         container.innerHTML = html;
-        // Adiciona o elemento principal (e seus filhos) diretamente ao body
         document.body.appendChild(container.firstChild!);
     }
 
@@ -52,13 +48,12 @@ export default class XpBarGui {
      * @param data Os dados mais recentes do jogador.
      */
     public update(data: { level?: number, currentXp?: number, xpToNextLevel?: number }): void {
-        // Garante que os dados existem antes de tentar usá-los.
         if (data.level === undefined || data.currentXp === undefined || data.xpToNextLevel === undefined) {
             return;
         }
         const percentage = data.xpToNextLevel > 0 ? (data.currentXp / data.xpToNextLevel) * 100 : 0;
 
-        // Otimização: Só atualiza o DOM se os valores realmente mudaram.
+        //? Dirty checking para só atualizar nós do DOM quando os valores numéricos mudarem
         if (percentage !== this.lastPercentage) {
             this.xpBarFill.style.width = `${percentage}%`;
             this.lastPercentage = percentage;

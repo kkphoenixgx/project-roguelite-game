@@ -60,9 +60,7 @@ export default class ToastGui extends BaseGuiTemplate {
         this.container.style.display = 'flex';
     }
 
-    protected bindEvents(): void {
-        // O container de toasts escuta remoções internas delegadas se necessário
-    }
+    protected bindEvents(): void {}
 
     /**
      * Exibe o container e cria uma notificação toast flutuante na tela.
@@ -85,7 +83,7 @@ export default class ToastGui extends BaseGuiTemplate {
             this.setupElements();
         }
 
-        // Garante que o limite de toasts simultâneos não seja violado
+        //? Descarta o toast mais antigo (FIFO) quando o limite simultâneo é atingido
         if (this.activeToasts.size >= this.maxConcurrentToasts) {
             const oldestId = this.activeToasts.keys().next().value;
             if (oldestId !== undefined) {
@@ -130,7 +128,7 @@ export default class ToastGui extends BaseGuiTemplate {
 
         this.container.appendChild(toastEl);
 
-        // Dispara a animação de entrada no próximo ciclo de renderização
+        //? Agenda transição CSS para o próximo frame de renderização
         if (typeof requestAnimationFrame === 'function') {
             requestAnimationFrame(() => {
                 toastEl.classList.add('toast-visible');
@@ -139,7 +137,6 @@ export default class ToastGui extends BaseGuiTemplate {
             toastEl.classList.add('toast-visible');
         }
 
-        // Configura o timer de auto-dismiss
         let timeoutId: ReturnType<typeof setTimeout> | null = null;
         if (durationMs > 0) {
             timeoutId = setTimeout(() => {

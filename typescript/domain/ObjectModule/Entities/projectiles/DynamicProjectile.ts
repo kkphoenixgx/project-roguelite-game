@@ -36,7 +36,7 @@ export class DynamicProjectile extends Bullet {
     
     public effects: Effect[];
     public attack: Attack;
-    public spellElements: string[]; // <--- As essências que darão cor à magia no Visual!
+    public spellElements: string[]; //? Essências elementais combinadas que determinam o comportamento e apresentação
     
     public static readonly BASE_SIZE = { width: 10, height: 10 };
 
@@ -70,7 +70,7 @@ export class DynamicProjectile extends Bullet {
     public update(deltaTime: number): void {
         const displacement = this.speed * deltaTime;
         this.distanceTraveled += displacement;
-        if (this.distanceTraveled >= 500) super.destroy(); // Vai bem longe
+        if (this.distanceTraveled >= 500) super.destroy(); //? Alcance máximo de deslocamento de 500px
         this.velocity = this.direction.clone().normalizeMut().multiplyMut(displacement);
         this.rotation = this.direction.angle();
         super.updatePosition();
@@ -98,11 +98,12 @@ export class DynamicProjectile extends Bullet {
                 if (el === 'light') elementalEffects.push(new LightEffect(source));
                 if (el === 'magic') elementalEffects.push(new MagicEffect());
                 
-                // --- DEEP 2 ---
                 if (el === 'potencia') elementalEffects.push(new PotenciaEffect(source));
                 if (el === 'ice') elementalEffects.push(new IceEffect());
                 if (el === 'life') elementalEffects.push(new LifeEffect(source));
-                if (el === 'caos') elementalEffects.push(new AreaDamageEffect(eventManager, 120, payload.attack!)); // Caos é Dano em Área!
+                //? Elemento Caos gera dano radial em área
+
+                if (el === 'caos') elementalEffects.push(new AreaDamageEffect(eventManager, 120, payload.attack!));
                 if (el === 'ordem') elementalEffects.push(new OrdemEffect(source, payload.attack!, payload.spellElements!));
                 if (el === 'air') elementalEffects.push(new AirEffect());
                 if (el === 'magma') elementalEffects.push(new MagmaEffect(source));

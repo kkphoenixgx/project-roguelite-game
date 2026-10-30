@@ -128,9 +128,7 @@ export default class EquippedWeaponsHudGui extends BaseGuiTemplate {
         const secondKey = EquippedWeaponsHudGui.getWeaponIdentityKey(secondHand);
         const currentSwapHash = `${mainKey}|${secondKey}`;
 
-        // Detecta se houve uma troca (swap) entre mainHand e secondHand:
-        // Nesse caso, mantemos as armas fixas em seus respectivos slots físicos
-        // e alternamos qual slot recebe o estilo de selecionado (activeSlotIndex).
+        //? Em caso de swap de mãos, preserva posição física dos slots e alterna activeSlotIndex
         const isWeaponSwap =
             this.lastSwapHash !== '' &&
             this.lastSwapHash !== currentSwapHash &&
@@ -152,13 +150,11 @@ export default class EquippedWeaponsHudGui extends BaseGuiTemplate {
         this.lastSecondKey = secondKey;
         this.lastSwapHash = currentSwapHash;
 
-        // Aplica o estilo de selecionado (.ew-slot-primary / .is-selected) ao slot ativo
-        // e o estilo de reserva (.ew-slot-secondary) ao slot inativo
+        //? Atualiza estilos visuais (.ew-slot-primary vs .ew-slot-secondary) de acordo com o slot ativo
         this.applySlotSelectionStyle(0, this.activeSlotIndex === 0);
         this.applySlotSelectionStyle(1, this.activeSlotIndex === 1);
 
-        // Os dados de mainHand vão para o slot atualmente selecionado,
-        // e os de secondHand vão para o outro slot — mantendo as imagens fixas nos slots durante swaps!
+        //? Mapeia mainHand para o slot selecionado mantendo consistência visual durante swaps
         const slot0Weapon = this.activeSlotIndex === 0 ? mainHand : secondHand;
         const slot1Weapon = this.activeSlotIndex === 1 ? mainHand : secondHand;
 

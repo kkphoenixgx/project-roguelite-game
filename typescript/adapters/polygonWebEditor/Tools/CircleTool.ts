@@ -8,20 +8,20 @@ export class CircleTool implements ITool {
     constructor(private onComplete: (hitbox: HitboxModel) => void) {}
 
     public onMouseDown(e: MouseEvent, worldPos: Point, zoom: number): void {
-        if (e.button === 0 && !this.center) { // Inicia o círculo
+        if (e.button === 0 && !this.center) {
             this.center = { x: worldPos.x, y: worldPos.y };
             this.currentRadius = 0;
         }
     }
 
     public onMouseMove(e: MouseEvent, worldPos: Point, zoom: number): void {
-        if (this.center) { // Calcula o raio enquanto arrasta
+        if (this.center) {
             this.currentRadius = Math.hypot(worldPos.x - this.center.x, worldPos.y - this.center.y);
         }
     }
 
     public onMouseUp(e: MouseEvent, worldPos: Point, zoom: number): void {
-        if (e.button === 0 && this.center && this.currentRadius > 0) { // Finaliza ao soltar o clique
+        if (e.button === 0 && this.center && this.currentRadius > 0) {
             const hitbox: HitboxModel = {
                 id: `circle_${Date.now()}`,
                 type: 'circle',
@@ -42,7 +42,7 @@ export class CircleTool implements ITool {
         if (this.center) {
             const px = this.center.x * zoom + panX;
             const py = this.center.y * zoom + panY;
-            const screenRadius = this.currentRadius * zoom; // O raio geométrico deve escalar
+            const screenRadius = this.currentRadius * zoom;
 
             ctx.beginPath(); ctx.arc(px, py, screenRadius, 0, Math.PI * 2);
             ctx.strokeStyle = '#00FF00'; ctx.lineWidth = 2; ctx.stroke();

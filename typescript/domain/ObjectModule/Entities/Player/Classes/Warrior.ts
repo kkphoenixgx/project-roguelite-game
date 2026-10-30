@@ -46,7 +46,6 @@ import { WarriorSkillsBuilder } from "./WarriorSkillsBuilder";
 export default class Warrior extends Class {
     private skillsByLevel: Map<number, Skill> = new Map();
 
-    // Timers de Cooldown (ms)
     private lastHeavyBlowTime: number = 0;
     private readonly heavyBlowCooldown: number = 2500;
 
@@ -68,32 +67,25 @@ export default class Warrior extends Class {
     private lastAvatarTime: number = 0;
     private readonly avatarCooldown: number = 15000;
 
-    // Instâncias ativas controladas no frame loop (Zero-GC)
+    //! Instâncias ativas controladas no frame loop sob disciplina Zero-GC.
     private activeOrbitals: ActiveOrbitalAttack[] = [];
     private activeNovas: ActiveNovaBurst[] = [];
     private activeArcs: ActiveSweepingArc[] = [];
 
-    // Modelos de ataque reutilizáveis (Templates imutáveis)
     private readonly heavyBlowTemplate: SweepingArcAttackTemplate;
     private readonly whirlwindTemplate: OrbitalAttackTemplate;
     private readonly warCryTemplate: NovaBurstAttackTemplate;
     private readonly groundSlamTemplate: NovaBurstAttackTemplate;
     private readonly bladeDanceTemplate: SweepingArcAttackTemplate;
 
-    // Cache Zero-GC de vetores de direção
+    //! Cache Zero-GC de vetores de direção para evitar alocações por frame.
     private _scratchDir: Vector2D = new Vector2D(0, 0);
 
     constructor(xpTable: IXPTable, player: IPlayer, eventManager: IEventManager) {
         super('Guerreiro', xpTable, player, eventManager);
 
-        // 1. ÁRVORE DE 12 HABILIDADES CANÔNICAS (Lvl 1 ao 12) via Builder
         this.skillsByLevel = WarriorSkillsBuilder.build();
 
-        // ========================================================================
-        // 2. CONFIGURAÇÃO DOS TEMPLATES GEOMÉTRICOS DE ATAQUE
-        // ========================================================================
-
-        // 2.1. Pancada Pesada (Heavy Blow) - Arco frontal coeso sem zona morta
         this.heavyBlowTemplate = SweepingArcAttackTemplate.create(
             'warrior_heavy_blow',
             'Pancada Pesada',
@@ -110,7 +102,6 @@ export default class Warrior extends Class {
         .withDexterityScaling(0.05)
         .withParticle('slashSparks');
 
-        // 2.2. Turbilhão de Aço (Whirlwind) - Lâmina orbital paramétrica cobrindo 360 graus sem ponto cego
         this.whirlwindTemplate = OrbitalAttackTemplate.create(
             'warrior_whirlwind',
             'Turbilhão de Aço',
@@ -130,7 +121,6 @@ export default class Warrior extends Class {
         .withKnockbackMode('tangential')
         .withParticle('slashSparks');
 
-        // 2.3. Grito de Guerra (War Cry) - Onda sonora rápida com Slow
         this.warCryTemplate = NovaBurstAttackTemplate.create(
             'warrior_war_cry',
             'Grito de Guerra',
@@ -152,7 +142,6 @@ export default class Warrior extends Class {
             }
         });
 
-        // 2.4. Impacto Sísmico (Ground Slam) - Onda de terra que atordoa
         this.groundSlamTemplate = NovaBurstAttackTemplate.create(
             'warrior_ground_slam',
             'Impacto Sísmico',
@@ -173,7 +162,6 @@ export default class Warrior extends Class {
             }
         });
 
-        // 2.5. Dança das Lâminas (Blade Dance) - Corte frontal devastador em 160°
         this.bladeDanceTemplate = SweepingArcAttackTemplate.create(
             'warrior_blade_dance',
             'Dança das Lâminas do Colosso',
@@ -195,7 +183,6 @@ export default class Warrior extends Class {
      * Atualização dos ataques ativos contínuos (Zero-GC).
      */
     public update(deltaTime: number): void {
-        // Orbitais ativos
         for (let i = this.activeOrbitals.length - 1; i >= 0; i--) {
             const orbital = this.activeOrbitals[i]!;
             orbital.update(deltaTime);
@@ -204,7 +191,6 @@ export default class Warrior extends Class {
             }
         }
 
-        // Ondas expansivas ativas
         for (let i = this.activeNovas.length - 1; i >= 0; i--) {
             const nova = this.activeNovas[i]!;
             nova.update(deltaTime);
@@ -213,7 +199,6 @@ export default class Warrior extends Class {
             }
         }
 
-        // Cortes em arco ativos
         for (let i = this.activeArcs.length - 1; i >= 0; i--) {
             const arc = this.activeArcs[i]!;
             arc.update(deltaTime);
@@ -320,7 +305,6 @@ export default class Warrior extends Class {
         if (this._scratchDir.x === 0 && this._scratchDir.y === 0) this._scratchDir.x = 1;
         this._scratchDir.normalizeMut();
 
-        // Arremesso do jogador (Dash de impacto)
         if ('accelerator' in this.player && (this.player as any).accelerator) {
             (this.player as any).accelerator.x += this._scratchDir.x * 12;
             (this.player as any).accelerator.y += this._scratchDir.y * 12;
@@ -330,7 +314,6 @@ export default class Warrior extends Class {
         const damage = 20 + Math.floor(str * 1.8);
         const attack = new Attack(this.player as any, damage, 'physical', []);
 
-        // Dano e Stun na frente da investida
         const targetX = px + this._scratchDir.x * 60;
         const targetY = py + this._scratchDir.y * 60;
 
@@ -447,7 +430,6 @@ export default class Warrior extends Class {
         const px = this.player.coordinates.x + this.player.size.width / 2;
         const py = this.player.coordinates.y + this.player.size.height / 2;
 
-        // Cura 25% da vida máxima do guerreiro
         const healAmount = Math.max(30, Math.floor(this.player.attributes.maxHp * 0.25));
         if (typeof this.player.heal === 'function') {
             this.player.heal(healAmount);

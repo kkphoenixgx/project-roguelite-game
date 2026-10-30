@@ -9,6 +9,22 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
   • [F2]: Alterna a exibição das hitboxes de colisão.
   • [F3]: Alterna o painel de telemetria.
 
+  **Atalhos no Assets Adapter (Editor de Cenários e Mapas):**
+  • [T]: Alterna a ferramenta Pincel de Textura de Chunk (Chunk Texture Brush).
+  • [[ / ]]: Ajusta o raio do círculo do pincel (ou [Alt + Scroll]).
+  • [B]: Alterna o Modo Carimbo (Stamp Tool).
+  • [P]: Alterna o Player Idle de referência proporcional (1:1 com zoom) no canto inferior.
+  • [L]: Bloqueia/desbloqueia (Lock) os assets selecionados contra movimentação acidental.
+  • [C]: Centraliza o(s) asset(s) selecionado(s) perfeitamente no chunk onde se encontram.
+  • [N]: Naturaliza posição e escala com leve variação orgânica randômica.
+  • [R / Shift + R]: Gira o asset selecionado em 90° (horário / anti-horário).
+  • [H / V]: Espelha horizontalmente (Flip X) ou verticalmente (Flip Y).
+  • [Del / Backspace]: Remove o(s) asset(s) selecionado(s).
+  • [Ctrl + D]: Duplica a seleção.
+  • [Ctrl + C / Ctrl + V]: Copia e cola assets selecionados.
+  • [Ctrl + Z / Ctrl + Y]: Desfazer (Undo) e Refazer (Redo).
+  • [Esc]: Sai do Pincel/Carimbo ou desseleciona.
+
 
 ## 1. Princípios Arquiteturais: Arquitetura Hexagonal (Portas e Adaptadores)
 
@@ -56,32 +72,45 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
   - **`DomainFacade.ts`:** O guardião e **único ponto de entrada** (Porta Primária). Expõe a interface `IGameDomain` (`update`, `setWorld`, `getRenderState`). Sua responsabilidade é orquestrar a física, eventos globais e o `Player`, blindando o motor interno de mutações externas irregulares vindas da Web, Tauri ou Motores BDI/Socket. Para evitar que a Fachada vire um "Deus Monolítico", as operações complexas são delegadas para **Sub-Fachadas** especializadas no diretório `facadeComponents/`.
 
   - **`facadeComponents/`**: Gateways especializados que fragmentam as responsabilidades da `DomainFacade` em domínios funcionais coesos:
-    - **`DomainRenderState.ts`**: Construtor da "fotografia" do frame. Classe `DomainRenderState` com o método `buildRenderState()` que varre Player, Entidades e Mundo para montar o DTO `RenderableState` consumido pelo Adaptador a cada ciclo de `sync`.
+    - **`DomainRenderState.ts`**: Construtor da "fotografia" do frame com *Dirty Checking* rigoroso e *caching* agressivo Zero-GC. Método `buildRenderState()` varre Player, Entidades ativas (filtradas pela janela 3x3 do `WorldChunkManager`) e Mundo para montar o DTO `DomainRenderStateDTO`. Possui cache de nível de habilidades por classe (`classSkillLevelCache`), atualização sob demanda da árvore de habilidades e cálculo otimizado da proximidade do NPC interagível mais próximo (`nearestDistSq = 2500` sem recalcular `Math.hypot` incondicionalmente a cada frame).
     - **`InventoryGateway.ts`**: Sub-fachada exclusiva do Inventário. Expõe métodos como `getInventoryState()`, `equipItem()`, `unequipItem()`, `useItem()`, `dropItem()`. Blinda o `Player` de chamadas diretas de UI, roteando todas as operações de mochila por este ponto único.
     - **`SkillTreeGateway.ts`**: Sub-fachada da Árvore de Habilidades. Expõe `getSkillTreeState()`, `unlockSkill()`, `equipSkill()`, `unequipSkill()`. Gerencia o consumo de Pontos de Habilidade e a validação de pré-requisitos topológicos.
+    - **`MetaProgressionManager.ts`**: Sub-fachada da Metaprogressão Global Permanente. Expõe `unlockStat()`, `unlockBrooch()`, `equipBrooch()`, `unequipBrooch()`, `applyGlobalBonuses()`. Gerencia a árvore global e os pools de atributos/broches que persistem entre runs roguelite, aplicando bônus passivos permanentes e vinculando broches aos slots ativos (1-6) e passivos (I-IV).
+    - **`MetaProgressionMap.ts`**: Catálogo declarativo da metaprogressão contendo as definições dos pools (`GlobalStatPool`, `GlobalBroochPool`) e a topologia de nós da Árvore Global.
+    - **`TauriPanteaoBridge.ts`**: Gateway de comunicação IPC nativa entre o runtime Rust do Panteão (BDI) e o Domínio TypeScript. Registra listeners IPC para percepções, crenças e intenções cognitivas dos NPCs.
+    - **`ToolActionGateway.ts`**: Gateway para ferramentas do desenvolvedor, editores visuais e comandos de inspeção em runtime.
 
   - **`DialogueGateway.ts`**: Gateway de Diálogos e Conversação com NPCs. Roteia mensagens entre o Adaptador (UI de diálogo) e o motor BDI (Panteão). Gerencia o estado conversacional, turnos de fala e a ponte assíncrona com o LLM local (Ollama).
 
-  - **`ObjectModule/GameWorld.ts` e Mapas:** A classe abstrata que define as propriedades espaciais e a identidade do mapa (ex: `mapId: 'vilgem'`). Suas filhas possuem um método `generate()` que despacha as hitboxes estáticas de rios, montanhas e spawns de inimigos assim que o jogador entra no mapa. O Domínio é cego: não conhece as imagens do chão, apenas as metragens e limites físicos. Mapas implementados:
-    - **`Maps/VilgemWorld.ts`**: A ilha tutorial verdejante.
+  - **`ObjectModule/GameWorld.ts` e Mapas:** A classe abstrata que define as propriedades espaciais e a identidade do mapa (ex: `mapId: 'vilgem'`). Suas filhas possuem um método `generate()` que despacha as hitboxes estáticas de rios, montanhas e spawns de inimigos assim que o jogador entra no mapa. O Domínio é cego: não conhece as imagens do chão, apenas as metragens e limites físicos. Mapas e subsistemas implementados:
+    - **`Maps/VilgemWorld.ts`**: A ilha tutorial verdejante com coordenadas centradas no Spawn (Chunk `(0, 0)` cobrindo `[0..1024, 0..1024)` e ponto de spawn em `(512, 591)`).
     - **`Maps/CemiiWorld.ts`**: Bioma sombrio e hostil.
     - **`Maps/AlunWorld.ts`**: Região avançada com desafios escalados.
+    - **`Maps/IntermapWorld.ts` & `Maps/IntermapConfig.ts` (`IntermapRegistry`)**: Arquitetura orientada a dados para mundos interiores (casas, lojas, padarias, calabouços). O `IntermapRegistry` armazena as definições estruturadas (`IntermapDefinition`) contendo dimensões, chunks, portas de transição (`DoorConfig`) e cenários específicos. O `IntermapWorld` é instanciado dinamicamente no carregamento de qualquer interior registrado (ex: `interior_black_default`), eliminando a necessidade de criar classes de arquivo `.ts` manuais para cada cômodo.
+    - **`Maps/PortalLinks/portalLinksMap.ts` & `PortalLink.ts`**: Sistema declarativo de mapeamento de portais de transição entre mundos. `PortalLink` atua como colisor e sensor no mundo lógico, ativando requisições semânticas de transição com cálculo e memorização de retorno seguro (`lastEnteredPortalReturnByMap`).
+    - **`Maps/ChunkBoundaryHelper.ts`**: Utilitário matemático Zero-GC que calcula interpolações e resolve colisões de fronteira para evitar que entidades sofram descontinuidades físicas ao cruzar as bordas de chunks.
+    - **`Maps/WorldChunkManager.ts`**: O orquestrador de particionamento espacial de mundo baseado em coordenadas de chunks inteiras assinadas $(cx, cy) \in \mathbb{Z} \times \mathbb{Z}$ (estilo Minecraft). Responsabilidades:
+      - **Hash Inteiro de 32 bits Zero-GC:** Chave numérica `(cx << 16) ^ (cy & 0xffff)` eliminando concatenação de strings no Event Loop.
+      - **Janela Ativa 3x3:** Mantém ativos para física, simulação e renderização apenas os 9 chunks adjacentes ao jogador, permitindo mundos massivos com 60 FPS contínuos sem *Garbage Collection*.
+      - **Origem Central no Spawn:** O Chunk `(0, 0)` representa o núcleo da cidade/spawn. A expansão ao Norte (`cy < 0`), Oeste (`cx < 0`), Sul (`cy > 0`) ou Leste (`cx > 0`) jamais desloca as coordenadas dos chunks existentes nem as hitboxes de assets já posicionados.
+      - **Notificação Reativa:** Emite o evento semântico `activeChunkChanged` quando o jogador atravessa a fronteira para um novo chunk.
 
   - **`ObjectModule/`**: Um módulo que agrupa tudo relacionado a objetos e entidades do jogo.
     - **`ObjectElement.ts`**: A classe base matemática para qualquer objeto no mundo. Define ID espacial, coordenadas, dimensões visíveis (`size`) e vetores.
     - **`ObjectElementManager.ts`**: O coração pulsante da física do jogo. Gerencia o ciclo de vida completo de **todas** as entidades (exceto o `Player`). Responsabilidades:
-      - **Spawn Guiado a Dados:** Ouve eventos de `spawn` e utiliza o `SpawnRegistry` (povoado automaticamente via Decorators `@RegisterSpawner`) para instanciar classes concretas dinamicamente, sem nenhum acoplamento estrutural (If/Else).
-      - **Atualização de Estado:** Itera sobre todos os elementos a cada frame, chamando seus respectivos métodos `update`.
+      - **Spawn Guiado a Dados:** Ouve eventos de `spawn` e utiliza o `SpawnRegistry` (povoado automaticamente via Decorators `@RegisterSpawner`) para instanciar classes concretas dinamicamente, sem nenhum acoplamento estrutural (If/Else). Registra novos elementos no `WorldChunkManager` para rastreamento espacial.
+      - **Atualização de Estado:** Itera sobre os elementos ativos na janela 3x3 a cada frame, chamando seus respectivos métodos `update`.
       - **Detecção de Colisão Zero-GC:** Repassa buffers leves de dados primitivos (`plainElements`) para a Porta `ICollisionService`. A resolução adota o padrão de **Física Atrasada (Delayed Resolution)**: resolve impactos e gatilhos de `onColision` apenas no início do frame seguinte, garantindo fluidez do Event Loop síncrono.
       - **Query Espacial Otimizada (`requestNeighbors`):** Implementa busca de vizinhança usando Teorema de Pitágoras (Distância Euclidiana via `Math.hypot`), permitindo varreduras a partir de entidades ou de pontos arbitrários no espaço (útil para magias de área como meteoros e explosões procedurais).
-    - **`CollisionManager.ts`**: Camada de orquestração de colisão extraída do `ObjectElementManager` para separação de responsabilidades. Gerencia o ciclo de vida da detecção de colisão, o buffer de colisões pendentes (*Double Buffering*) e o despacho da resolução atrasada.
+      - **Gatilhos de Cenário (`handleTriggerAssetState`):** Processa solicitações de mudança de estado de assets de cenário (ex: abrir/fechar portões). Suporta filtragem por `elementId`, `presetType` ou `nearCoordinates` com raio de alcance calculado até a caixa delimitadora (AABB) de grandes estruturas, sincronizando colisores no `CollisionManager`.
+    - **`CollisionManager.ts`**: Camada de orquestração de colisão extraída do `ObjectElementManager` para separação de responsabilidades. Gerencia o ciclo de vida da detecção de colisão, o buffer de colisões pendentes (*Double Buffering*), o grid estático espacial (`GRID_SIZE = 256`), o cache de colisores estáticos (`staticCollidersCache`) e a sincronização atômica de colisores passáveis/bloqueantes (`addStaticCollider`, `removeStaticCollider`).
     - **`CollisionTileType.ts`**: Enum e mapeamentos para colisões baseadas em tiles. Mapeia cores hexadecimais de imagens PNG para tipos de colisão (`WALL`, `WATER`, `LAVA`, `GRASS`, `ICE`, `SPIKE`) e define comportamentos (passável, modificador de velocidade, tipo de efeito, dano por segundo).
     - **`RewardManager.ts`**: Orquestrador de recompensas na morte de inimigos. Escuta eventos de morte e dispara a geração de loot via `RewardGenerator`.
     - **`SpawnRegistry.ts`**: Registro estático preenchido por Decorators `@RegisterSpawner`. Mapeia strings de tipo para funções fábrica, eliminando qualquer `switch-case` ou `if-else` na instanciação.
     - **`EnvironmentCollider.ts`**: Colisores estáticos do ambiente (muros, rios, montanhas). São gerados pelo `GameWorld.generate()` e pelo `CollisionTileAdapter`.
-    - **`Scenery/`**: Módulo de elementos decorativos não-interativos no mundo (árvores, pedras, arbustos):
-      - **`SceneryElement.ts`**: Estende `ObjectElement`. Possui propriedades visuais mas sem hitbox ou lógica de colisão. Puro "cenário de fundo".
-      - **`SceneryRegistry.ts`**: Registro (padrão Registry, similar ao `SpawnRegistry`) que mapeia strings de tipo de cenário para funções fábrica.
+    - **`Scenery/`**: Módulo de elementos de cenário interativos e estáticos no mundo (árvores, construções, portões, poços, muralhas):
+      - **`SceneryElement.ts`**: Estende `EnvironmentCollider`. Configurado dinamicamente com hitboxes via `SceneryRegistry`. Implementa a máquina de estados visual (`setState()`, `open()`, `close()`), emite o evento semântico `assetStateChanged` e altera a propriedade física `passable`, permitindo transições fluidas entre assets estáticos e spritesheets animadas.
+      - **`SceneryRegistry.ts`**: Registro que mapeia tipos de cenário para dimensões base e geradores de hitbox procedurais (polígonos e círculos parametrizados).
     - **`Entities/`**: Representam seres "vivos" ou com comportamento autônomo.
       - **`Entity.ts`**: Adiciona os conceitos de "Vida", "Movimento" e **"Status"**. Gerencia vetores cinemáticos e processa o intrincado pipeline de dano (`takeDamage`), que calcula esquiva, redução de dano, sinergias de vulnerabilidades elementais (ex: Água + Trovão) e emite eventos de *knockback*.
       - **`EntityMovement.ts`**: Componente de movimento extraído da `Entity`. Encapsula velocidade, aceleração, fricção, acúmulo de forças e resposta a colisões. A `Entity` agora delega toda a cinemática para esta classe, seguindo o princípio de Composição sobre Herança.
@@ -95,7 +124,12 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
       - **`DefaultXPTable.ts` e `IXPTable.ts`**: Tabela de progressão de XP por nível. Define recompensas (pontos de atributo e de habilidade) para cada Tier, permitindo que cada Classe do jogador customize sua curva de crescimento.
       - **`Player/`**: Contém a lógica específica da entidade do jogador.
         - **`Player.ts`**: O avatar central. Orquestra a injeção do complexo Sistema de Inventário (uma intrincada `Bag` com limite de carga dinâmica e slots anatômicos rigorosos, até 10 anéis) e Delega execuções. A matriz `activeLoadout` implementa as restrições do design de **Deck Building** (Mochila de Magias).
-        - **`components/`**: Subsistemas do jogador extraídos como componentes independentes (Composição sobre Herança). Fragmenta responsabilidades de combate, inventário e interação em classes coesas reutilizáveis.
+        - **`components/`**: Subsistemas do jogador extraídos como componentes independentes (Composição sobre Herança):
+          - **`PlayerClassManager.ts`**: Gerencia troca de classes ativas, level-up de classes, cálculo de bônus de atributos derivados e reset efêmero do estado da run (`resetRun`).
+          - **`PlayerBroochManager.ts`**: Gerencia a ativação e slots de broches ativos (1 a 6) e passivos (I a IV) derivados da metaprogressão global.
+          - **`PlayerEquipment.ts`**: Gerencia a equipagem de armas e as peças anatômicas de armadura com limites de carga dinâmica e cálculo de atributos.
+          - **`PlayerInventory.ts`**: Fachada de integração coesa entre o `Player` e o sistema de armazenamento (`Bag`).
+          - **`BroochRegistry.ts`**: Registro estático dos broches do jogo e suas definições funcionais.
         - **`IPlayerContext.ts`**: Interface que define o contexto exposto pelo Player para seus componentes e classes, evitando que subsistemas acessem propriedades internas desnecessárias.
         - **`Classes/Class.ts` e Derivados:** Onde mora a identidade mutável do jogador. Classes como `Gunslinger`, `Warrior`, `Necromancer` determinam as Curvas de XP e recompensas em Tiers de nível.
         - **`Classes/Mage.ts` (O Axiomante e o Spell Parser):** Transforma o teclado num terminal de comandos. Possui um **Buffer Temporal FIFO**. O jogador "digita" os atalhos elementais em sequência rápida (ex: `0` para Projétil, `4` para Fogo). O *Parser* lê a receita "`04`", valida e "cospe" uma `Fireball`. Magia por digitação real, caos controlado.
@@ -115,8 +149,8 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
         **Camada 2 — `BdiAgentEntity.ts`** (Ponte BDI):
         Classe abstrata que estende `InteractiveEntity` e injeta o `IBdiGateway`. É o "nervo óptico" do NPC: empacota percepções do mundo (posição do jogador, HP, entidades próximas) em Speech Acts JSON e as envia para o backend Rust via `gateway.sendPerception()`. Recebe de volta intenções de ação (`attack`, `flee`, `speak`) que são validadas antes de execução. O ciclo é **assíncrono e não-bloqueante**: o NPC continua existindo e se movendo no mundo enquanto a Engine BDI delibera.
 
-        **Camada 3 — `CognitiveNPC.ts`** (IA Conversacional):
-        Estende `BdiAgentEntity` e adiciona o `ILLMService` (Ollama). É aqui que o NPC *"pensa com palavras"*. Quando o jogador inicia diálogo, o NPC monta um prompt contextual (sua personalidade, crenças atuais, histórico de relação com o jogador) e o envia para o LLM local. A resposta do LLM é tratada como uma **proposta de ação**, não como verdade — ela passa obrigatoriamente pelo `PraxisValidator` antes de ser executada. Gerencia `emotionalState` (feliz, irritado, desconfiado) e `relationshipScore` com o jogador.
+        **Camada 3 — `CognitiveNPC.ts`** (IA Conversacional & Ações de Cenário):
+        Estende `BdiAgentEntity` e adiciona o `ILLMService` (Ollama). É aqui que o NPC *"pensa com palavras"*. Quando o jogador inicia diálogo, o NPC monta um prompt contextual (sua personalidade, crenças atuais, histórico de relação com o jogador) e o envia para o LLM local. A resposta do LLM é tratada como uma **proposta de ação**, não como verdade — ela passa obrigatoriamente pelo `PraxisValidator` antes de ser executada. Gerencia `emotionalState` (feliz, irritado, desconfiado), `relationshipScore` com o jogador, e expõe métodos de intenção de cenário (`openGate`, `closeGate`, `triggerAssetState`) para que planos BDI ou scripts possam interagir com estruturas do mundo (como portões de castelo e pontes) por proximidade espacial contextual.
 
         **Camada 4 — `PraxisValidator.ts`** (Sandbox de Segurança):
         O guarda-costas do motor de jogo contra IAs alucinantes. Recebe a string de ação proposta pelo LLM/BDI, parseia a AST e rejeita qualquer tentativa de:
@@ -177,7 +211,7 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
 
   - **`eventDispacher/`**: Implementa um sistema de eventos (Observer Pattern) para comunicação desacoplada dentro do Domínio.
     - **`eventDispacher.ts`**: Orquestrador global e forte tipagem (TypeScript seguro). Filtra preventivamente canais volumosos (`playerMoved`, `log`) para prevenir loop recursivo.
-    - **`IGameEvents.ts` e `GameEventMap`:** O dicionário absoluto da comunicação do jogo (Ex: payloads de `spawnVisual`, `particle`, `npcSpoke`). Garante que UIs reativas (via Tauri) e lógicas puras possuam segurança na compilação.
+    - **`IGameEvents.ts` e `GameEventMap`:** O dicionário absoluto da comunicação do jogo (Ex: payloads de `spawnVisual`, `particle`, `npcSpoke`, `triggerAssetState`, `assetStateChanged`, `activeChunkChanged`). Garante que UIs reativas (via Tauri) e lógicas puras possuam segurança na compilação.
     - **`ActionBindings.ts` (Decorators):** O Roteamento de Entrada Zero-Overhead. Usa Metadata Reflection com o `@BindAction('tecla')` para declarar quais métodos das classes (ex: `Player`, `Mage`) interceptam inputs, criando o mapeamento na própria inicialização do código sem nenhum Switch-Case e disparando erros (Fail-Fast) no Boot.
     - **`ActionManager.ts`:** Roteador dinâmico. Lê os Decorators e roteia intencionalidades primárias para a Classe Ativa e delega teclas soltas numéricas (1, 2, 3) para disparar Skills equipadas no painel de Loadout (`activeLoadout`) do jogador.
 
@@ -185,12 +219,13 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
     - **`Skill.ts`**: Classe representando uma habilidade na Árvore de Habilidades. Propriedades: `id`, `name`, `description`, `icon`, `tier`, `prerequisites`, `effects`. Suporta `activate()` e `deactivate()`. Parte do sistema de Deck Building onde habilidades desbloqueadas podem ser equipadas nos 4 slots do Loadout ativo.
 
   - **`ports/`**: Define as fronteiras do domínio. As Portas Secundárias cresceram significativamente para suportar Telemetria, Persistência, IA e Tiles de Colisão:
-    - `domain-contracts.ts` (Porta Primária): Exporta os DTOs transitórios (`RenderableState`).
+    - `domain-contracts.ts` (Porta Primária): Exporta a interface `IGameDomain` (`update`, `setWorld`, `loadWorld`, `getRenderState`, `triggerAssetState`) e os DTOs transitórios essenciais (`DomainRenderStateDTO`, `RenderableState`, `TriggerAssetStateDTO`, `AssetStateChangedDTO`, `ChunkCoordDTO`, `WorldBoundsDTO`).
     - `ILogger.ts` (Porta Secundária): Permite logs desacoplados e categorizados (`channels`).
     - `ICollisionService.ts` (Porta Secundária): Contrato de submissão do array `plainElements` aguardando reposta da árvore Quádrupla Assíncrona no Adaptador.
     - `ICollisionTileService.ts` (Porta Secundária): Contrato para carregamento de camadas de colisão baseadas em imagens PNG.
     - `IBdiGateway.ts` (Porta Secundária): Contrato para comunicação IPC com o motor BDI Panteão.
     - `ILLMService.ts` (Porta Secundária): Contrato para integração com LLM local (Ollama) para diálogos cognitivos.
+    - `ILLMConfigPort.ts` (Porta Secundária): Contrato para configuração dinâmica de modelos e parâmetros do LLM.
     - `ISaveRepository.ts` (Porta Secundária): Contrato de persistência para salvar/carregar progresso do jogo.
     - `ITelemetryPort.ts` (Porta Secundária): Contrato de coleta de métricas de gameplay (DPS, TTK, FPS, tempo de sessão).
     - `IClass.ts`: Interface contratual para definições de classes do jogador.
@@ -230,6 +265,15 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
     - **`PolygonTool.ts`**: Ferramenta para desenhar hitboxes poligonais ponto a ponto (fecha com `Enter`).
     - **`CircleTool.ts`**: Ferramenta para hitboxes circulares interativas. Calcula raio durante o arraste, mostra preview verde, e exporta `HitboxModel` tipo `'circle'`.
     - **`SelectTool.ts`**: Seleção, movimentação e deleção de vértices/centros de hitboxes existentes. Suporta polígonos e círculos; clique-direito deleta.
+
+  - **`assets-adapter/` (Assets & Scenery Editor):** Ferramenta visual autônoma (aberta com `F4`) para composição de cenários, posicionamento de props, gerenciamento e pintura de chunks, vinculação de portais com InnerMaps e exportação sincronizada de código do mundo.
+    - **`EditorApp.ts`:** Orquestrador principal que integra o `AssetDrawer`, `MapCanvas`, `PropertiesPanel`, `WorldCodeSync`, `ChunkSync` e os modais (`ChunkManagerModal`, `MapSelectorModal`, `SpriteDefinitionModal`, `Exporter`).
+    - **`MapCanvas.ts`:** Viewport de alta fidelidade visual com Y-Sorting isométrico 2.5D, pan/zoom fluido focado no mouse, marquee box selection tipo desktop, alças de redimensionamento livre ou proporcional (`Shift`), e renderização opcional de hitboxes (`F2`).
+    - **Pincel de Textura de Chunk (`isChunkBrushMode` / Tecla `T`):** Permite selecionar qualquer textura de fundo de chunk (ou terreno/estrada/água) e pintar diretamente sobre o mapa através de um cursor circular configurável (`8px` a `256px`, com suavidade/degradê radial e opacidade). Pinceladas consecutivas acumulam dinamicamente em uma camada contínua ([`PlacedAssetModel`](file:///home/kkphoenix/Documents/Workspace/rpg-roguelite-game/typescript/adapters/assets-adapter/Models/PlacedAssetModel.ts) com `isPaintedLayer: true` e `presetId: 'painted_chunk_layer'`).
+    - **Bake de Objetos no Fundo do Chunk (`bakeMultipleAssetsToChunkBackground`):** Permite selecionar qualquer objeto ou área pintada pelo pincel e fixá-lo (Bake) permanentemente no(s) PNG(s) de fundo dos chunks interceptados. Salva a nova textura física via endpoint `/api/assets-adapter?target=save-chunk-image`, atualiza a matriz de chunks no disco via `ChunkSync` e remove a entidade temporária do mapa.
+    - **Referência Proporcional do Player (`showPlayerReference` / Tecla `P`):** Projeta o Player Idle no canto inferior direito da tela sem bordas de UI, escalando estritamente em sincronia com o zoom da câmera para servir como referência visual de escala 1:1 com portas, construções e props.
+    - **WorldCodeSync (`WorldCodeSync.ts`):** Serializa os assets colocados diretamente no arquivo de código de mundo TypeScript correspondente (ex: `VilgemWorld.ts`), filtrando automaticamente camadas temporárias não fixadas (`isPaintedLayer`) para não poluir o código do jogo antes do bake.
+    - **ChunkManagerModal (`ChunkManagerModal.ts`):** Modal para adicionar/remover linhas e colunas de chunks em tempo real com preservação da origem central `(0, 0)` no Spawn, além de gerenciamento de InnerMaps (interiores de construções).
 
   Tudo listado a seguir está no diretório `typescript/adapters/web/components/` e são componentes do jogo:
 
@@ -466,7 +510,11 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
   4.  **Aplicação do Dano (Domain - Entity/Attributes):**
       -   Dentro do `attack.execute`, o dano total é calculado (base + atributos + crítico).
       -   O método `target.takeDamage(damageInfo)` é chamado.
-      -   O método `takeDamage` na classe `Entity` calcula o dano final após aplicar a defesa (`this.attributes.defence`) e subtrai o resultado do HP da entidade.
+      -   O método `takeDamage` na classe `Entity` processa modificadores elementais e sinergias de status:
+          - *Sinergias de Status:* `wet + dark` (+50% de dano por condução), `wet + fire` (-50% de dano por extinção), `poison` (+15% de dano global recebido), `undead + light` (+50% de dano sagrado).
+          - *Fraquezas Intrínsecas (+50% dano):* Natureza fraca a Fogo; Fogo fraco a Água; Água fraca a Trevas.
+          - *Resistências Intrínsecas (-50% dano):* Natureza resiste a Terra; Fogo resiste a Fogo; Trevas resistem a Luz; dano do mesmo elemento do alvo também é resistido.
+      -   A defesa (`this.attributes.defence`) atenua o dano restante e o resultado é subtraído do HP da entidade.
 
   5.  **Verificação de Morte (Domain - Entity):**
       -   Após aplicar o dano, `takeDamage` verifica se `this.attributes.hp <= 0`.
@@ -474,6 +522,22 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
 
   6.  **Remoção da Entidade (Domain - `ObjectElementManager`):**
       -   O `ObjectElementManager`, que ouve o evento `'despawn'`, recebe o ID do inimigo e o remove de seu mapa `elements`. A partir do próximo frame, o inimigo não existe mais no domínio.
+
+#### 3.6.1. AttackBuilder e Composição Fluente de Ataques (`AttackBuilder.ts`)
+
+  Para evitar construtores telescópicos e acoplamento rígido em armas, magias e classes, o `AttackBuilder` provê uma interface fluente para parametrizar instâncias de `Attack`:
+  - **Escalonamento Multifatorial:** Suporte a escalonamento de múltiplos atributos primários (`strength`, `dexterity`, `intelligence`, `wisdom`, `constitution`).
+  - **Fórmulas de Crítico e Execução:** Configuração de chance extra de crítico, multiplicador de dano crítico, crítico garantido e limite percentual de vida para Coup de Grâce / Execução (`withExecuteThreshold`).
+  - **Bônus Situacionais de Arquétipo:** Multiplicadores dedicados contra mortos-vivos (`withUndeadBonus`) e chefes (`withBossBonus`).
+  - **Interceptadores de Recursos e Efeitos:** Vampirismo percentual (`withExtraLifestealPercent`), drenagem de mana (`withManaLeechAmount`), física de repulsão (`withKnockback`) ou sucção (`withVacuum`), e injeção probabilística de status (`withBurn`, `withFreeze`, `withStun`, `withPoison`, etc.).
+  - **Dano em Área e Ricochete:** Suporte nativo a dispersão radial (`withRadialAoE`) e ricochete entre alvos (`withChainRicochet`).
+
+#### 3.6.2. Motor Gramatical de Runas e Magias (`RuneGrammarEngine.ts` & `MageSpellCraftingRegistry.ts`)
+
+  O sistema de magia da classe Mago e conjuradores cognitivos é fundamentado em uma gramática de runas combinatórias executadas pelo `RuneGrammarEngine`:
+  - **Fusão Adjacente Canônica (Deep-2):** Glifos adjacentes no buffer de digitação do jogador são fundidos par a par segundo a matriz de elementos primários (ex: Fogo + Terra = Magma, Fogo + Ar = Relâmpago, Água + Terra = Lama, etc.).
+  - **Operador Axiomático de Negação / Dispel:** A runa de Negação (`negation`) atua como anulação e purga axiomática de buffs e debuffs mágicos. Quando combinada com certas ordens materiais inválidas, gera dissipação instável de mana (*fizzle*); quando estruturada com `self + potencia + negation + magic`, conjura a Lâmina Anti-Magia com purga de status mágicos adversos.
+  - **Auto-Cast por Inatividade:** O `Mage` processa um buffer circular de até 9 glifos, disparando auto-cast determinístico assim que o jogador cessa a digitação por uma janela temporal configurada, garantindo fluidez e responsividade de combate.
 
 ### 3.7. Fluxo de Experiência e Level Up (`xp`)
 
@@ -638,6 +702,61 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
   2.  **Load:** `loadProgress()` descriptografa e valida integridade. Injeta o estado de volta no `DomainFacade`.
   3.  **Export/Import:** `exportSave()` gera string criptografada para backup. `importSave()` valida e restaura.
 
+### 3.16. Fluxo de Transição de Mundos e InnerMaps (`transitionWorld`)
+
+  O ciclo de transição de mapas orquestrado pela `DomainFacade` opera em 6 fases assíncronas estritas:
+  1.  **Limpeza Preservada:** `ObjectElementManager.clearWorldElements(true)` expurga todas as entidades dinâmicas do mapa anterior, preservando o estado do `Player`.
+  2.  **Sincronização de Coleta:** Sincroniza o conjunto de itens coletados (`collectedWorldItems`) para não respawnar itens já obtidos.
+  3.  **Instanciação Dinâmica:** `createWorldInstance(targetMapId)` resolve a classe de mapa concreta (ex: `VilgemWorld`, `InteriorBlackDefaultWorld`).
+  4.  **Atualização de Limites & Chunks:** Atualiza os limites espaciais (`world.bounds`) e reinicializa o `ChunkManager` para o novo mundo.
+  5.  **Resolução de Spawn e Retorno:** Reposiciona o jogador no ponto de spawn especificado ou calcula a porta de retorno segura registrada (`lastEnteredPortalReturnByMap`) quando saindo de um InnerMap para o mundo exterior.
+  6.  **Geração e Notificação:** Executa `world.generate()` e despacha o evento semântico `mapTransitionCompleted` com as coordenadas finais para sincronização dos adaptadores.
+
+### 3.17. Fluxo de Reset de Run e Ciclo Roguelite (`resetRunState`)
+
+  Ao término de uma run (morte do jogador ou reinício de ciclo):
+  1.  **Preservação Meta-Progressiva:** Os broches desbloqueados e equipados no loadout permanente (`passiveLoadout` e `globalActiveLoadout`) são clonados e preservados.
+  2.  **Reset de Estado Efêmero:** Nível e atributos são resetados para o nível 1 base da run, reaplicando em seguida os bônus fixos da Árvore Global (`MetaProgressionManager.applyGlobalBonuses()`). HP e Mana voltam ao máximo base.
+  3.  **Limpeza de Inventário e Equipamentos:** Mochila, moedas temporárias da run e equipamentos equipados (`mainHand`, `helmet`, `chestplate`, etc.) são completamente limpos.
+  4.  **Restauração de Habilidades:** Habilidades e cooldowns da classe ativa são reinicializados para o estado inicial via `PlayerClassManager.resetRun()`.
+  5.  **Reinstalação dos Broches & Cinemática:** Broches permanentes são reinstalados nos slots 1..4 de passivos e 5..8 de ativos. O jogador é revivido (`revive()`) e reposicionado nas coordenadas de spawn iniciais com hitboxes atualizadas.
+  6.  **Sincronização com a UI:** Dispara `inventoryUpdated` e eventos de atributos para atualizar toda a interface gráfica.
+
+### 3.18. Fluxo de Transição de Estado de Cenário & Abertura de Portões (`triggerAssetState` & `assetStateChanged`)
+
+  Permite que NPCs cognitivos (BDI), sistemas de quests, alavancas e scripts do mundo modifiquem dinamicamente o estado visual e a física de elementos do cenário (como um guarda abrindo ou fechando os portões de pedra do castelo):
+
+  1.  **Gatilho de Ação:** O NPC executa ações contextuais como `guardNpc.openGate('stone_wall_gate')` ou `guardNpc.closeGate('stone_wall_gate')`, ou uma entidade/quest despacha diretamente o evento `triggerAssetState` com o DTO `TriggerAssetStateDTO`.
+  2.  **Filtragem Espacial Inteligente por AABB:** O `ObjectElementManager.handleTriggerAssetState()` localiza o elemento pelo `elementId`, `presetType` ou `nearCoordinates`. Para estruturas arquitetônicas amplas (como o portão `stone_wall_gate` de 396px de largura e 250px de altura), o cálculo afere a distância euclidiana do ponto de consulta até a borda mais próxima da caixa delimitadora (AABB) do asset (`Math.max(min, Math.min(q, max))`), eliminando falsos negativos quando a entidade está nas laterais ou batentes da estrutura.
+  3.  **Transição de Estado no Domínio:** Invoca `sceneryElement.setState(targetState, passable)` (ou `open()` / `close()`). O elemento atualiza seu estado semântico (`'static'`, `'open'`, `'idle'`) e sua flag de colisão física `passable`.
+  4.  **Sincronização de Colisão Física:** Se `passable: true`, o `ObjectElementManager` remove a entidade dos colisores estáticos bloqueantes via `collisionManager.removeStaticCollider()`; se `passable: false`, o elemento é imediatamente re-adicionado ao grid de colisão via `collisionManager.addStaticCollider()`. Assim, jogadores e inimigos podem atravessar livremente o vão aberto sem serem barrados pela física estática.
+  5.  **Notificação Semântica Tipada:** O elemento despacha o evento `assetStateChanged` com `AssetStateChangedDTO` (`elementId`, `presetType`, `previousState`, `currentState`, `passable`).
+  6.  **Reação da Apresentação (RenderModule):** O `DomainRenderState` reflete o novo estado na fotografia do frame (`RenderableState.state`). O `GameObjectElement` detecta a transição e troca instantaneamente o `SpriteConfig` de `stone_wall_gate-static` (imagem limpa de 1 frame) para `stone_wall_gate-open` (spritesheet animada de 4 frames), com cache Zero-GC via `RenderRegistry`.
+
+### 3.19. Fluxo de Particionamento Espacial e Chunks Infinitos (`WorldChunkManager & Origem Central`)
+
+  O sistema de mundo adota o particionamento espacial contínuo por chunks inteiros assinados $(cx, cy) \in \mathbb{Z} \times \mathbb{Z}$ (estilo Minecraft) gerenciado pelo `WorldChunkManager`:
+
+  1.  **Origem Central no Spawn:** A praça central e o ponto de spawn inicial de Vilgem residem no Chunk `(0, 0)` (dimensões `[0..1024, 0..1024)` e spawn em `(512, 591)`). Chunks circundantes usam coordenadas inteiras assinadas relativas ao centro: Norte (`cy < 0`), Oeste (`cx < 0`), Sul (`cy > 0`), Leste (`cx > 0`). Expansões modulares com muralhas e novos distritos nunca deslocam coordenadas relativas nem hitboxes existentes.
+  2.  **Chave Inteira Zero-GC de 32 bits:** A indexação dos chunks em mapas usa a função hash `(cx << 16) ^ (cy & 0xffff)` sem instanciar strings temporárias (`${cx},${cy}`) no loop quente da simulação.
+  3.  **Janela Ativa 3x3:** Apenas os 9 chunks adjacentes ao chunk ocupado pelo jogador são mantidos ativos a cada frame para física de colisão, simulação de IA e renderização no `DomainRenderState`. Elementos em chunks distantes ficam em repouso, garantindo 60 FPS estáveis mesmo com mapas imensos.
+  4.  **Notificação de Travessia:** Sempre que o jogador cruza a fronteira para um novo chunk, o `WorldChunkManager` despacha o evento tipado `activeChunkChanged`, permitindo que os adaptadores visuais façam streaming de texturas e chunks de forma proativa.
+
+### 3.20. Fluxo de Salvamento Obrigatório ao Quitar e Retenção de Coordenadas (`quitSave`)
+
+  Garante a preservação estrita do progresso do jogador e a prevenção de bugs de teletransporte involuntário ao sair da sessão:
+
+  1.  **Salvamento Obrigatório Antes de Sair:** No acionamento de encerramento (clique em `#pm-btn-quit` no menu de pausa ou fechamento do cliente), o `PauseMenuGui` e o `GameAdapter` disparam atomicamente a persistência do save slot atual antes de invocar callbacks de saída ou descarregar a cena.
+  2.  **Retenção Fiel de Posição:** O DTO de persistência grava com precisão as coordenadas espaciais atuais do jogador (`coordinates.x`, `coordinates.y`) e o `currentMapId`.
+  3.  **Restauração Autêntica:** Ao recarregar a partida via `loadWorld` e `loadProgress`, a `DomainFacade` inicializa o avatar exatamente na posição salva no mundo, sem reposicioná-lo arbitrariamente no spawn da cidade.
+
+### 3.21. Desacoplamento da Facade de Domínio (Prevenção de God Class)
+
+  Para aderir estritamente ao Princípio da Responsabilidade Única (SRP) e impedir o crescimento da `DomainFacade` como *God Class*:
+  - Métodos granulares de manipulação (`manageInventory`, `manageSkillTree`, `allocateAttribute`) não residem na Facade.
+  - As interfaces de apresentação (GUIs) comunicam intenções através de eventos semânticos no barramento (`EventBus`) ou via Gateways especializados (`InventoryGateway`, `SkillTreeGateway`, `DialogueGateway`, `ToolActionGateway`).
+  - A Facade atua exclusivamente como orquestrador de alto nível e delegador para os subsistemas responsáveis.
+
 ### Diagrama Geral de Comunicação entre Módulos
 
   ```mermaid
@@ -646,13 +765,17 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
       DF[DomainFacade]
       OEM[ObjectElementManager]
       CM[CollisionManager]
+      WCM[WorldChunkManager]
       P[Player]
       E[Enemies]
       NPC[CognitiveNPCs]
       RM[RewardManager]
       IG[InventoryGateway]
       SG[SkillTreeGateway]
+      MPM[MetaProgressionManager]
       DG[DialogueGateway]
+      TPB[TauriPanteaoBridge]
+      IMR["IntermapRegistry & Portals"]
       EB["EventBus (gameEvents)"]
     end
 
@@ -681,17 +804,24 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
     GA -->|syncRenderables| SM
     SM -->|draw| GPU
     DF --> OEM
+    DF --> MPM
+    DF --> IMR
+    OEM --> WCM
     OEM -->|plainElements| CM
     CM -->|Worker Async| CM
     P -->|playerMoved| EB
-    EB -->|spawn, despawn, levelUp| OEM
+    EB -->|spawn, despawn, levelUp, triggerAssetState| OEM
+    OEM -->|assetStateChanged, activeChunkChanged| EB
     EB -->|particle, spawnVisual| GEB
     GEB --> SM
     EB -->|npcSpoke, npcDialog| DA
     E -->|morte| RM
     RM -->|spawn droppedItem| EB
+    NPC -->|openGate / intenções de cenário| OEM
     NPC -->|sendPerception| BDI
     NPC -->|prompt| LLM
+    BDI -->|IPC Bridge| TPB
+    TPB --> DF
     DG -->|PraxisValidator| NPC
     IG --> DF
     SG --> DF
@@ -792,6 +922,39 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
    - **Escalabilidade Infinita de Atributos:** Os atributos cumulativos da árvore global podem crescer indefinidamente. A interface utiliza um container com rolagem suave (`overflow-y: auto`) e tags circulares compactas com tooltips detalhados, garantindo que novos nós de meta-progressão não quebrem o layout.
    - **Consistência de Feedback Visual:** Cada formato geométrico reage ao estado de preenchimento (`.filled`) com gradientes radiais correspondentes à sua classe ou raridade, glow temático e tooltip completo.
 
+   ### 4.7. Como Criar um Elemento de Cenário Interativo com Troca Dinâmica de Asset para Sprite (Ex: Portões de Castelo, Portas, Alavancas)
+
+   Para criar elementos de cenário que transitam de imagem estática para spritesheet animada e alternam sua física de passagem:
+
+   1. **A Configuração Visual e de Sprites (Adaptador Web):**
+      - Em `typescript/adapters/web/shared/VisualConfigMap.ts`:
+        - Defina o preset (ex: `'stone_wall_gate'`).
+        - Configure o estado `'static'` apontando para o asset estático limpo (ex: `stone_wall_gate_clean.png` com `frameCount: 1`).
+        - Configure os estados animados como `'open'` e `'idle'` apontando para a spritesheet com múltiplos frames (ex: `stone_wall_gate_anim.png` com `frameCount: 4`).
+   2. **O Registro de Hitbox & Dimensões (Domínio):**
+      - Em `typescript/domain/ObjectModule/Scenery/SceneryRegistry.ts`:
+        - Registre as dimensões base do elemento em `SCENERY_ASSET_BASE_SIZES` (ex: `stone_wall_gate: { width: 396, height: 250 }`).
+        - Caso possua hitboxes de colisão sólidas, registre em `SCENERY_ASSET_HITBOXES` com polígonos ou círculos que respeitam a escala do mundo.
+   3. **O Ciclo de Spawn e Transição (Domínio):**
+      - Instancie via spawner do domínio: `objectManager.spawn(id => new SceneryElement(id, coords, eventManager, 'stone_wall_gate'))`.
+      - O elemento inicia como `'static'` com `passable: false` (bloqueando a passagem).
+   4. **Gatilhos de Acionamento Cognitivo ou por Evento:**
+      - **Por NPC Cognitivo:** Um guarda com cérebro BDI pode executar:
+        ```typescript
+        guardNpc.openGate('stone_wall_gate'); // Abre o portão mais próximo num raio de 400px
+        guardNpc.closeGate('stone_wall_gate'); // Fecha o portão mais próximo
+        ```
+      - **Por Evento Global:** Sistemas de quests ou triggers de mapa podem emitir:
+        ```typescript
+        eventManager.dispatch('triggerAssetState', {
+          presetType: 'stone_wall_gate',
+          targetState: 'open',
+          passable: true,
+          nearCoordinates: { x: player.coordinates.x, y: player.coordinates.y, radius: 250 }
+        });
+        ```
+      - O Domínio valida o alcance via proximidade da AABB, altera `passable`, sincroniza os colisores no `CollisionManager` (`removeStaticCollider`/`addStaticCollider`), emite `assetStateChanged`, e o `GameObjectElement` na apresentação comuta a imagem para a spritesheet animada.
+
 
 ## 5. Arquitetura de Testes e Garantias de Engenharia
 
@@ -804,24 +967,30 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
   3. **Isolamento Hexagonal & Fitness Functions:** O Domínio é 100% puro e agnóstico de infraestrutura. Testes automatizados varrem ASTs para garantir fan-out zero para UI/Browser (`window`, `document`) e classes concretas.
   4. **Fail-Fast & Segurança de IA:** Parsers (Hitbox, Spells, Ações) estouram no boot ao receberem schemas inválidos. O `PraxisValidator` bloqueia 100% dos payloads maliciosos ou alucinações geradas pelo Ollama.
 
-  ### 5.2. Categorias de Testes (96 arquivos)
+  ### 5.2. Categorias de Testes
 
-  | Categoria | Qtd | Foco |
-  |-----------|-----|------|
+  | Categoria | Qtd Arquivos | Foco |
+  |---|---|---|
+  | **Regressão Automática (Regression Suites)** | 51+ | Blindagem contra reincidência de bugs (chunks, salvamento ao quitar, triggers de sprite, colisões, broches, UI) |
   | **Arquitetura (Fitness Functions)** | 4 | Pureza hexagonal, fan-out zero, CI workflows |
   | **Performance & Benchmarking** | 5 | Estresse de colisão, Memory Leak / Zero-GC, latência IPC, Render Thrashing |
   | **Estabilidade & Determinismo** | 4 | Hashing criptográfico de estado, Chaos Monkey |
+  | **Compliance de Mapas & Catálogos** | 1 | Integridade sintática e semântica de catálogos (`VisualConfigMap`, portais, efeitos, ícones) |
   | **Integração** | 10 | Loop completo do jogo, Double Buffering, UI Ollama, parser PNG |
-  | **Unitários** | 73 | Matemática vetorial, QuadTree, Entidades, Classes, Projéteis, Status, Itens, Armas, Mapas |
+  | **Unitários** | 75+ | Matemática vetorial, QuadTree, Chunks, Entidades, Classes, Projéteis, Status, Itens, Armas, Mapas |
 
   ### 5.3. Scripts de Pipeline
 
   ```bash
-  npm test              # tsc --noEmit + vitest run
-  npm run test:perf     # Apenas testes de performance
-  npm run test:stability # Apenas testes de estabilidade
-  npm run analyze       # Análise de código + detecção de dependências circulares (madge)
-  npm run pipeline      # Suite completa: analyze + test
+  npm test                   # tsc --noEmit + vitest run
+  npm run test:regression:fast # Execução instantânea de todas as suítes de regressão
+  npm run test:maps:fast       # Validação sintática e estrutural de mapas e catálogos
+  npm run test:coverage        # Cobertura detalhada de código V8 (meta mínima >= 70%)
+  npm run coverage:report      # Geração do dashboard interativo em coverage/dashboard.html
+  npm run test:perf          # Apenas testes de performance
+  npm run test:stability     # Apenas testes de estabilidade
+  npm run analyze            # Análise de código + detecção de dependências circulares (madge)
+  npm run pipeline           # Suite completa: analyze + test
   ```
 
 ## 6. Build e Tooling

@@ -22,17 +22,14 @@ export class RectangleTool implements ITool {
     public onMouseDown(e: MouseEvent, worldPos: Point, _zoom: number): void {
         if (e.button === 0) {
             if (!this.startPoint) {
-                // Inicia o retangulo a partir do primeiro vertice
                 this.startPoint = { x: Math.round(worldPos.x), y: Math.round(worldPos.y) };
                 this.currentPoint = { x: Math.round(worldPos.x), y: Math.round(worldPos.y) };
                 this.isDragging = true;
             } else {
-                // Modo dois cliques: segundo clique confirma e finaliza
                 this.currentPoint = { x: Math.round(worldPos.x), y: Math.round(worldPos.y) };
                 this.commitRectangle(e.shiftKey);
             }
         } else if (e.button === 2) {
-            // Clique direito cancela a criacao em andamento
             this.reset();
         }
     }
@@ -45,7 +42,7 @@ export class RectangleTool implements ITool {
             let curX = Math.round(worldPos.x);
             let curY = Math.round(worldPos.y);
 
-            // Trava de proporcao quadrada 1:1 se Shift estiver pressionado
+            //? Trava proporção 1:1 quando shift está ativo
             if (e.shiftKey) {
                 const dx = curX - this.startPoint.x;
                 const dy = curY - this.startPoint.y;
@@ -67,12 +64,11 @@ export class RectangleTool implements ITool {
             const curY = Math.round(worldPos.y);
             const dist = Math.hypot(curX - this.startPoint.x, curY - this.startPoint.y);
 
-            // Se arrastou com distancia minima de 3px, finaliza de imediato
+            //? Finaliza se houver deslocamento mínimo de arrasto (deadzone de 3px)
             if (dist > 3) {
                 this.currentPoint = { x: curX, y: curY };
                 this.commitRectangle(e.shiftKey);
             } else {
-                // Caso tenha sido apenas um clique pontual sem deslocamento, mantem ativo para o segundo clique
                 this.isDragging = false;
             }
         }
@@ -125,14 +121,13 @@ export class RectangleTool implements ITool {
         const width = maxX - minX;
         const height = maxY - minY;
 
-        // Exige dimensoes minimas de 2x2 para evitar colisoes degeneradas
+        //? Exige dimensões mínimas de 2x2 para evitar hitboxes degeneradas
         if (width >= 2 && height >= 2) {
             const hitbox: HitboxModel = {
                 id: `rect_${Date.now()}`,
                 type: 'polygon',
                 coordinates: { x: minX, y: minY },
                 rotation: 0,
-                // Vertices em ordem horaria: Top-Left -> Top-Right -> Bottom-Right -> Bottom-Left
                 points: [
                     { x: minX, y: minY },
                     { x: maxX, y: minY },
@@ -162,16 +157,13 @@ export class RectangleTool implements ITool {
         const pw = (maxX - minX) * zoom;
         const ph = (maxY - minY) * zoom;
 
-        // 1. Preenchimento semitransparente verde
         ctx.fillStyle = 'rgba(0, 255, 128, 0.2)';
         ctx.fillRect(px, py, pw, ph);
 
-        // 2. Borda verde solida
         ctx.strokeStyle = '#00FF88';
         ctx.lineWidth = 2;
         ctx.strokeRect(px, py, pw, ph);
 
-        // 3. Vertices destacados nos 4 cantos
         ctx.fillStyle = '#FF0055';
         const vertexRadius = 4;
         const corners = [
@@ -186,7 +178,6 @@ export class RectangleTool implements ITool {
             ctx.fill();
         }
 
-        // 4. Etiqueta informativa com largura e altura em pixels
         const w = maxX - minX;
         const h = maxY - minY;
         if (w > 0 && h > 0) {

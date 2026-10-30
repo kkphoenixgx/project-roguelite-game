@@ -2,7 +2,7 @@ import { logger } from "../../shared/Logger";
 import css from './floatingChat.css?raw';
 
 interface ActiveBubble {
-    id: number; // entityId or portalId
+    id: number;
     element: HTMLElement;
     timeoutId?: ReturnType<typeof setTimeout> | undefined;
     hideTimeoutId?: ReturnType<typeof setTimeout> | undefined;
@@ -60,7 +60,7 @@ export default class FloatingChatGui {
             clearTimeout(bubble.timeoutId);
         }
         
-        // Duração: baseado no tamanho do texto, mín 2s, máx 8s
+        //? Duração proporcional à quantidade de caracteres (entre 2000ms e 8000ms)
         const duration = Math.min(Math.max(2000, text.length * 50), 8000);
         
         bubble.timeoutId = setTimeout(() => {
@@ -142,21 +142,20 @@ export default class FloatingChatGui {
                 bubble.hideTimeoutId = undefined;
             }
             bubble.element.classList.remove('active');
-            // Remove o elemento após a animação de fade out
             bubble.hideTimeoutId = setTimeout(() => {
                 bubble.hideTimeoutId = undefined;
                 if (this.activeBubbles.has(entityId) && !bubble.element.classList.contains('active')) {
                     bubble.element.remove();
                     this.activeBubbles.delete(entityId);
                 }
-            }, 300); // 300ms = tempo da transition do CSS
+            }, 300);
         }
     }
 
     public update(renderables: readonly any[], worldToScreen: (wx: number, wy: number) => { x: number, y: number }): void {
         if (this.activeBubbles.size === 0) return;
 
-        // Procura a posição de cada entidade ou coordenada fixa com balão ativo
+        //? Projeta balões flutuantes na posição em tela da entidade vinculada ou coordenada fixa
         this.activeBubbles.forEach((bubble, entityId) => {
             if (bubble.worldCoordinates) {
                 const screenPos = worldToScreen(
@@ -185,8 +184,7 @@ export default class FloatingChatGui {
                 }
                 
                 if (renderable) {
-                    // Se a entidade está na tela, atualiza a posição
-                    // Considera o topo da hitbox da entidade para colocar o balão
+                    //? Ancoragem no topo central da hitbox da entidade
                     const screenPos = worldToScreen(
                         renderable.coordinates.x + renderable.size.width / 2,
                         renderable.coordinates.y
@@ -205,7 +203,7 @@ export default class FloatingChatGui {
                         bubble.element.style.display = 'block';
                     }
                 } else {
-                    // Entidade não visível ou descarregada temporariamente, apenas esconde o balão
+                    //? Oculta balão se a entidade não estiver visível na viewport ou descarregada
                     if (bubble.lastDisplay !== 'none') {
                         bubble.lastDisplay = 'none';
                         bubble.element.style.display = 'none';

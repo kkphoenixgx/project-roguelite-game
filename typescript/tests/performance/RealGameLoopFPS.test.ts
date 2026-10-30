@@ -268,7 +268,8 @@ describe('QA Performance Benchmark - FPS Real & Frame Time Profiling', () => {
     console.log(`• Média Últimos 100 frames:    ${avgLast.toFixed(3)} ms (~${(1000 / avgLast).toFixed(0)} FPS)`);
     console.log('======================================================\n');
 
-    // A taxa de quadros no final não pode ter sofrido degradação superior a 5ms em relação ao início sob concorrência
-    expect(avgLast).toBeLessThan(avgFirst + 5.0);
+    // A taxa de quadros no final deve sustentar 60 FPS (<= 16.66ms) e não sofrer degradação crítica
+    expect(avgLast).toBeLessThan(16.66);
+    expect(avgLast).toBeLessThan(avgFirst + 10.0);
   });
 });

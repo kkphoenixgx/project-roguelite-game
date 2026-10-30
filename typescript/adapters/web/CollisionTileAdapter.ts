@@ -12,7 +12,6 @@ export default class CollisionTileAdapter implements ICollisionTileService {
     private cache: Map<string, CollisionTileData[]> = new Map();
 
     public async loadCollisionTiles(mapId: string): Promise<CollisionTileData[]> {
-        // Retorna do cache se já foi carregado
         if (this.cache.has(mapId)) {
             return this.cache.get(mapId)!;
         }
@@ -34,7 +33,6 @@ export default class CollisionTileAdapter implements ICollisionTileService {
         }
 
         if (!collisionLayerUrl) {
-            // Se não houver collision layer definida, retorna vazio
             console.warn(`[CollisionTileAdapter] Mapa '${mapId}' não possui collision layer definida`);
             return [];
         }
@@ -42,7 +40,7 @@ export default class CollisionTileAdapter implements ICollisionTileService {
         try {
             const collisionData = await parseCollisionLayerImage(collisionLayerUrl, tileSize, worldWidth, worldHeight);
             
-            // Opcionalmente: agrupa tiles adjacentes para otimização
+            //? Agrupa tiles sólidos adjacentes em polígonos consolidados para reduzir contagem de checagens
             const aggregated = aggregateCollisionTiles(collisionData.tiles);
             
             this.cache.set(mapId, aggregated);

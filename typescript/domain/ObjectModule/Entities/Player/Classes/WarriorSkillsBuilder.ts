@@ -9,7 +9,6 @@ export class WarriorSkillsBuilder {
     public static build(): Map<number, Skill> {
         const skills = new Map<number, Skill>();
 
-        // --- Tier 1 (Fundação Base) ---
         skills.set(1, new Skill(
             'w_t1_strike',
             'Força Bruta',
@@ -29,8 +28,6 @@ export class WarriorSkillsBuilder {
             'w_t1_strike'
         ));
 
-        // --- Ramo A: O Colosso (Dano, Vórtice e Fúria Berserker) ---
-        // Tier 2
         skills.set(4, new Skill(
             'w_t2_cleave',
             'Turbilhão de Aço',
@@ -50,7 +47,6 @@ export class WarriorSkillsBuilder {
             new AttributeBoostEffect('strength', 6)
         ));
 
-        // Tier 3
         skills.set(10, new Skill(
             'w_t5_blade_dance',
             'Dança das Lâminas do Colosso',
@@ -70,7 +66,6 @@ export class WarriorSkillsBuilder {
             new AttributeBoostEffect('strength', 8)
         ));
 
-        // Tier 4 (Ápice do Colosso)
         skills.set(12, new Skill(
             'w_t5_avatar_of_war',
             'Avatar da Guerra',
@@ -80,8 +75,6 @@ export class WarriorSkillsBuilder {
             'w_t4_armor_breaker'
         ));
 
-        // --- Ramo B: O Titã (Defesa, Controle e Impacto Sísmico) ---
-        // Tier 2
         skills.set(3, new Skill(
             'w_t1_iron_skin',
             'Pele de Aço',
@@ -101,7 +94,6 @@ export class WarriorSkillsBuilder {
             'w_t1_iron_skin'
         ));
 
-        // Tier 3
         skills.set(7, new Skill(
             'w_t3_war_cry',
             'Grito de Guerra',
@@ -121,7 +113,6 @@ export class WarriorSkillsBuilder {
             new AttributeBoostEffect('constitution', 10)
         ));
 
-        // Tier 4 (Ápice do Titã)
         skills.set(8, new Skill(
             'w_t4_ground_slam',
             'Impacto Sísmico',

@@ -60,9 +60,6 @@ export class BroochRegistry {
   }
 
   private static registerDefaults(): void {
-    // -------------------------------------------------------------------------
-    // 1. Cálice da Vida (Cura Ativa)
-    // -------------------------------------------------------------------------
     this.register(
       BroochTemplate.createActive('brooch_active_heal', 'Cálice da Vida', 'Ativo: Cura 30% da Vida Máxima. Recarga: 60s.', 60000)
         .withTags('cura', 'vida')
@@ -86,9 +83,6 @@ export class BroochRegistry {
       'brooch_heal'
     );
 
-    // -------------------------------------------------------------------------
-    // 2. Chamado do Meteoro (Dano em Área e Controle)
-    // -------------------------------------------------------------------------
     this.register(
       BroochTemplate.createActive('brooch_active_meteor', 'Chamado do Meteoro', 'Ativo: Evoca um meteoro na posição do cursor causando dano em área massivo. Recarga: 90s.', 90000)
         .withTags('dano', 'fogo')
@@ -138,9 +132,6 @@ export class BroochRegistry {
       'brooch_meteor'
     );
 
-    // -------------------------------------------------------------------------
-    // 3. Dados da Fortuna (Buff de Sorte & Evasão)
-    // -------------------------------------------------------------------------
     let luckTimer = 0;
     this.register(
       BroochTemplate.createActive('brooch_active_luck', 'Dados da Fortuna', 'Ativo: Aumenta a Sorte e Evasão em 100% por 10 segundos. Recarga: 45s.', 45000)
@@ -176,9 +167,6 @@ export class BroochRegistry {
       'brooch_luck'
     );
 
-    // -------------------------------------------------------------------------
-    // 4. Botas Aladas (Recarga de Dash & Mobilidade)
-    // -------------------------------------------------------------------------
     let dashSurgeTimer = 0;
     this.register(
       BroochTemplate.createActive('brooch_active_dash', 'Botas Aladas', 'Ativo: Reseta instantaneamente todas as cargas de dash com ímpeto veloz. Recarga: 30s.', 30000)
@@ -212,9 +200,6 @@ export class BroochRegistry {
       'brooch_blink'
     );
 
-    // -------------------------------------------------------------------------
-    // 5. Barreira de Cristal (Escudo Absoluto de 3 Golpes)
-    // -------------------------------------------------------------------------
     let shieldCharges = 0;
     this.register(
       BroochTemplate.createActive('brooch_active_shield', 'Barreira de Cristal', 'Ativo: Cria um escudo que absorve 100% de dano nos próximos 3 hits. Recarga: 60s.', 60000)
@@ -260,9 +245,6 @@ export class BroochRegistry {
       'brooch_shield'
     );
 
-    // -------------------------------------------------------------------------
-    // 6. Fúria do Berserker (Buff de Dano / Defesa Zero)
-    // -------------------------------------------------------------------------
     let berserkTimer = 0;
     this.register(
       BroochTemplate.createActive('brooch_active_berserk', 'Fúria do Berserker', 'Ativo: Aumenta o dano em 50% e reduz a defesa a zero por 8 segundos. Recarga: 120s.', 120000)
@@ -306,9 +288,6 @@ export class BroochRegistry {
       'brooch_berserk'
     );
 
-    // -------------------------------------------------------------------------
-    // 7. Corrente de Raios (Tempestade Elétrica)
-    // -------------------------------------------------------------------------
     this.register(
       BroochTemplate.createActive('brooch_chain', 'Corrente de Tempestade', 'Ativo: Propaga arcos elétricos entre até 4 inimigos próximos. Recarga: 20s.', 20000)
         .withTags('dano', 'eletricidade')
@@ -345,9 +324,6 @@ export class BroochRegistry {
         .build()
     );
 
-    // -------------------------------------------------------------------------
-    // 8. O BROCHE AZUL / FORMA ASTRAL (Estase Cósmica & Reset de Cooldowns)
-    // -------------------------------------------------------------------------
     let astralTimer = 0;
     this.register(
       BroochTemplate.createActive('brooch_active_astral', 'Estase Cósmica', 'Ativo: Entra em forma astral azul, ganha imunidade total e reseta todos os cooldowns por 4s. Recarga: 75s.', 75000)
@@ -400,9 +376,7 @@ export class BroochRegistry {
       'brooch_blue'
     );
 
-    // -------------------------------------------------------------------------
-    // 9 a 15. Broches Passivos Delegados (SRP / Governança de Tamanho de Arquivo)
-    // -------------------------------------------------------------------------
+    //? Broches passivos delegados a PassiveBrooches para governança de responsabilidade única (SRP).
     const passiveHelpers = PassiveBrooches.registerAll(this.register.bind(this));
 
     (this as any).getRerollCharges = passiveHelpers.getRerollCharges;

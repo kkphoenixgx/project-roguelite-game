@@ -94,7 +94,7 @@ export default class PauseMenuGui {
             });
             if (confirmed) {
                 await this.saveSettings();
-                this.onQuit(); // Use quit to reload
+                this.onQuit();
             }
         });
 
@@ -104,7 +104,7 @@ export default class PauseMenuGui {
             this.onResume();
         });
 
-        // Tabs Logic
+        /* Tabs Logic */
         const navItems = this.container.querySelectorAll('.nav-item');
         const tabBodies = this.container.querySelectorAll('.settings-body');
 
@@ -124,7 +124,7 @@ export default class PauseMenuGui {
             });
         });
 
-        // Slider Value Displays
+        /* Slider Value Displays */
         const bindSlider = (id: string, suffix: string = '') => {
             const input = this.container.querySelector(`#llm-${id}`) as HTMLInputElement;
             const span = this.container.querySelector(`#val-${id}`);
@@ -140,7 +140,7 @@ export default class PauseMenuGui {
         bindSlider('temp');
         bindSlider('tokens');
 
-        // Presets Logic
+        /* Presets Logic */
         const applyLLMPreset = (model: string, ctx: string, timeout: string, temp: string, tokens: string, reflexion: boolean, guards: boolean, stateless: boolean) => {
             const modelSelect = this.container.querySelector('#llm-model') as HTMLSelectElement;
             if (modelSelect) modelSelect.value = model;
@@ -164,17 +164,17 @@ export default class PauseMenuGui {
         };
 
         this.container.querySelector('#preset-potato')?.addEventListener('click', () => {
-            // Econômico / Básico (CPU / Gráficos Integrados): qwen2.5:0.5b
+            //? Perfil Econômico: modelo ultraleve qwen2.5:0.5b sem reflexão para CPUs e gráficos integrados
             applyLLMPreset('qwen2.5:0.5b', '768', '600', '0.5', '32', false, false, true);
         });
 
         this.container.querySelector('#preset-balanced')?.addEventListener('click', () => {
-            // Recomendado / Equilibrado (Padrão para a maioria): qwen2.5:1.5b
+            //? Perfil Equilibrado: modelo padrão qwen2.5:1.5b com reflexão e guardas ativos
             applyLLMPreset('qwen2.5:1.5b', '1024', '180', '0.7', '96', true, true, false);
         });
 
         this.container.querySelector('#preset-beast')?.addEventListener('click', () => {
-            // High-End / Entusiasta (GPUs com ≥ 8 GB VRAM): qwen2.5:7b com contexto expandido e baixa latência
+            //? Perfil High-End: modelo qwen2.5:7b com contexto expandido (2048 tokens) para GPUs dedicadas
             applyLLMPreset('qwen2.5:7b', '2048', '120', '0.65', '120', true, true, false);
         });
     }

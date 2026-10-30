@@ -32,7 +32,7 @@ export default abstract class StatusEffect {
 
         if (this.elapsed >= this.duration) {
             this.onRemove(target);
-            return true; // Finalizado
+            return true;
         }
         return false;
     }

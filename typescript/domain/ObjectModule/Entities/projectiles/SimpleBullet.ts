@@ -42,8 +42,8 @@ export class SimpleBullet extends Bullet {
     private setHitboxes(size :{ width :number, height :number }, attack :Attack ) :HitBoxCircle[]{
         return [ new HitBoxCircle(
             { x: this.coordinates.x + size.width / 2, y: this.coordinates.y + size.height / 2 },
-            0, //* rotation
-            size.width / 2, //* radius
+            0,
+            size.width / 2,
             (otherElement: ObjectElement) => {
 
                 const isFriendlySummon = attack.attacker.objectId === 'player' && (
@@ -53,15 +53,16 @@ export class SimpleBullet extends Bullet {
                 );
 
                 if ('takeDamage' in otherElement && otherElement.id !== attack.attacker.id && !isFriendlySummon) {
-                    if (this.hitTargets.has(otherElement.id)) return; // Evita acertar o mesmo inimigo multiplas vezes no mesmo frame
+                    //? Evita dano reentrante no mesmo alvo no mesmo frame.
+                    if (this.hitTargets.has(otherElement.id)) return;
                     
                     this.hitTargets.add(otherElement.id);
                     attack.execute(otherElement as any, this.direction);
                     
                     if (this.pierceCount > 0) {
-                        this.pierceCount--; // Atravessa o inimigo e perde força de perfuração
+                        this.pierceCount--;
                     } else {
-                        super.destroy(); // Destrói se não tiver mais energia de perfuração
+                        super.destroy();
                     }
                 }
             }
@@ -78,7 +79,7 @@ export class SimpleBullet extends Bullet {
     }
 
     public override move(deltaTime: number): void {
-        // Lógica de Perseguição (Homing) para o Magic Missile
+        //? Lógica de perseguição teleguiada (homing) para mísseis mágicos.
         if (this.objectId === 'magicMissile' && this.target && this.target.attributes.hp > 0) {
             const targetCenter = {
                 x: this.target.coordinates.x + this.target.size.width / 2,
@@ -88,10 +89,9 @@ export class SimpleBullet extends Bullet {
                 x: this.coordinates.x + this.size.width / 2,
                 y: this.coordinates.y + this.size.height / 2
             };
-            // Recalcula a direção a cada frame para seguir o alvo
             this.direction = Vector2D.sub(targetCenter, selfCenter).normalizeMut();
         } else {
-            // Se o alvo morrer ou não existir, o míssil se torna um projétil reto
+            //? Se o alvo morrer ou for despachado, o projétil preserva sua direção atual em linha reta.
             this.target = null;
         }
 
@@ -101,7 +101,6 @@ export class SimpleBullet extends Bullet {
         const maxDistance = this.objectId === 'magicMissile' ? 400 : 150;
         if (this.distanceTraveled >= maxDistance) super.destroy()
 
-        // Define a direção e magnitude da velocidade, mas sem o deltaTime.
         this.velocity = this.direction.clone()
             .normalizeMut()
             .multiplyMut(displacement)
@@ -113,7 +112,8 @@ export class SimpleBullet extends Bullet {
     }
 
     private generateRandomNoiseAccelerator(): void {
-        if (this.objectId !== 'simpleBullet') return; // Magias e foices devem ir sempre em linha reta!
+        //? Dispersão por precisão/spread aplica-se apenas a balas balísticas convencionais.
+        if (this.objectId !== 'simpleBullet') return;
 
         let lateral_noise_factor = 0.1
         const normalizedDirection = this.direction.clone().normalizeMut();
@@ -148,7 +148,6 @@ export class SimpleBullet extends Bullet {
         };
 
         let initialDirection: Vector2D;
-        // Se a magia tem um alvo, calcula a direção inicial, senão, usa a direção do payload (tiro reto)
         if (payload.target) {
             const targetCenter = {
                 x: payload.target.coordinates.x + payload.target.size.width / 2,

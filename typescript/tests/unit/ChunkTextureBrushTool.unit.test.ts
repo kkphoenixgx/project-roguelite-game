@@ -5,7 +5,7 @@
  * no Assets Editor (`MapCanvas`, `PropertiesPanel`, `WorldCodeSync`).
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { MapCanvas } from '../../../typescript/adapters/assets-adapter/Components/MapCanvas';
 import { PropertiesPanel } from '../../../typescript/adapters/assets-adapter/Components/PropertiesPanel';
 import { WorldCodeSync } from '../../../typescript/adapters/assets-adapter/Components/WorldCodeSync';
@@ -18,6 +18,7 @@ describe('ChunkTextureBrushTool (Unit Tests)', () => {
     let propsPanel: PropertiesPanel;
 
     beforeEach(() => {
+        vi.stubGlobal('requestAnimationFrame', vi.fn());
         document.body.innerHTML = `
             <div id="canvas-container" style="width: 1024px; height: 768px;"></div>
             <div id="properties-panel"></div>
@@ -78,6 +79,12 @@ describe('ChunkTextureBrushTool (Unit Tests)', () => {
 
         mapCanvas = new MapCanvas('canvas-container', mapConfig);
         propsPanel = new PropertiesPanel('properties-panel', mapCanvas);
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        vi.restoreAllMocks();
+        document.body.innerHTML = '';
     });
 
     it('1. deve ativar e desativar o modo Pincel de Textura de Chunk via toggleChunkBrushMode()', () => {

@@ -142,7 +142,7 @@ export class MageSpellCraftingRegistry implements ISpellRegistry {
       y: player.coordinates.y + player.size.height / 2
     };
 
-    // 1. Verifica se há receita estática correspondente
+    //? 1. Verifica se há receita estática registrada correspondente à combinação de componentes.
     const staticRecipe = this.recipesBySequence.get(sequence);
     let manaCost: number;
 
@@ -174,7 +174,7 @@ export class MageSpellCraftingRegistry implements ISpellRegistry {
       return MageSpellTemplate.executeRecipe(staticRecipe, context);
     }
 
-    // 2. Síntese e Execução Dinâmica
+    //? 2. Síntese e Execução Dinâmica
     return this.synthesizeAndExecuteDynamic(context);
   }
 
@@ -243,14 +243,14 @@ export class MageSpellCraftingRegistry implements ISpellRegistry {
       forms: grammar.forms
     };
 
-    // 1. Verifica regras de síntese dinâmica especializada (ex: Self + Fire + Abyss)
+    //? 1. Avalia regras de síntese dinâmica especializada por combinação de componentes.
     for (const rule of this.dynamicRules) {
       if (rule.matcher(dynamicContext)) {
         return rule.execute(dynamicContext);
       }
     }
 
-    // 2. Fallback para solucionadores de forma genéricos (ex: Projétil, Self básico)
+    //? 2. Fallback para solucionadores de forma genéricos caso nenhuma regra especializada seja atendida.
     for (const form of grammar.forms) {
       const solver = this.formSolvers.get(form);
       if (solver) {
@@ -268,7 +268,7 @@ export class MageSpellCraftingRegistry implements ISpellRegistry {
   public static createDefault(): MageSpellCraftingRegistry {
     const registry = new MageSpellCraftingRegistry();
 
-    // 1. Receitas Estáticas Canônicas
+    //? Registro de receitas estáticas canônicas.
     registry.registerRecipe(
       MageSpellTemplate.createStatic('fireball', 'Bola de Fogo')
         .matchingSequence(['spell_0', 'spell_4', 'spell_0'])
@@ -292,7 +292,7 @@ export class MageSpellCraftingRegistry implements ISpellRegistry {
         .build()
     );
 
-    // 2. Mapeamento de VFX por Elemento
+    //? Mapeamento de VFX por Elemento.
     const elementVfxEntries: [string, string][] = [
       ['fire', 'fireExplosion'],
       ['water', 'waterSplash'],
@@ -321,7 +321,7 @@ export class MageSpellCraftingRegistry implements ISpellRegistry {
       registry.registerElementVfx(el, fx);
     }
 
-    // 3. Solucionadores de Forças Físicas (Zero-GC compliant)
+    //! Solucionadores de forças físicas e cinemática sob disciplina Zero-GC.
     registry.registerForceSolver('knockback', (ctx) => {
       const forceMagnitude = 15;
       const { target, isSelf, direction, eventManager } = ctx;
@@ -406,8 +406,7 @@ export class MageSpellCraftingRegistry implements ISpellRegistry {
       }
     });
 
-    // 4. Solucionadores de Formas Dinâmicas
-    // Forma 1: Projétil
+    //? Solucionadores de Formas Dinâmicas.
     registry.registerFormSolver('projectile', (ctx) => {
       const { player, eventManager, direction, spawnCoordinates, manaCost, elements, forces } = ctx;
       const baseDamage = 10 + (10 * elements.length) + Math.floor(player.attributes.intelligence || 0);
@@ -460,7 +459,6 @@ export class MageSpellCraftingRegistry implements ISpellRegistry {
       return true;
     });
 
-    // Forma 2: Self
     registry.registerFormSolver('self', (ctx) => {
       const { player, eventManager, direction, spawnCoordinates, manaCost, elements, forces } = ctx;
 
@@ -511,7 +509,7 @@ export class MageSpellCraftingRegistry implements ISpellRegistry {
       return true;
     });
 
-    // 5. Registra feitiços dinâmicos canônicos e infusões
+    //? 5. Registra feitiços dinâmicos canônicos e infusões
     registerAbyssalDemon(registry);
     registerBladeInfusions(registry);
     registerNegationRules(registry);

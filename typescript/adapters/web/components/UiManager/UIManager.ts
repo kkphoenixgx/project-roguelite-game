@@ -113,7 +113,7 @@ export default class UIManager {
   }
 
   public toggleCharacterMenu(): void {
-    if (this.dialogueAdapter.isAnyMenuOpen()) return; // Impede sobreposição com o diálogo
+    if (this.dialogueAdapter.isAnyMenuOpen()) return;
     if (!this.characterMenuGui.isOpen) {
       this.skillTreeGui.hide();
     }
@@ -121,7 +121,7 @@ export default class UIManager {
   }
 
   public toggleSkillTree(): void {
-    if (this.dialogueAdapter.isAnyMenuOpen()) return; // Impede sobreposição com o diálogo
+    if (this.dialogueAdapter.isAnyMenuOpen()) return;
     if (!this.skillTreeGui.isOpen) {
       this.characterMenuGui.hide();
     }
@@ -130,12 +130,11 @@ export default class UIManager {
 
   public handleInteract(): void {
     if (this.currentPrompt && !this.dialogueAdapter.isAnyMenuOpen()) {
-      // Abre a interface visualmente como "Aguardando" e manda um "Oi" invisivel para despertar a LLM do NPC
+      //? Abre interface de diálogo em estado de espera e despacha saudação inicial para despertar a LLM do NPC
       this.dialogueAdapter.dialogueGui.show(this.currentPrompt.npcName, "...", this.currentPrompt.npcId, this.currentPrompt.entityTypeId);
-      // Hackish but works for now to simulate the player replying
       (this.dialogueAdapter as any).dialogueGui['onPlayerReply']("[Aproximou-se para conversar]", this.currentPrompt.npcId);
     } else if (this.hasActivePortalPrompt()) {
-      // Impede abertura do menu de personagem se o jogador estiver usando a tecla de interacao para ativar um PortalLink
+      //? Prioriza ativação do PortalLink ignorando abertura do menu de personagem
       return;
     } else if (!this.dialogueAdapter.isAnyMenuOpen()) {
       this.toggleCharacterMenu();
@@ -166,13 +165,13 @@ export default class UIManager {
         this.dialogueAdapter.update(renderables, worldToScreen);
       }
 
-      // UI de prompt se o Domínio acusar proximidade com um NPC
+      //? Renderiza balão de prompt quando o Domínio sinaliza proximidade com entidade interativa
       if (playerState.interactablePrompt && playerScreenPos && !this.dialogueAdapter.isAnyMenuOpen()) {
         this.currentPrompt = playerState.interactablePrompt;
         this.promptEl.style.display = 'block';
         this.promptEl.innerText = playerState.interactablePrompt.text;
         this.promptEl.style.left = `${playerScreenPos.x}px`;
-        this.promptEl.style.top = `${playerScreenPos.y - 40}px`; // Exibe exatamente acima da cabeça do personagem
+        this.promptEl.style.top = `${playerScreenPos.y - 40}px`;
       } else {
         this.currentPrompt = null;
         this.promptEl.style.display = 'none';

@@ -21,7 +21,7 @@ export default class WateringCan extends Tool {
     }
 
     public canUseInZone(zoneType: 'city' | 'wilderness' | 'farmland'): boolean {
-        // Regador só pode ser usado em terras cultiváveis
+    //? Regador restrito para uso em solos cultiváveis
         return zoneType === 'farmland' || zoneType === 'wilderness';
     }
 

@@ -19,7 +19,7 @@ export interface SpriteConfig {
   /** A altura real de um único frame recortado dentro da imagem original. */
   frameHeight: number;
   
-  // Específicos do WebGPU Texture Atlas (Opcionais para o fallback 2D)
+  /* Específicos do WebGPU Texture Atlas (Opcionais para o fallback 2D) */
   /** O deslocamento (coordenadas {x, y}) desta imagem dentro da grande imagem do Atlas de Textura Global (usado pelo WebGPURenderer). */
   atlasOffset?: { x: number, y: number };
   /** O tamanho final {width, height} na qual o sprite será de fato escalado e renderizado na tela. */
@@ -57,7 +57,7 @@ export default class GameObjectElement implements IRenderable {
   public rotation:number
 
   protected image: HTMLImageElement | undefined;
-  protected config: SpriteConfig | undefined; // Explicitamente SpriteConfig | undefined
+  protected config: SpriteConfig | undefined;
 
   protected currentFrame: number = 0;
   protected frameCounter: number = 0;
@@ -132,7 +132,7 @@ export default class GameObjectElement implements IRenderable {
   }
 
   protected updateAnimation(): void {
-    if (!this.config) return; // Só anima se houver config de sprite
+    if (!this.config) return;
     this.frameCounter++;
     if (this.frameCounter >= this.config.animationSpeed) {
       this.frameCounter = 0;
@@ -151,7 +151,7 @@ export default class GameObjectElement implements IRenderable {
     this.activeStatuses = newState.activeStatuses;
     this.recomputeAuraFlags();
 
-    // Sincronização dinâmica de estado visual: troca o asset/imagem para seu sprite correspondente
+    //? Sincroniza em runtime o asset/imagem para seu sprite correspondente ao mudar de estado
     if (newState.state && this.currentRenderState !== newState.state) {
       this.currentRenderState = newState.state;
       const configKey = `${newState.entityTypeId}-${newState.state}`;
@@ -172,14 +172,14 @@ export default class GameObjectElement implements IRenderable {
   }
 
   public draw(ctx: CanvasRenderingContext2D): void {
-    // Se não for um sprite configurado, desenha um quadrado preto como fallback.
+    //? Fallback visual em modo debug/placeholder quando não há sprite registrado
     if (!this.config || !this.image) {
       logger.log('render', `Rendering fallback black box for ID: ${this.id}`);
       ctx.fillStyle = "black";
       ctx.fillRect(this.coordinates.x, this.coordinates.y, this.size.width, this.size.height);
       return;
     }
-    // Se a imagem ainda estiver carregando assincronamente, aguarda o próximo tick sem quebrar o loop do canvas
+    //? Aguarda término do carregamento assíncrono sem interromper o loop de renderização
     if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
       if (this.image.complete === false && this.image.naturalWidth === 0) {
         return;
@@ -190,7 +190,7 @@ export default class GameObjectElement implements IRenderable {
     const scale = (this.visualScale !== undefined && this.visualScale > 0) ? this.visualScale : 1;
     const drawWidth = this.size.width * scale;
     const drawHeight = this.size.height * scale;
-    // Ancoragem 'bottom-center' preserva os pés no solo ao escalar
+    //? Ancoragem bottom-center para manter os pés da entidade alinhados ao solo durante escalonamento
     const drawX = this.coordinates.x - (drawWidth - this.size.width) / 2;
     const drawY = this.coordinates.y - (drawHeight - this.size.height);
 
@@ -223,14 +223,13 @@ export default class GameObjectElement implements IRenderable {
     
     ctx.imageSmoothingEnabled = false;
     
-    // Calcula dinamicamente quantas colunas a imagem possui e encontra a linha/coluna atual
     const columns = Math.max(1, Math.floor(this.image.width / this.config.frameWidth));
     const sourceX = (this.currentFrame % columns) * this.config.frameWidth;
     const sourceY = Math.floor(this.currentFrame / columns) * this.config.frameHeight;
     
     ctx.drawImage(this.image, sourceX, sourceY, this.config.frameWidth, this.config.frameHeight, drawX, drawY, drawWidth, drawHeight);
 
-    // Aplicação do visualTint via blend mode Canvas 2D (source-atop com 35-45% opacidade, sem alocação de GC)
+    //! Aplicação de visualTint via blend mode source-atop sem alocações de GC no Canvas 2D
     if (this.visualTint) {
         ctx.save();
         ctx.globalCompositeOperation = 'source-atop';
@@ -240,7 +239,6 @@ export default class GameObjectElement implements IRenderable {
         ctx.restore();
     }
 
-    // Aura Elemental da Lâmina / Entidade (executado apenas se ativa)
     if (this.hasAirAura || this.hasLightAura) {
         this.drawElementalAura(ctx, pivotX, pivotY, drawWidth, drawHeight);
     }
@@ -256,7 +254,7 @@ export default class GameObjectElement implements IRenderable {
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
       const arcRadius = (drawWidth / 2) * 1.15;
-      // Halo externo translúcido sem shadowBlur (evita Gaussian blur lento via software na CPU)
+      //! Halo externo traçado sem shadowBlur para evitar computação pesada de Gaussian blur na CPU
       ctx.strokeStyle = 'rgba(0, 255, 204, 0.25)';
       ctx.lineWidth = 7;
       ctx.beginPath();
@@ -274,7 +272,7 @@ export default class GameObjectElement implements IRenderable {
     if (this.hasLightAura) {
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      const auraRadius = Math.max(drawWidth, drawHeight) * 0.75; // +50% de área
+      const auraRadius = Math.max(drawWidth, drawHeight) * 0.75;
       const gradient = ctx.createRadialGradient(pivotX, pivotY, auraRadius * 0.25, pivotX, pivotY, auraRadius);
       gradient.addColorStop(0, 'rgba(255, 255, 210, 0.4)');
       gradient.addColorStop(0.65, 'rgba(255, 215, 0, 0.2)');

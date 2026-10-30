@@ -10,7 +10,6 @@ export default class ProgressionTabController {
     private hoverTimer: any = null;
     private layoutCache: Map<string, { x: number, y: number }> = new Map();
 
-    // Removed hardcoded layout in favor of procedural distribution
 
     constructor(container: HTMLElement, domain: IGameDomain, private onProgressionChanged?: () => void) {
         this.container = container;
@@ -18,7 +17,6 @@ export default class ProgressionTabController {
         this.injectStructure();
         this.renderTree();
         
-        // Listen to tab activation to trigger animations
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.attributeName === 'class' && this.container.classList.contains('active')) {
@@ -72,7 +70,6 @@ export default class ProgressionTabController {
         this.svgLayer.innerHTML = '';
         this.nodesLayer.innerHTML = '';
         
-        // This comes from the Domain's MetaProgressionManager
         let globalNodesMap = this.domain.globalNodesMap;
         if (!globalNodesMap || (Array.isArray(globalNodesMap) && globalNodesMap.length === 0) || (typeof globalNodesMap === 'object' && Object.keys(globalNodesMap).length === 0)) {
             globalNodesMap = (this.domain as any).metaProgressionManager?.getAvailableNodesMap?.() || [];
@@ -90,12 +87,10 @@ export default class ProgressionTabController {
 
         const nodesList = Object.values(globalNodesMap) as any[];
         
-        // Computa posições perfeitamente alinhadas (nó pai no meio dos nós filhos)
         this.computeTreeLayout(nodesList);
 
         const nodeElements = new Map<string, HTMLElement>();
 
-        // 1. Draw Paths
         nodesList.forEach(node => {
             if (node.dependencies && node.dependencies.length > 0) {
                 node.dependencies.forEach((parentId: string) => {
@@ -107,7 +102,7 @@ export default class ProgressionTabController {
                         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                         const isUnlocked = unlockedIds.has(node.id) && unlockedIds.has(parent.id);
                         
-                        // Cubic bezier from bottom up (coordenadas 0-100 mapeadas pelo viewBox do SVG)
+    //? Curva de Bézier cúbica de baixo para cima normalizada pelo viewBox SVG
                         const d = `M ${layoutParent.x} ${layoutParent.y} C ${layoutParent.x} ${layoutParent.y - 10}, ${layoutNode.x} ${layoutNode.y + 10}, ${layoutNode.x} ${layoutNode.y}`;
                         
                         path.setAttribute('d', d);
@@ -124,7 +119,6 @@ export default class ProgressionTabController {
             }
         });
 
-        // 2. Draw Nodes
         nodesList.forEach(node => {
             const layout = this.getLayoutPos(node);
             const isUnlocked = unlockedIds.has(node.id);
@@ -133,9 +127,9 @@ export default class ProgressionTabController {
             let isSiblingSelected = false;
             
             if (node.level === 4) {
-                // Brooch Level: Any level 3 node unlocked allows choosing a brooch
+                //? Nível de Broche: qualquer nó de nível 3 desbloqueado permite escolher um broche
                 parentUnlocked = node.dependencies.some((id: string) => unlockedIds.has(id));
-                // Brooches are also exclusive to each other
+                //? Broches são mutuamente exclusivos entre si na mesma ramificação
                 const siblings = nodesList.filter(n => n.level === 4 && n.id !== node.id);
                 if (siblings.some(sib => unlockedIds.has(sib.id))) {
                     isSiblingSelected = true;
@@ -159,7 +153,7 @@ export default class ProgressionTabController {
             
             const div = document.createElement('div');
             div.className = `node-circle animate ${node.rarity || 'comum'} ${isUnlocked ? 'unlocked' : (canUnlock ? 'available' : 'locked')}`;
-            div.style.left = `calc(${layout.x}% - 30px)`; // Center the 60x60 node
+            div.style.left = `calc(${layout.x}% - 30px)`;
             div.style.top = `calc(${layout.y}% - 30px)`;
             
             const iconStr = this.getIconForNode(node.level, node.statType || '');
@@ -171,7 +165,7 @@ export default class ProgressionTabController {
 
             let isHovered = false;
 
-            // Floating widget: aparece após meio segundo (500ms) com o mouse em cima do nó
+      //? Widget flutuante ativado após 500ms de hover sobre o nó
             div.addEventListener('mouseenter', () => {
                 isHovered = true;
                 if (this.hoverTimer) clearTimeout(this.hoverTimer);
@@ -187,7 +181,6 @@ export default class ProgressionTabController {
                 this.hideNodeDetails();
             });
 
-            // Double Click to Buy
             div.addEventListener('dblclick', () => {
                 this.hideNodeDetails();
                 if (isUnlocked) return;
@@ -197,12 +190,11 @@ export default class ProgressionTabController {
                     if (canAfford) {
                         mpm.unlockNode(node.id);
                         this.spawnParticles(layout.x, layout.y);
-                        this.renderTree(); // Re-render tree
+                        this.renderTree();
                         if (this.onProgressionChanged) {
                             this.onProgressionChanged();
                         }
                     } else {
-                        // Tratar falta de essência (shake no botão e no node)
                         div.style.animation = 'shake 0.3s ease';
                         setTimeout(() => div.style.animation = '', 300);
                         const hint = this.container.querySelector('#skill-buy-hint') as HTMLElement;
@@ -229,7 +221,7 @@ export default class ProgressionTabController {
         const levelNodes: Record<number, any[]> = { 1: [], 2: [], 3: [], 4: [] };
         nodesList.forEach(n => { if (levelNodes[n.level]) levelNodes[n.level]!.push(n); });
 
-        // Vertical tiers: Nível 1 na base (80%), Nível 4 broches no topo (18%)
+    //? Distribuição procedural dos nós em camadas verticais (Nível 1 na base a Nível 4 no topo)
         const yMap: Record<number, number> = { 1: 80, 2: 60, 3: 40, 4: 18 };
 
         const l1 = levelNodes[1] || [];
@@ -237,33 +229,28 @@ export default class ProgressionTabController {
         const l3 = levelNodes[3] || [];
         const l4 = levelNodes[4] || [];
 
-        // Centros para as 3 bases de Nível 1
         const baseCenters = l1.length === 3 ? [21, 50, 79] : l1.map((_, idx) => ((idx + 1) / (l1.length + 1)) * 100);
 
         l1.forEach((node, i) => {
             const centerX = baseCenters[i] || 50;
             this.layoutCache.set(node.id, { x: centerX, y: yMap[1]! });
 
-            // Filhos no Nível 2 que dependem desta base
             const childrenL2 = l2.filter(child => child.dependencies?.includes(node.id));
             const numL2 = childrenL2.length;
             const deltaL2 = 6;
 
             childrenL2.forEach((c2, j) => {
-                // O nó pai (Level 1) fica perfeitamente no meio dos filhos (Level 2)
                 const c2X = numL2 === 1 
                     ? centerX 
                     : centerX + (j - (numL2 - 1) / 2) * (deltaL2 * 2);
                 
                 this.layoutCache.set(c2.id, { x: c2X, y: yMap[2]! });
 
-                // Filhos no Nível 3 que dependem deste ramo de Nível 2
                 const childrenL3 = l3.filter(child => child.dependencies?.includes(c2.id));
                 const numL3 = childrenL3.length;
                 const deltaL3 = 3;
 
                 childrenL3.forEach((c3, k) => {
-                    // O nó pai (Level 2) fica perfeitamente no meio dos seus filhos (Level 3)
                     const c3X = numL3 === 1
                         ? c2X
                         : c2X + (k - (numL3 - 1) / 2) * (deltaL3 * 2);
@@ -273,7 +260,6 @@ export default class ProgressionTabController {
             });
         });
 
-        // Fallbacks para nós órfãos caso ocorram
         l2.forEach((n, idx) => {
             if (!this.layoutCache.has(n.id)) {
                 this.layoutCache.set(n.id, { x: ((idx + 1) / (l2.length + 1)) * 100, y: yMap[2]! });
@@ -285,7 +271,6 @@ export default class ProgressionTabController {
             }
         });
 
-        // Nível 4 (Broches): posicionados simetricamente no topo
         if (l4.length === 2) {
             this.layoutCache.set(l4[0]!.id, { x: 36, y: yMap[4]! });
             this.layoutCache.set(l4[1]!.id, { x: 64, y: yMap[4]! });
@@ -304,14 +289,12 @@ export default class ProgressionTabController {
         const color = "currentColor";
     
         if (level === 4) {
-            // Triangle with lightning (Brooch)
             return `<svg width="30" height="30" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <polygon points="50,10 90,90 10,90" stroke="${color}" stroke-width="6" fill="transparent" stroke-linejoin="round"/>
                 <path d="M 55,25 L 35,60 L 50,60 L 45,85 L 65,50 L 50,50 Z" fill="${color}"/>
             </svg>`;
         }
 
-        // Roubo de Vida / Vampirismo: Gota de sangue / presa afiada
         if (statType === 'lifesteal') {
             return `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" fill="${color}" fill-opacity="0.3"/>
@@ -320,7 +303,6 @@ export default class ProgressionTabController {
             </svg>`;
         }
 
-        // Área de Efeito / Splash: Ondas circulares expansivas
         if (statType === 'area' || statType === 'splash') {
             return `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10" stroke-dasharray="3 3"/>
@@ -329,21 +311,18 @@ export default class ProgressionTabController {
             </svg>`;
         }
         
-        // Vida, Cura, Vigor
         if (statType === 'hp' || statType === 'maxHp' || statType === 'vigor' || statType === 'hpRegen') {
             return `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="${color}" fill-opacity="0.3"/>
             </svg>`;
         }
 
-        // Defesa, Constituição, Tenacidade: Escudo
         if (statType === 'defence' || statType === 'con' || statType === 'tenacity') {
             return `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="${color}" fill-opacity="0.2"/>
             </svg>`;
         }
 
-        // Força, Dano Crítico, Chance Crítica: Espadas / Lâmina
         if (statType === 'str' || statType === 'crit' || statType === 'crit_dmg' || statType === 'piercing') {
             return `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
@@ -351,14 +330,12 @@ export default class ProgressionTabController {
             </svg>`;
         }
     
-        // Velocidade, Esquiva, Dash, Destreza: Asas / Agilidade
         if (statType === 'speed' || statType === 'dodge' || statType === 'dash' || statType === 'dex') {
             return `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m13 2-2 7h5l-6 13 2-8h-5l6-12z" fill="${color}" fill-opacity="0.3"/>
             </svg>`;
         }
 
-        // Inteligência, Sabedoria, Mana, Recarga, Percepção: Orbe Mágico
         if (statType === 'int' || statType === 'wis' || statType === 'mana' || statType === 'recharge' || statType === 'insight' || statType === 'accuracy') {
             return `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/>
@@ -368,21 +345,18 @@ export default class ProgressionTabController {
             </svg>`;
         }
 
-        // Sorte, Carisma: Estrela / Trevo
         if (statType === 'lucky' || statType === 'cha') {
             return `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="${color}" fill-opacity="0.3"/>
             </svg>`;
         }
 
-        // Afinidades Elementais (Fogo, Água, Terra, Luz, etc.): Chama Elemental
         if (statType.endsWith('_dmg')) {
             return `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="${color}" fill-opacity="0.3"/>
             </svg>`;
         }
     
-        // Default spark (4-pointed star)
         return `<svg width="30" height="30" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M 50,10 Q 50,50 90,50 Q 50,50 50,90 Q 50,50 10,50 Q 50,50 50,10 Z" fill="${color}"/>
         </svg>`;
@@ -404,7 +378,6 @@ export default class ProgressionTabController {
         nameEl.textContent = cleanName;
         rarityEl.textContent = rarity.toUpperCase();
         
-        // Define rarity colors
         const colors: any = { comum: '#a0a0a0', incomum: '#1eff00', raro: '#0070dd', epico: '#a335ee', lendario: '#ff8000' };
         rarityEl.style.color = colors[rarity] || colors['comum'];
         
@@ -426,18 +399,16 @@ export default class ProgressionTabController {
         }
 
         if (layout) {
-            // Posicionamento inteligente baseado na coordenada do nó:
-            // Nível 4 (topo, y=15%): posiciona o widget flutuando ABAIXO do nó
+    //? Posicionamento de widget: flutua abaixo em nós de nível 4
             if (layout.y <= 30) {
                 panel.style.top = `calc(${layout.y}% + 45px)`;
                 panel.style.bottom = 'auto';
             } else {
-                // Níveis 1, 2 e 3: posiciona o widget flutuando ACIMA do nó
                 panel.style.bottom = `calc(${100 - layout.y}% + 45px)`;
                 panel.style.top = 'auto';
             }
 
-            // Posicionamento horizontal centralizado com clamp para não cortar nas bordas
+    //? Posicionamento horizontal centralizado com clamp nas bordas da viewport
             if (layout.x < 22) {
                 panel.style.left = `calc(${layout.x}% - 10px)`;
                 panel.style.right = 'auto';
@@ -493,11 +464,10 @@ export default class ProgressionTabController {
             
             layer.appendChild(p);
             
-            // Random direction
             const angle = Math.random() * Math.PI * 2;
-            const velocity = Math.random() * 150 + 50; // px
+            const velocity = Math.random() * 150 + 50;
             const tx = Math.cos(angle) * velocity;
-            const ty = Math.sin(angle) * velocity - 50; // little upward bias
+            const ty = Math.sin(angle) * velocity - 50;
             
             const animation = p.animate([
                 { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
@@ -512,21 +482,18 @@ export default class ProgressionTabController {
     }
 
     private triggerAnimations(): void {
-        // Paths animation
         const paths = this.svgLayer.querySelectorAll('.path-line');
         paths.forEach((p, idx) => {
             p.classList.remove('animate');
-            setTimeout(() => p.classList.add('animate'), 50); // Small delay to trigger CSS transition
+            setTimeout(() => p.classList.add('animate'), 50);
         });
 
-        // Nodes animation (staggered by level)
         const globalNodesMap = this.domain.globalNodesMap;
         const nodesList = Object.values(globalNodesMap) as any[];
         
         const nodesDom = this.nodesLayer.querySelectorAll('.node-circle');
         nodesDom.forEach((nodeEl, i) => {
             nodeEl.classList.remove('animate');
-            // Mock staggered animation based on level (bottom to top)
             const nodeData = nodesList[i];
             const delay = nodeData ? (nodeData.level * 200) : 0;
             setTimeout(() => nodeEl.classList.add('animate'), delay);
@@ -577,10 +544,10 @@ export default class ProgressionTabController {
         const targetEssence = mpm.globalEssence;
         
         if (this.visualEssence === -1) {
-            this.visualEssence = 0; // Always start at 0 if no previous state (like first load)
+            this.visualEssence = 0;
             if (mpm.lastRunSummary && mpm.lastRunSummary.totalReward > 0) {
                 this.visualEssence = Math.max(0, targetEssence - mpm.lastRunSummary.totalReward);
-                mpm.lastRunSummary.totalReward = 0; // Consume
+                mpm.lastRunSummary.totalReward = 0;
             }
         }
         
@@ -593,7 +560,7 @@ export default class ProgressionTabController {
         this.isAnimatingXP = true;
         let currentLevel = this.getMathXPState(this.visualEssence).level;
         
-        const duration = 2000; // 2 seconds total animation
+        const duration = 2000;
         const startEssence = this.visualEssence;
         const diff = targetEssence - startEssence;
         const startTime = performance.now();
@@ -602,7 +569,6 @@ export default class ProgressionTabController {
             const elapsed = timestamp - startTime;
             const progress = Math.min(elapsed / duration, 1);
             
-            // ease-out cubic
             const easeOut = 1 - Math.pow(1 - progress, 3);
             this.visualEssence = startEssence + (diff * easeOut);
             
@@ -611,7 +577,6 @@ export default class ProgressionTabController {
             
             if (state.level > currentLevel) {
                 currentLevel = state.level;
-                // Level Up Effect!
                 const xpBarFill = this.container.querySelector('#xp-bar-fill') as HTMLElement;
                 if (xpBarFill) {
                     const rect = xpBarFill.getBoundingClientRect();
@@ -620,14 +585,12 @@ export default class ProgressionTabController {
                     this.spawnParticles((x / window.innerWidth) * 100, (y / window.innerHeight) * 100);
                     
                     
-                    // Ultimate Dopamine Glow Effect!
                     xpBarFill.animate([
                         { filter: 'brightness(1) contrast(1)', boxShadow: '0 0 0px rgba(255,255,255,0)' },
                         { filter: 'brightness(2) contrast(1.5)', boxShadow: '0 0 50px #fff, 0 0 100px #ff00ff, 0 0 150px #00ffff, inset 0 0 50px #fff' },
                         { filter: 'brightness(1) contrast(1)', boxShadow: '0 0 20px #1eff00, inset 0 0 20px #1eff00' }
                     ], { duration: 1000, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' });
                     
-                    // Extra particle explosion (Ultimate style)
                     for (let i = 0; i < 15; i++) {
                         const p = document.createElement('div');
                         const size = Math.random() * 15 + 5;

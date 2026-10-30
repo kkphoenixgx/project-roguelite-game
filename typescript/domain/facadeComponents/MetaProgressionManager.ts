@@ -9,14 +9,19 @@ import type { IEventManager } from "../eventDispacher/IGameEvents";
 
 export interface GlobalState {
   globalEssence: number;
-  unlockedGlobalNodes: string[]; // IDs da árvore atual
-  purchasedPermanentNodes: GeneratedGlobalNode[]; // Histórico de todos os upgrades locais comprados
-  unlockedBrooches: string[]; // IDs dos broches coletados
+  /** IDs dos nós desbloqueados na árvore procedural ativa */
+  unlockedGlobalNodes: string[];
+  /** Histórico cumulativo de todos os nós comprados em gerações anteriores */
+  purchasedPermanentNodes: GeneratedGlobalNode[];
+  /** IDs de todos os broches permanentes coletados */
+  unlockedBrooches: string[];
   generatedTree: GeneratedGlobalNode[];
   treeGenerationCount: number;
   spentSkillPoints?: number | undefined;
-  unlockedStoryMilestones?: string[] | undefined; // Histórico de marcos de lore desbloqueados
-  storyFlags?: Record<string, any> | undefined; // Flags narrativas persistentes
+  /** Histórico de marcos narrativos desbloqueados */
+  unlockedStoryMilestones?: string[] | undefined;
+  /** Flags narrativas persistentes */
+  storyFlags?: Record<string, any> | undefined;
 }
 export default class MetaProgressionManager {
   private globalEssence: number = 50000;
@@ -29,7 +34,7 @@ export default class MetaProgressionManager {
   private treeGenerationCount: number = 0;
   private logger: ILogger;
 
-  // Run Tracker
+  /** Rastreador de proezas e nível alcançado na run ativa */
   private currentRunFeats: { name: string, value: number }[] = [];
   private maxLevelReached: number = 1;
 
@@ -69,31 +74,28 @@ export default class MetaProgressionManager {
       const leftLevel3Ids: string[] = [];
       const rightLevel3Ids: string[] = [];
       
-      // Nível 1: 3 Escolhas (Base da árvore)
+      //? Nível 1: 3 Escolhas (Base da árvore)
       for (let i = 0; i < 3; i++) {
           const l1Stat = GlobalStatPool[Math.floor(Math.random() * GlobalStatPool.length)]!;
           const l1Rarity = rarities[Math.floor(Math.random() * rarities.length)]!;
           const l1Id = `${generationPrefix}_lvl1_base${i}`;
           this.generatedTree.push(this.createProceduralNode(l1Id, 1, l1Stat, l1Rarity, []));
 
-          // Nível 2: Cada escolha base leva para 2 escolhas
+          //? Nível 2: Cada escolha base ramifica em 2 nós filhos
           for (let j = 0; j < 2; j++) {
               const l2Stat = GlobalStatPool[Math.floor(Math.random() * GlobalStatPool.length)]!;
               const l2Rarity = rarities[Math.floor(Math.random() * rarities.length)]!;
               const l2Id = `${generationPrefix}_lvl2_b${i}_c${j}`;
               this.generatedTree.push(this.createProceduralNode(l2Id, 2, l2Stat, l2Rarity, [l1Id]));
 
-              // Nível 3: Cada escolha de Nível 2 leva para mais 2 escolhas
+              //? Nível 3: Cada nó de Nível 2 ramifica em mais 2 nós
               for (let k = 0; k < 2; k++) {
                   const l3Stat = GlobalStatPool[Math.floor(Math.random() * GlobalStatPool.length)]!;
                   const l3Rarity = rarities[Math.floor(Math.random() * rarities.length)]!;
                   const l3Id = `${generationPrefix}_lvl3_b${i}_c${j}_k${k}`;
                   this.generatedTree.push(this.createProceduralNode(l3Id, 3, l3Stat, l3Rarity, [l2Id]));
                   
-                  // Distribuição para os 2 broches:
-                  // Base 0 (esquerda): vai para o Broche 0 (esquerda)
-                  // Base 1 (meio): ramo esquerdo (j=0) vai para Broche 0; ramo direito (j=1) vai para Broche 1
-                  // Base 2 (direita): vai para o Broche 1 (direita)
+                  //? Distribuição das metades da árvore para os 2 broches terminais
                   if (i === 0 || (i === 1 && j === 0)) {
                       leftLevel3Ids.push(l3Id);
                   } else {
@@ -103,8 +105,7 @@ export default class MetaProgressionManager {
           }
       }
 
-      // Nível 4: 2 Escolhas de Broche
-      // Cada broche conecta aos ramos da sua respectiva metade da árvore
+      //? Nível 4: 2 escolhas de Broche permanente conectadas aos ramos respectivos
       const shuffledBrooches = [...GlobalBroochPool].sort(() => 0.5 - Math.random());
       
       for (let k = 0; k < 2; k++) {
@@ -115,7 +116,7 @@ export default class MetaProgressionManager {
               level: 4,
               name: brooch.name,
               description: brooch.description,
-              cost: 1, // 1 Ponto de Habilidade
+              cost: 1,
               rarity: 'lendario',
               dependencies: targetDeps,
               broochId: brooch.id
@@ -133,7 +134,7 @@ export default class MetaProgressionManager {
           level,
           name: `${stat.name} (${rarity})`,
           description: `${stat.desc} em ${stat.baseValue * mult}.`,
-          cost: 1, // 1 Ponto de Habilidade
+          cost: 1,
           rarity,
           dependencies,
           statType: stat.type,
@@ -149,7 +150,7 @@ export default class MetaProgressionManager {
   public lastRunSummary: { totalReward: number, breakdown: any } | null = null;
 
   public calculateAndClaimRunReward(finalLevel: number): { totalReward: number, breakdown: any } {
-      const levelReward = finalLevel * 50; // 50 essências por nível
+      const levelReward = finalLevel * 50;
       let featsReward = 0;
       
       for (const feat of this.currentRunFeats) {
@@ -157,7 +158,7 @@ export default class MetaProgressionManager {
       }
       
       const totalReward = levelReward + featsReward;
-      this.addEssence(totalReward); // Isso vai somar na globalEssence (nossa XP atual)
+      this.addEssence(totalReward);
       
       const breakdown = {
           levelReward,
@@ -165,12 +166,11 @@ export default class MetaProgressionManager {
           feats: [...this.currentRunFeats]
       };
       
-      // Reseta para a próxima run
       this.currentRunFeats = [];
       this.maxLevelReached = 1;
       
       const result = { totalReward, breakdown };
-      this.lastRunSummary = result; // Guarda para a UI poder ler depois
+      this.lastRunSummary = result;
       
       this.logger.log('domain', `Run terminada! Recompensa total: ${totalReward} XP.`);
       return result;
@@ -224,7 +224,7 @@ export default class MetaProgressionManager {
 
     if (this.unlockedGlobalNodes.has(nodeId)) return;
 
-    // Checagem de dependência: para nós de nível > 1, ao menos um pai deve estar desbloqueado
+    //? Checagem de dependência: para nós de nível > 1, ao menos um pai deve estar desbloqueado
     if (node.level > 1 && node.dependencies && node.dependencies.length > 0) {
         const hasParentUnlocked = node.dependencies.some(depId => this.unlockedGlobalNodes.has(depId));
         if (!hasParentUnlocked) {
@@ -233,7 +233,7 @@ export default class MetaProgressionManager {
         }
     }
 
-    // Exclusividade de nível 1: apenas 1 base por geração da árvore
+    //? Exclusividade de nível 1: permite selecionar apenas 1 base por ciclo da árvore
     if (node.level === 1) {
         const alreadyHasLevel1 = Array.from(this.unlockedGlobalNodes).some(id => {
             const n = this.generatedTree.find(treeNode => treeNode.id === id);
@@ -252,13 +252,12 @@ export default class MetaProgressionManager {
     }
 
     if (node.level < 4) {
-        // Armazena no histórico de buffs para sempre
+        //? Armazena no histórico de buffs para sempre
         this.purchasedPermanentNodes.push(node);
     } else if (node.level === 4 && node.broochId) {
-        // Coletou o Broche
+        //? Broche terminal coletado: desbloqueia o broche e reseta a árvore para nova geração
         this.unlockedBrooches.add(node.broochId);
         this.logger.log('domain', `Broche coletado: ${node.broochId}. Resetando a árvore...`);
-        // Reseta a árvore para uma nova geração
         this.generateNewTree();
     }
   }
@@ -334,8 +333,7 @@ export default class MetaProgressionManager {
       this.unlockedGlobalNodes = new Set(state.unlockedGlobalNodes);
     }
 
-    // Cálculo resiliente e determinístico de pontos de habilidade gastos:
-    // Garante que o jogador nunca receba pontos que já foram gastos anteriormente
+    //? Cálculo resiliente e determinístico de pontos de habilidade gastos para evitar duplicação em reload
     if (state.spentSkillPoints !== undefined) {
       this.spentSkillPoints = state.spentSkillPoints;
     } else {
@@ -350,7 +348,7 @@ export default class MetaProgressionManager {
     } else if (this.generatedTree.length === 0) {
       this.generateNewTree();
     }
-    // Preserva a árvore existente caso o state não a defina explicitamente.
+    //? Preserva a árvore existente caso o state não a defina explicitamente
 
     if (state.treeGenerationCount !== undefined) this.treeGenerationCount = state.treeGenerationCount;
     if (state.unlockedStoryMilestones) this.unlockedStoryMilestones = new Set(state.unlockedStoryMilestones);
@@ -362,7 +360,7 @@ export default class MetaProgressionManager {
   }
 
   public applyGlobalBonuses(attributes: Attributes): void {
-    // Aplica TODOS os buffs comprados em todas as gerações de árvores
+    //? Aplica TODOS os buffs comprados em todas as gerações de árvores
     for (const node of this.purchasedPermanentNodes) {
         if (node.statType && node.statValue) {
             const statDef = GlobalStatPool.find(s => s.type === node.statType);
@@ -377,7 +375,7 @@ export default class MetaProgressionManager {
   public getAggregatedMetaStats() {
       const aggregatedStats: Record<string, { type: string, category?: string, name: string, desc?: string, totalValue: number }> = {};
   
-      // Inicializa todos os atributos conhecidos com 0 para exibição consistente
+      //? Inicializa todos os atributos conhecidos com 0 para exibição consistente
       for (const stat of GlobalStatPool) {
           aggregatedStats[stat.type] = {
               type: stat.type,

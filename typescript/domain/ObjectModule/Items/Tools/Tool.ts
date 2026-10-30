@@ -6,9 +6,9 @@ export type ToolType = 'hoe' | 'watering_can' | 'axe' | 'hammer';
 export default abstract class Tool extends Item {
     constructor(
         public readonly toolType: ToolType,
-        public readonly tier: number, // 1: Madeira, 2: Pedra, 3: Ferro, 4: Ouro, 5: Diamante/Mithril
-        public readonly efficiency: number, // Multiplicador de velocidade/eficiência da ação (1.0 = normal)
-        public readonly staminaCost: number, // Custo de estamina/vigor por uso da ferramenta
+        public readonly tier: number, //? Tier da ferramenta (1: Madeira, 2: Pedra, 3: Ferro, 4: Ouro, 5: Mithril)
+        public readonly efficiency: number, //? Multiplicador de velocidade da ação (1.0 = normal)
+        public readonly staminaCost: number, //? Custo de vigor por uso da ferramenta
         name: string,
         description: string,
         itemId: number,

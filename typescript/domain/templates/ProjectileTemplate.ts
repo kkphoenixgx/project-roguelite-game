@@ -24,8 +24,8 @@ import { RegisterSpawner, type SpawnPayload } from "../ObjectModule/SpawnRegistr
  */
 @RegisterSpawner('templateProjectile')
 export default class TemplateProjectileTemplate extends Bullet {
-  private speed: number = 400; // Pixels por segundo
-  private maxRange: number = 800; // Alcance máximo antes de sumir
+  private speed: number = 400;
+  private maxRange: number = 800;
   private distanceTraveled: number = 0;
   private hitTargets: Set<number> = new Set();
 
@@ -75,7 +75,6 @@ export default class TemplateProjectileTemplate extends Bullet {
     this.coordinates.y += this.direction.y * step;
     this.distanceTraveled += step;
 
-    // Atualiza o centro da hitbox
     const cx = this.coordinates.x + this.size.width / 2;
     const cy = this.coordinates.y + this.size.height / 2;
 
@@ -85,7 +84,6 @@ export default class TemplateProjectileTemplate extends Bullet {
       }
     }
 
-    // Se ultrapassou o alcance máximo, despacha remoção do mundo
     if (this.distanceTraveled >= this.maxRange) {
       this.destroy();
     }
@@ -104,25 +102,23 @@ export default class TemplateProjectileTemplate extends Bullet {
       0,
       radius,
       (other: ObjectElement) => {
-        // Ignora quem disparou o tiro ou alvos já atingidos
+      //? Ignora o disparador do projétil e alvos já atingidos por disparos perfurantes
         if ('takeDamage' in other && other.id !== this.attack.attacker.id) {
           if (this.hitTargets.has(other.id)) return;
           this.hitTargets.add(other.id);
 
-          // Executa dano e efeitos
           this.attack.execute(other as any, this.direction);
           for (let i = 0; i < this.effects.length; i++) {
             this.effects[i]!.apply(other as any);
           }
 
-          // Dispara feedback de partículas sem acoplar visual ao domínio
+      //? Emite evento semântico de partículas desacoplado do renderizador visual
           this.eventManager.dispatch('particle', {
             effect: 'magicPulse',
             x: other.coordinates.x + other.size.width / 2,
             y: other.coordinates.y + other.size.height / 2
           });
 
-          // Se não for perfurante, some na primeira colisão
           this.destroy();
         }
       }

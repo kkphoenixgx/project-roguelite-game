@@ -50,27 +50,25 @@ export class RenderThrottlePolicy implements IRenderThrottlePolicy {
   }
 
   public shouldRenderWorldFrame(isMenuOpen: boolean, isGamePaused: boolean, isMultiplayer: boolean = false): boolean {
-    // 1. Em gameplay normal (sem menus abertos), renderiza sempre a taxa total de quadros (60+ FPS)
+    /* 1. Em gameplay normal (sem menus abertos), renderiza sempre a taxa total de quadros (60+ FPS) */
     if (!isMenuOpen) {
       return true;
     }
 
-    // 2. Se o congelamento forçado estiver desativado (padrão de performance), mantém o pipeline
-    // gráfico alimentando o compositor a 60 FPS para evitar que compositores Linux/WebKit reduzam a taxa para 20 FPS
+    //? Mantém pipeline a 60 FPS quando enableIdleFreeze estiver falso para evitar throttling de compositores Linux/WebKit
     if (!this.enableIdleFreeze) {
       return true;
     }
 
-    // 3. Em Singleplayer com congelamento ativado:
-    // O mundo não muda suas coordenadas ou estado físico. Desenha exatamente 1 frame estático de fundo e para completamente o canvas.
+    //? Em Singleplayer com menus abertos: desenha exatamente 1 frame estático de fundo e suspende o redesenho
     if (!isMultiplayer && isGamePaused) {
       if (this.isWorldDirty) {
         return true;
       }
-      return false; // Congela o redesenho do mapa/mundo
+      return false;
     }
 
-    // 4. Em Multiplayer ou mundo ativo em segundo plano com congelamento ativado
+    /* 4. Em Multiplayer ou mundo ativo em segundo plano com congelamento ativado */
     const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
     const elapsedSinceLastDraw = now - this.lastWorldDrawTimestamp;
 
@@ -91,7 +89,7 @@ export class RenderThrottlePolicy implements IRenderThrottlePolicy {
   }
 
   public notifyMenuStateChanged(isMenuOpen: boolean): void {
-    // Ao fechar ou abrir o menu, marca o mundo como sujo para garantir que o frame inicial de transição seja desenhado imediatamente
+    //? Marca mundo como sujo em transições de menu para renderizar frame inicial imediatamente
     this.isWorldDirty = true;
   }
 }

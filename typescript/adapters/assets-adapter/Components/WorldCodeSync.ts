@@ -33,7 +33,7 @@ export class WorldCodeSync {
         }
 
         const assets: PlacedAssetModel[] = [];
-        // Regex para capturar chamadas de spawn de cenário (com ou sem size explícito)
+        //? Regex para captura de chamadas de spawn de cenário (com ou sem size explícito)
         const spawnRegex = /this\.eventManager\.dispatch\('spawn',\s*\{\s*type:\s*'scenery',\s*coordinates:\s*\{\s*x:\s*(-?\d+),\s*y:\s*(-?\d+)\s*\}([\s\S]*?)\}\);/g;
 
         let match: RegExpExecArray | null;
@@ -83,7 +83,6 @@ export class WorldCodeSync {
             });
         }
 
-        // 2. Parser para PortalLinks (diretos e com confirmação [E]):
         const portalRegex = /this\.eventManager\.dispatch\('spawn',\s*\{\s*type:\s*'(portalLinkRequest|portalLink)',\s*coordinates:\s*\{\s*x:\s*(-?\d+),\s*y:\s*(-?\d+)\s*\}([\s\S]*?)\}\);/g;
 
         let portalMatch: RegExpExecArray | null;
@@ -141,7 +140,6 @@ export class WorldCodeSync {
             });
         }
 
-        // 3. Parser para Dropped Items (armas, armaduras, consumiveis caidos no mapa):
         const itemRegex = /(?:this\.eventManager\.dispatch\('spawn',\s*\{\s*type:\s*'droppedItem',\s*coordinates:\s*\{\s*x:\s*(-?\d+),\s*y:\s*(-?\d+)\s*\},\s*item:\s*([\s\S]*?)(?:,\s*pickupId:\s*['"][^'"]*['"])?\s*\}\)|this\.spawnDroppedItem\(\s*\{\s*x:\s*(-?\d+),\s*y:\s*(-?\d+)\s*\},\s*([\s\S]*?)(?:,\s*['"][^'"]*['"])?\s*\));/g;
         let itemMatch: RegExpExecArray | null;
         while ((itemMatch = itemRegex.exec(contentToParse)) !== null) {
@@ -153,7 +151,6 @@ export class WorldCodeSync {
             let itemClass = 'SimpleSword';
             const customOptions: Record<string, any> = {};
 
-            // Caso A: new ClassName(args)
             const newClassMatch = /^new\s+([A-Za-z0-9_]+)\(([^)]*)\)/.exec(itemCode);
             if (newClassMatch) {
                 itemClass = newClassMatch[1] || 'SimpleSword';
@@ -166,7 +163,6 @@ export class WorldCodeSync {
                 }
             }
 
-            // Caso B: ItemFactory.createItem(idOrClass, options)
             const factoryMatch = /^ItemFactory\.createItem\(\s*(['"][^'"]+['"]|\d+)(?:,\s*(\{[\s\S]*?\}))?\s*\)/.exec(itemCode);
             if (factoryMatch) {
                 const rawIdOrClass = factoryMatch[1]?.replace(/['"]/g, '').trim() || 'SimpleSword';
@@ -278,7 +274,7 @@ export class WorldCodeSync {
             }
         }
 
-        // Agrupa cada asset em seu respectivo chunk (pela coordenada central/base)
+        //? Agrupa cada asset em seu respectivo chunk espacial (coordenada central/base)
         placedAssets.forEach(asset => {
             if (asset.isPaintedLayer) return;
             const chunkX = Math.floor(asset.x / chunkSize);
@@ -302,7 +298,7 @@ export class WorldCodeSync {
             const maxX = minX + chunkSize;
             const maxY = minY + chunkSize;
 
-            // Só gera bloco no código se o chunk tiver assets OU se for o chunk central (0, 0)
+            //? Só gera bloco no código se o chunk tiver assets OU se for o chunk central (0, 0)
             if (assetsInChunk.length === 0 && (cx !== 0 || cy !== 0)) {
                 return;
             }
@@ -312,9 +308,9 @@ export class WorldCodeSync {
             lines.push(`        //* =========================================================================`);
 
             if (assetsInChunk.length === 0) {
-                lines.push(`        // (Chunk livre de elementos cenográficos estáticos)`);
+                lines.push(`        //? (Chunk livre de elementos cenográficos estáticos)`);
             } else {
-                // Ordena por Y crescente para coerência espacial no código
+                //? Ordena por Y crescente para coerência espacial no código
                 assetsInChunk.sort((a, b) => a.y - b.y);
 
                 assetsInChunk.forEach(asset => {
@@ -327,7 +323,7 @@ export class WorldCodeSync {
                         const key = asset.actionKey || 'E';
                         const cooldown = asset.cooldownMs ?? 1000;
 
-                        lines.push(`        // Portal Link -> ${targetMap}`);
+                        lines.push(`        //? Portal Link -> ${targetMap}`);
                         lines.push(`        this.eventManager.dispatch('spawn', { type: '${portalType}', coordinates: { x: ${Math.round(asset.x)}, y: ${Math.round(asset.y)} }, size: { width: ${asset.width}, height: ${asset.height} }, metadata: { targetMapId: '${targetMap}', targetSpawnCoords: { x: ${targetX}, y: ${targetY} }, promptText: '${prompt}', actionKey: '${key}', cooldownMs: ${cooldown} } });`);
                     } else if (asset.isItem) {
                         const itemClass = asset.itemClass || 'SimpleSword';
@@ -375,10 +371,10 @@ export class WorldCodeSync {
                             itemCode = `new ${itemClass}()`;
                         }
 
-                        lines.push(`        // Item: ${asset.name}`);
+                        lines.push(`        //? Item: ${asset.name}`);
                         lines.push(`        this.spawnDroppedItem({ x: ${Math.round(asset.x)}, y: ${Math.round(asset.y)} }, ${itemCode});`);
                     } else {
-                        lines.push(`        // ${asset.name}`);
+                        lines.push(`        //? ${asset.name}`);
                         let meta = `preset: '${asset.presetId}'`;
                         if (asset.flipX) meta += `, flipX: true`;
                         if (asset.flipY) meta += `, flipY: true`;
@@ -404,12 +400,11 @@ export class WorldCodeSync {
         const innerMapMgr = InnerMapManager.getInstance();
         const isRootWorld = InnerMapManager.ROOT_WORLDS.has(mapId);
 
-        // Se for um InnerMap e NÃO um mundo raiz conhecido, carrega suas entidades do InnerMapManager
+        //? Carrega entidades do InnerMapManager caso seja um InnerMap e não um mundo raiz
         if (!isRootWorld && (mapConfig?.isInnerMap || innerMapMgr.hasInnerMap(mapId))) {
             const def = innerMapMgr.getInnerMap(mapId);
             if (def) {
                 const assets: PlacedAssetModel[] = [];
-                // 1. Scenery
                 if (def.scenery) {
                     def.scenery.forEach((sc, idx) => {
                         const assetDef = scanner.getAssetById(sc.presetId);
@@ -432,7 +427,6 @@ export class WorldCodeSync {
                         });
                     });
                 }
-                // 2. Portais
                 if (def.portals) {
                     def.portals.forEach((p, idx) => {
                         const portalDef = scanner.getAssetById('portal_link_circle') || scanner.getAssetById('portal_link');
@@ -460,7 +454,6 @@ export class WorldCodeSync {
                         });
                     });
                 }
-                // 3. Itens
                 if (def.items) {
                     def.items.forEach((it, idx) => {
                         const itemClass = it.itemClass || 'SimpleSword';
@@ -515,7 +508,7 @@ export class WorldCodeSync {
                 }
             }
         } catch {
-            // Em testes ou ambientes offline, utiliza o fallback estático
+            //? Fallback estático em testes ou ambientes offline
         }
 
         if (assets.length === 0 && mapId === 'vilgem') {
@@ -523,7 +516,7 @@ export class WorldCodeSync {
             assets = this.parseSceneryFromCode(rawVilgemWorldCode, scanner);
         }
 
-        // Se o arquivo ainda não contém os portais cadastrados no catálogo PortalLinksMap, mescla-os para visualização e edição imediata
+        //? Mescla portais cadastrados no catálogo PortalLinksMap caso ainda não constem no código fonte
         const catalogPortals = getPortalLinksForMap(mapId);
         catalogPortals.forEach((p, idx) => {
             const alreadyInAssets = assets.some(a => a.isPortal && a.targetMapId === p.targetMapId);
@@ -575,7 +568,7 @@ export class WorldCodeSync {
         this.saveTimer = setTimeout(async () => {
             try {
                 const isRootWorld = InnerMapManager.ROOT_WORLDS.has(mapId);
-                // Se for um InnerMap e NÃO um mundo raiz conhecido, salva via InnerMapManager
+                //? Salva via InnerMapManager caso seja um InnerMap e não um mundo raiz
                 if (!isRootWorld && (mapConfig.isInnerMap || InnerMapManager.getInstance().hasInnerMap(mapId))) {
                     await InnerMapManager.getInstance().saveInnerMapElements(mapId, placedAssets, mapConfig);
                     onStatusChange?.('saved', `Sincronizado automaticamente com InnerMap ${mapConfig.name}`);

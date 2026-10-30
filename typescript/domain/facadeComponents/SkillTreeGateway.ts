@@ -11,10 +11,10 @@ export default class SkillTreeGateway {
         private eventManager: IEventManager,
         private setViewedClass: (cls: string | null) => void
     ) {
-        // [DECOUPLED] Reage a intenções da UI de forma reativa, sem passar pela Facade
+    //? Reage a intenções da UI de forma reativa desacoplada da Facade
         this.eventManager.on('skillTreeAction', (payload) => {
             this.manage(payload.action, payload.payload);
-            this.broadcastState(); // Avisa a UI que a árvore de skills mudou
+            this.broadcastState();
         });
     }
 
@@ -29,12 +29,11 @@ export default class SkillTreeGateway {
 
     public manage(action: 'unlock' | 'changeClass' | 'equip', payload: { className?: string; skillId?: string; slotIndex?: number }): void {
         if (action === 'changeClass' && payload.className) {
-            // Apenas muda a classe que está sendo visualizada na UI, NÃO a classe ativa (armada) do jogador!
+    //? Atualiza a classe inspecionada na interface sem alterar a classe armada ativa do jogador
             this.setViewedClass(payload.className as string);
             this.logger.log('actions', `[DomainFacade] UI está agora visualizando a árvore da classe: ${payload.className}`);
-            this.eventManager.dispatch('classChanged', { oldClassInstance: null, newClassInstance: null }); // Atualiza UI
+            this.eventManager.dispatch('classChanged', { oldClassInstance: null, newClassInstance: null });
         } else if (action === 'unlock' && payload.skillId) {
-            // Procura a skill em qualquer classe
             let activeClassInstance = undefined;
             for (const cls of this.player.classes) {
                 const map = (cls as any).skillsByLevel as Map<number, any>;
@@ -106,7 +105,7 @@ export default class SkillTreeGateway {
             
             if (this.player.attributes.level >= requiredLevel) {
                 if (this.player.attributes.availablePoints > 0) {
-                    (this.player.attributes as any)._availablePoints--; // Gasta o ponto de habilidade!
+                    (this.player.attributes as any)._availablePoints--;
                     this.player.unlockSkill(payload.skillId as string);
                     this.eventManager.dispatch('skillPointSpent', { 
                         skillId: payload.skillId as string, 

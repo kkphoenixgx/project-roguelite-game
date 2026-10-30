@@ -1,14 +1,12 @@
 import type Item from "./Item";
 import type { ItemSaveData } from "../../ports/ISaveRepository";
 
-// Weapons
 import SimpleSword from "./Weapons/MeleeWeapons/SimpleSword";
 import Scythe from "./Weapons/MeleeWeapons/Scythe";
 import Gun from "./Weapons/RangedWeapons/Gun";
 import SimpleStaff from "./Weapons/RangedWeapons/Staffs/SimpleStaff";
 import FishingRod from "./Weapons/RangedWeapons/FishingRod";
 
-// Armors
 import IronHelmet from "./Armors/helmet/IronHelmet";
 import IronChestplate from "./Armors/chestplates/IronChestplate";
 import IronPants from "./Armors/pants/IronPants";
@@ -17,7 +15,6 @@ import IronGloves from "./Armors/glooves/IronGloves";
 import SimpleAmulet from "./Armors/necklaces/SimpleAmulet";
 import SimpleRing from "./Armors/rings/SimpleRing";
 
-// Consumables
 import HealthPotion from "./Consumables/Potions/HealthPotion";
 import ManaPotion from "./Consumables/Potions/ManaPotion";
 import AdrenalineFlask from "./Consumables/Potions/AdrenalineFlask";
@@ -28,11 +25,9 @@ import VampireFang from "./Consumables/VampireFang";
 import MegaMushroom from "./Consumables/MegaMushroom";
 import DemonBlood from "./Consumables/DemonBlood";
 
-// Storage
 import LeatherBag from "./Storage/LeatherBag";
 import LeatherBelt from "./Storage/LeatherBelt";
 
-// Tools
 import Hoe from "./Tools/Hoe";
 import WateringCan from "./Tools/WateringCan";
 import Axe from "./Tools/Axe";
@@ -86,15 +81,13 @@ export default class ItemFactory {
     ]);
 
     private static readonly registry: Map<number, ItemConstructor> = new Map<number, ItemConstructor>([
-        // Weapons
-        [1, () => new SimpleStaff()],
+                [1, () => new SimpleStaff()],
         [2, () => new Gun()],
         [3, () => new Scythe()],
         [4, () => new SimpleSword()],
         [5, () => new FishingRod()],
 
-        // Armors
-        [10, () => new IronHelmet()],
+                [10, () => new IronHelmet()],
         [11, () => new IronChestplate()],
         [12, () => new IronPants()],
         [13, () => new IronBoots()],
@@ -102,8 +95,7 @@ export default class ItemFactory {
         [15, () => new SimpleAmulet()],
         [16, () => new SimpleRing()],
 
-        // Consumables
-        [30, () => new HealthPotion()],
+                [30, () => new HealthPotion()],
         [31, () => new ManaPotion()],
         [32, () => new Apple()],
         [33, (opt?: { durability?: number; amount?: number }) => new Coin(opt?.amount ?? 10)],
@@ -113,13 +105,11 @@ export default class ItemFactory {
         [42, () => new AdrenalineFlask()],
         [43, () => new DemonBlood()],
 
-        // Storage
-        [100, () => new LeatherBag()],
+                [100, () => new LeatherBag()],
         [200, () => new LeatherBelt()],
         [205, () => new LeatherBelt()],
 
-        // Tools
-        [210, () => new Hoe()],
+                [210, () => new Hoe()],
         [211, () => new WateringCan()],
         [212, () => new Axe()],
         [213, () => new Hammer()]

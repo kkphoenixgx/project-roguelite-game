@@ -11,7 +11,7 @@ export default class FishingHook extends Projectile {
     private attack: Attack;
     private hookedTarget: ObjectElement | null = null;
     private distanceTraveled: number = 0;
-    private maxRange: number = 400; // Alcance máximo do anzol lançado
+    private maxRange: number = 400;
     public connectedTo: { x: number, y: number } | null = null;
 
     constructor(
@@ -27,17 +27,15 @@ export default class FishingHook extends Projectile {
         this.attack = attack;
         this.rotation = this.direction.angle();
         
-        // Hitbox simples circular
         this.hitboxes = [
             new HitBoxCircle(
                 { x: this.coordinates.x + 8, y: this.coordinates.y + 8 }, 
-                0, // Rotação da HitBox (necessário na assinatura)
+                0,
                 8, 
                 this.onColision.bind(this)
             )
         ];
 
-        // Destrói o anzol silenciosamente quando o Pescador soltar a linha
         this.eventManager.on('releaseFishingHook', (payload: any) => {
             if (payload.playerId === this.attack.attacker.id) {
                 this.destroy();
@@ -47,13 +45,12 @@ export default class FishingHook extends Projectile {
 
     public override update(deltaTime: number): void {
         if (this.hookedTarget) {
-            // Se o alvo morreu (por veneno, outro tiro, etc) antes de soltar a linha, solta o anzol!
+            //? Se o alvo morrer antes da soltura da linha, finaliza o anzol.
             if ('attributes' in this.hookedTarget && (this.hookedTarget as any).attributes.hp <= 0) {
                 this.destroy();
                 return;
             }
 
-            // 1. Mantém o anzol grudado na posição atual do alvo
             this.coordinates.x = this.hookedTarget.coordinates.x + this.hookedTarget.size.width / 2 - this.size.width / 2;
             this.coordinates.y = this.hookedTarget.coordinates.y + this.hookedTarget.size.height / 2 - this.size.height / 2;
             
@@ -63,7 +60,8 @@ export default class FishingHook extends Projectile {
                 y: player.coordinates.y + player.size.height / 2 
             };
 
-            return; // Interrompe a lógica de balística, pois ele está cravado!
+            //? Interrompe balística cinemática quando ancorado no alvo.
+            return;
         }
 
         const speed = 600;
@@ -91,9 +89,8 @@ export default class FishingHook extends Projectile {
     }
 
     private onColision(otherElement: ObjectElement): void {
-        if (this.hookedTarget) return; // Só fisga um por vez
+        if (this.hookedTarget) return;
 
-        // Aplica o ataque no alvo (o que engatilhará a "pesca") e destrói o anzol
         const isFriendly = otherElement.id === this.attack.attacker.id || 
             otherElement.objectId === 'player' || 
             otherElement.objectId === 'spawn-leviatã' || 
@@ -101,8 +98,7 @@ export default class FishingHook extends Projectile {
             otherElement.objectId === 'fishPet';
 
         if ('takeDamage' in otherElement && !isFriendly) {
-            
-            // Bate em chefes apenas com dano (não ancora)
+            //? Chefes recebem dano de impacto mas não podem ser ancorados.
             if (otherElement.objectId.toString().toLowerCase().includes('boss')) {
                 this.attack.execute(otherElement as any, this.direction);
                 this.destroy();
@@ -110,10 +106,9 @@ export default class FishingHook extends Projectile {
             }
 
             this.hookedTarget = otherElement;
-            this.velocity.resetMut(); // Freio instantâneo do projétil
+            this.velocity.resetMut();
             this.attack.execute(otherElement as any, this.direction);
             
-            // Emite a partícula de engate APENAS UMA VEZ no momento do acerto!
             this.eventManager.dispatch('particle', { effect: 'magicAura', x: this.coordinates.x, y: this.coordinates.y, color: '#aaddff' }); 
         }
     }
@@ -126,7 +121,6 @@ export default class FishingHook extends Projectile {
     public static createSpawn(id: number, payload: SpawnPayload, eventManager: IEventManager): FishingHook {
         const size = { width: 16, height: 16 };
         
-        // Centraliza a saída do anzol em relação ao atacante/player
         const centeredCoordinates = {
             x: payload.coordinates.x - size.width / 2,
             y: payload.coordinates.y - size.height / 2

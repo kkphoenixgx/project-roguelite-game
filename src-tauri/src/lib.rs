@@ -11,7 +11,6 @@ fn cleanup_zombie_processes() {
     {
         let _ = std::process::Command::new("taskkill").args(["/F", "/IM", "ollama.exe"]).output();
         let _ = std::process::Command::new("taskkill").args(["/F", "/IM", "panteao-engine.exe"]).output();
-        let _ = std::process::Command::new("taskkill").args(["/F", "/IM", "node.exe"]).output(); // Pode matar outros nodes no windows, cuidado
     }
     #[cfg(not(target_os = "windows"))]
     {

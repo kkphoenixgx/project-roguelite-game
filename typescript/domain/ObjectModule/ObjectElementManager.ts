@@ -17,13 +17,14 @@ import { ChunkBoundaryHelper } from "./Maps/ChunkBoundaryHelper";
 
 
 
-// Auto-carrega todas as entidades e itens do domínio para engatilhar os decorators @RegisterSpawner
+//? Auto-carregamento eager de módulos do domínio via glob para registrar decoradores @RegisterSpawner.
 import.meta.glob('./Entities/**/*.ts', { eager: true });
 import.meta.glob('./Items/**/*.ts', { eager: true });
 import.meta.glob('./Scenery/**/*.ts', { eager: true });
 import './Maps/PortalLink';
 import './Maps/PortalLinkRequest';
-import.meta.glob('./!(Collision.worker).ts', { eager: true }); // Garante que EnvironmentCollider e outras raízes ativem o Decorator
+//? Carregamento de módulos locais exceto o web worker de colisão para disparar os registradores.
+import.meta.glob('./!(Collision.worker).ts', { eager: true });
 
 /** * @class ObjectElementManager * Gerencia uma coleção de `ObjectElement`s. * Esta classe encapsula a lógica de adicionar, remover, atualizar e acessar * grupos de entidades, permitindo que a `DomainFacade` delegue essa * responsabilidade e permaneça focada na orquestração de alto nível. */
 export default class ObjectElementManager {
@@ -162,19 +163,17 @@ export default class ObjectElementManager {
     for (const element of this.elements.values()) {
       if ((element as any).isDestroyed) continue;
 
-      // Filtro por ID exato
       if (payload.elementId !== undefined && element.id !== payload.elementId) {
         continue;
       }
 
-      // Filtro por Preset/Type
       const isScenery = element instanceof SceneryElement;
       const elementPreset = isScenery ? (element as SceneryElement).presetType : element.objectId;
       if (payload.presetType && elementPreset !== payload.presetType && element.objectId !== payload.presetType) {
         continue;
       }
 
-      // Filtro espacial por proximidade (distância até a AABB do elemento para suportar assets grandes como portões de 396px)
+      //? Distância euclidiana até a AABB mais próxima para suportar assets grandes com colisão precisa.
       if (payload.nearCoordinates) {
         const radius = payload.nearCoordinates.radius ?? 400;
         const qx = payload.nearCoordinates.x;
@@ -220,7 +219,7 @@ export default class ObjectElementManager {
   }
 
   public updateAll(deltaTime: number, player: Player): void {
-    // 1. Atualiza a janela ativa de chunks em torno do jogador
+    //? Janela ativa de chunks em torno do jogador para culling espacial.
     const px = player.coordinates.x + player.size.width / 2;
     const py = player.coordinates.y + player.size.height / 2;
     this.chunkManager.updatePlayerPosition(px, py);
@@ -419,11 +418,10 @@ export default class ObjectElementManager {
     const maxX = this.worldBounds.x + this.worldBounds.width;
     const maxY = this.worldBounds.y + this.worldBounds.height;
 
-    // 1. Clamping AABB global
     coordinates.x = Math.max(minX, Math.min(coordinates.x, maxX - size.width));
     coordinates.y = Math.max(minY, Math.min(coordinates.y, maxY - size.height));
 
-    // 2. Clamping dinâmico infalível por malha de chunks (evita que o jogador saia dos chunks válidos)
+    //? Clamping dinâmico por topologia de chunks: restringe transição em bordas sem chunk contíguo.
     const chunks = this.activeWorldBoundsDTO?.chunks;
     if (chunks && chunks.length > 0) {
       const origin = this.activeWorldBoundsDTO?.originChunk || { cx: 0, cy: 0 };
@@ -440,24 +438,20 @@ export default class ObjectElementManager {
         const cMinY = curCy * chunkSize;
         const cMaxY = (curCy + 1) * chunkSize;
 
-        // Se vizinho Oeste não é chunk válido, restringe movimento à esquerda
         if (!ChunkBoundaryHelper.isChunkValid(chunks, origin, curCx - 1, curCy)) {
           coordinates.x = Math.max(cMinX, coordinates.x);
         }
-        // Se vizinho Leste não é chunk válido, restringe movimento à direita
         if (!ChunkBoundaryHelper.isChunkValid(chunks, origin, curCx + 1, curCy)) {
           coordinates.x = Math.min(cMaxX - size.width, coordinates.x);
         }
-        // Se vizinho Norte não é chunk válido, restringe movimento para cima
         if (!ChunkBoundaryHelper.isChunkValid(chunks, origin, curCx, curCy - 1)) {
           coordinates.y = Math.max(cMinY, coordinates.y);
         }
-        // Se vizinho Sul não é chunk válido, restringe movimento para baixo
         if (!ChunkBoundaryHelper.isChunkValid(chunks, origin, curCx, curCy + 1)) {
           coordinates.y = Math.min(cMaxY - size.height, coordinates.y);
         }
       } else {
-        // Elemento penetrou em um chunk inválido/vazio: empurra de volta para o chunk válido vizinho mais próximo
+        //? Recuperação defensiva de penetração: empurra a entidade de volta para o chunk válido mais próximo.
         if (ChunkBoundaryHelper.isChunkValid(chunks, origin, curCx, curCy + 1)) {
           coordinates.y = Math.max((curCy + 1) * chunkSize, coordinates.y);
         }

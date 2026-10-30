@@ -75,23 +75,41 @@ export const ASSET_CATEGORIES_CATALOG: readonly AssetCategoryMeta[] = [
 ];
 
 export interface AssetDefinition {
-    id: string;              // Identificador único (ex: 'house_red_boro')
-    name: string;            // Nome legível (ex: 'Cumeeira Carmim de Boro')
-    category: AssetCategory; // Categoria visual ('sprites', 'houses', 'items', 'vfx', etc.)
-    tags?: string[] | undefined; // Subcategorias e tags adicionais ('trees', 'weapons', 'npcs', etc.)
-    imageSrc: string;        // URL do sprite carregado
-    width: number;           // Largura padrão no mundo (pixels)
-    height: number;          // Altura padrão no mundo (pixels)
-    frameWidth: number;      // Largura de um frame da spritesheet
-    frameHeight: number;     // Altura de um frame da spritesheet
-    frameCount: number;      // Quantidade de frames (1 se estático, >1 se animado)
-    animationSpeed?: number | undefined; // Velocidade de animação se aplicável
-    atlasOffset?: { x: number; y: number } | undefined; // Posição inicial no atlas
-    anchor?: string | undefined;         // Ancoragem padrão ('bottom-center', etc.)
-    isSprite?: boolean | undefined;      // True se for renderizado como sprite animado/fatiado
-    isCustom?: boolean | undefined;      // True se criado via modal do usuário
-    isItem?: boolean | undefined;        // True se for um item dropável no jogo
-    itemClass?: string | undefined;      // Nome da classe correspondente no domínio
-    itemCategory?: string | undefined;   // Categoria do item ('weapon', 'equipment', 'consumable')
+    /** Identificador único (ex: 'house_red_boro') */
+    id: string;
+    /** Nome legível (ex: 'Cumeeira Carmim de Boro') */
+    name: string;
+    /** Categoria visual ('sprites', 'houses', 'items', 'vfx', etc.) */
+    category: AssetCategory;
+    /** Subcategorias e tags adicionais ('trees', 'weapons', 'npcs', etc.) */
+    tags?: string[] | undefined;
+    /** URL do sprite carregado */
+    imageSrc: string;
+    /** Largura padrão no mundo (pixels) */
+    width: number;
+    /** Altura padrão no mundo (pixels) */
+    height: number;
+    /** Largura de um frame da spritesheet */
+    frameWidth: number;
+    /** Altura de um frame da spritesheet */
+    frameHeight: number;
+    /** Quantidade de frames (1 se estático, >1 se animado) */
+    frameCount: number;
+    /** Velocidade de animação se aplicável */
+    animationSpeed?: number | undefined;
+    /** Posição inicial no atlas */
+    atlasOffset?: { x: number; y: number } | undefined;
+    /** Ancoragem padrão ('bottom-center', etc.) */
+    anchor?: string | undefined;
+    /** True se for renderizado como sprite animado/fatiado */
+    isSprite?: boolean | undefined;
+    /** True se criado via modal do usuário */
+    isCustom?: boolean | undefined;
+    /** True se for um item dropável no jogo */
+    isItem?: boolean | undefined;
+    /** Nome da classe correspondente no domínio */
+    itemClass?: string | undefined;
+    /** Categoria do item ('weapon', 'equipment', 'consumable') */
+    itemCategory?: string | undefined;
 }
 

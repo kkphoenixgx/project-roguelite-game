@@ -6,6 +6,6 @@ export default class ParalyzeStatus extends StatusEffect {
     
     protected override onTick(target: Entity): void {
         const cx = target.coordinates.x + target.size.width / 2; const cy = target.coordinates.y + target.size.height / 2;
-        (target as any).eventManager?.dispatch('particle', { effect: 'slashSparks', x: cx, y: cy, angle: Math.random() * Math.PI * 2 }); // Choques
+        (target as any).eventManager?.dispatch('particle', { effect: 'slashSparks', x: cx, y: cy, angle: Math.random() * Math.PI * 2 });
     }
 }
