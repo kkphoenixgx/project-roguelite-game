@@ -20,8 +20,8 @@ export interface CriticalDependencyAuditReport {
  * 4. Banimento absoluto de flags de workaround como --legacy-peer-deps.
  */
 export class CriticalDependenciesValidator {
-  //? Versão mínima aceitável de Node LTS em ambientes de CI/CD
-  public static readonly MINIMUM_NODE_LTS_MAJOR = 20;
+  //? Versão mínima aceitável de Node LTS em ambientes de CI/CD (Node 22 é a Active LTS moderna)
+  public static readonly MINIMUM_NODE_LTS_MAJOR = 22;
 
   //? Matriz de versões mínimas das dependências críticas de compilação, teste e runtime
   public static readonly CRITICAL_FRAMEWORK_MINIMUMS: Record<string, number> = {

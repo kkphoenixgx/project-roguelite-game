@@ -116,9 +116,9 @@ describe('Unit - CriticalDependenciesValidator', () => {
       expect(result.findings.some(f => f.rule === 'PEER_DEPENDENCY_PARITY_MISMATCH')).toBe(true);
     });
 
-    it('deve reprovar engines.node abaixo do LTS aceito (< 20)', () => {
+    it('deve reprovar engines.node abaixo do LTS aceito (< 22, como Node 20 ou inferior)', () => {
       const packageJson = {
-        engines: { node: '>=18.0.0' },
+        engines: { node: '>=20.0.0' },
         devDependencies: {
           typescript: '^5.9.3',
           vite: '^7.1.12',
@@ -136,7 +136,7 @@ describe('Unit - CriticalDependenciesValidator', () => {
   });
 
   describe('3. Auditoria de Versão do Node.js nos Workflows de CI (auditWorkflowNodeLts)', () => {
-    it('deve aprovar workflows que configuram Node.js LTS ativo (20 ou 22)', () => {
+    it('deve aprovar workflows que configuram Node.js LTS ativo (Node 22)', () => {
       const yaml = `
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -149,12 +149,12 @@ describe('Unit - CriticalDependenciesValidator', () => {
       expect(result.findings).toHaveLength(0);
     });
 
-    it('deve reprovar workflows que configuram versões EOL do Node.js (ex: 16 ou 18)', () => {
+    it('deve reprovar workflows que configuram versões EOL/descontinuadas do Node.js (ex: 18 ou 20)', () => {
       const yaml = `
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
       `;
 
       const result = CriticalDependenciesValidator.auditWorkflowNodeLts(yaml, 'ci.yml');
