@@ -48,6 +48,24 @@ class DummyEnemy extends Entity {
   update() {}
 }
 
+function forceGC(): void {
+  if (typeof (global as any).gc === 'function') {
+    (global as any).gc();
+    return;
+  }
+  try {
+    const v8 = require('v8');
+    const vm = require('vm');
+    v8.setFlagsFromString('--expose_gc');
+    const gc = vm.runInNewContext('gc');
+    if (typeof gc === 'function') {
+      gc();
+    }
+  } catch {
+    //? Ambiente sem suporte a v8/vm flags
+  }
+}
+
 describe('System Integration (Headless Engine E2E)', () => {
   beforeEach(() => {
     // Garante um cenário estável: sem esquiva, acurácia normal (hit garantido) e sem acertos críticos.
@@ -162,17 +180,15 @@ describe('System Integration (Headless Engine E2E)', () => {
         engineManager.spawn(id => new DummyEnemy(id, eventBus));
     }
 
-    // Aquecimento (Warm-up): 100 frames para JIT e Object Pools estabilizarem.
-    for (let i = 0; i < 100; i++) {
+    // Aquecimento (Warm-up): 200 frames para JIT, Turbofan e Object Pools estabilizarem.
+    for (let i = 0; i < 200; i++) {
         player.onRightAction(); // Garante movimento para triggar atualização de matrizes
         player.update(0.016);
         engineManager.updateAll(0.016, player);
         engineManager.getAllRenderableStates();
     }
 
-    if (typeof global.gc === 'function') {
-        global.gc();
-    }
+    forceGC();
 
     const startMemory = process.memoryUsage().heapUsed;
 
@@ -184,9 +200,7 @@ describe('System Integration (Headless Engine E2E)', () => {
         engineManager.getAllRenderableStates(); // Varredura completa para montar DTOs Visuais
     }
 
-    if (typeof global.gc === 'function') {
-        global.gc();
-    }
+    forceGC();
 
     const endMemory = process.memoryUsage().heapUsed;
     const memoryDeltaMB = (endMemory - startMemory) / 1024 / 1024;

@@ -44,6 +44,7 @@ export default class ObjectElementManager {
   private collisionManager: CollisionManager;
   private rewardManager: RewardManager;
   private dynamicTimingsMap: Map<string, { fileName: string; module: string; durationMs: number; count: number }> = new Map();
+  private dynamicTimingsList: { fileName: string; module: string; durationMs: number; count: number }[] = [];
   private collectedWorldItems: Set<string> = new Set<string>();
 
   private resolveDynamicModule(className: string): string {
@@ -73,6 +74,7 @@ export default class ObjectElementManager {
         count: 0
       };
       this.dynamicTimingsMap.set(className, tracker);
+      this.dynamicTimingsList.push(tracker);
     }
     return tracker;
   }
@@ -239,7 +241,8 @@ export default class ObjectElementManager {
 
     this.stunnedPositionsPool.clear();
 
-    for (const tracker of this.dynamicTimingsMap.values()) {
+    for (let i = 0; i < this.dynamicTimingsList.length; i++) {
+      const tracker = this.dynamicTimingsList[i]!;
       tracker.durationMs = 0;
       tracker.count = 0;
     }
@@ -272,7 +275,8 @@ export default class ObjectElementManager {
     }
 
     if (hasPerf) {
-      for (const tracker of this.dynamicTimingsMap.values()) {
+      for (let i = 0; i < this.dynamicTimingsList.length; i++) {
+        const tracker = this.dynamicTimingsList[i]!;
         if (tracker.count > 0) {
           this.telemetryPort.recordFileTiming?.(tracker.fileName, tracker.module, tracker.durationMs, tracker.count);
         }

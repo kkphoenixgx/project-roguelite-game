@@ -61,6 +61,7 @@ export default class WorldChunkManager {
 
   private currentCenterChunk: ChunkCoordDTO = { cx: 0, cy: 0 };
   private activeChunkKeys: Set<number> = new Set();
+  private activeChunkKeyList: number[] = [];
   private activeChunkCoords: ChunkCoordDTO[] = [];
   private isPartitioningEnabled: boolean = true;
 
@@ -149,6 +150,7 @@ export default class WorldChunkManager {
     this.currentCenterChunk.cy = centerCy;
 
     this.activeChunkKeys.clear();
+    this.activeChunkKeyList.length = 0;
     this.activeChunkCoords = [];
 
     for (let dy = -1; dy <= 1; dy++) {
@@ -158,6 +160,7 @@ export default class WorldChunkManager {
         const key = WorldChunkManager.getChunkKey(cx, cy);
 
         this.activeChunkKeys.add(key);
+        this.activeChunkKeyList.push(key);
         this.activeChunkCoords.push({ cx, cy });
 
         if (this.proceduralGenerator && !this.loadedChunks.has(key)) {
@@ -301,7 +304,8 @@ export default class WorldChunkManager {
     }
 
     this.activeElementsBuffer.length = 0;
-    for (const key of this.activeChunkKeys) {
+    for (let k = 0; k < this.activeChunkKeyList.length; k++) {
+      const key = this.activeChunkKeyList[k]!;
       const cell = this.chunkElements.get(key);
       if (cell && cell.size > 0) {
         for (const el of cell) {
