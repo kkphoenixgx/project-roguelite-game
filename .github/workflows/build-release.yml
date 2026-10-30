@@ -38,7 +38,7 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf zstd
 
       - name: Install frontend dependencies
-        run: npm install --legacy-peer-deps
+        run: npm install
 
       - name: Auto-increment Version
         shell: bash
@@ -75,15 +75,15 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "ubuntu-22.04" ]; then
-            npm install panteao-engine-linux-x64 --no-save --legacy-peer-deps
+            npm install panteao-engine-linux-x64 --no-save
             cp node_modules/panteao-engine-linux-x64/bin/panteao-engine src-tauri/bin/panteao-engine-x86_64-unknown-linux-gnu
             chmod +x src-tauri/bin/panteao-engine-x86_64-unknown-linux-gnu
           elif [ "${{ matrix.platform }}" = "macos-latest" ]; then
-            npm install panteao-engine-darwin-arm64 --no-save --legacy-peer-deps
+            npm install panteao-engine-darwin-arm64 --no-save
             cp node_modules/panteao-engine-darwin-arm64/bin/panteao-engine src-tauri/bin/panteao-engine-aarch64-apple-darwin
             chmod +x src-tauri/bin/panteao-engine-aarch64-apple-darwin
           elif [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            npm install panteao-engine-win32-x64 --no-save --legacy-peer-deps
+            npm install panteao-engine-win32-x64 --no-save
             cp node_modules/panteao-engine-win32-x64/bin/panteao-engine.exe src-tauri/bin/panteao-engine-x86_64-pc-windows-msvc.exe
           fi
 

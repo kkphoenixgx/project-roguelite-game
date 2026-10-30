@@ -29,7 +29,12 @@ export default class PlayerBroochManager {
     preventDeath: false
   };
 
-  constructor(private player: any, private eventManager: IEventManager) {}
+  //! Contexto reutilizável para onUpdate de broches (Zero-GC)
+  private _cachedContext: { player: any; eventManager: IEventManager };
+
+  constructor(private player: any, private eventManager: IEventManager) {
+    this._cachedContext = { player: this.player, eventManager: this.eventManager };
+  }
 
   public equipPassive(passiveId: string | null, slotIndex: number): void {
     if (slotIndex < 0 || slotIndex >= 4) return;
@@ -135,7 +140,9 @@ export default class PlayerBroochManager {
   }
 
   public update(deltaTime: number): void {
-    const ctx = { player: this.player, eventManager: this.eventManager };
+    const ctx = this._cachedContext;
+    ctx.player = this.player;
+    ctx.eventManager = this.eventManager;
     for (let i = 0; i < 4; i++) {
       const activeId = this.globalActiveLoadout[i];
       if (activeId) {
