@@ -993,6 +993,12 @@ Este documento descreve a arquitetura do projeto, seus princípios, os papéis d
   npm run pipeline           # Suite completa: analyze + test
   ```
 
+  ### 5.4. Próxima Fronteira: Suíte E2E Híbrida com IA de QA (BDI + VLM Local)
+
+  Para fins acadêmicos e validação contínua avançada de performance gráfica e integridade física, foi especificada a arquitetura da suíte E2E autônoma:
+  - **Especificação Canônica:** Consulte [`docs/AI_AGENTIC_QA_E2E_REQUIREMENTS.md`](file:///home/kkphoenix/Documents/Workspace/rpg-roguelite-game/docs/AI_AGENTIC_QA_E2E_REQUIREMENTS.md).
+  - **Modelo Híbrido:** Agente BDI em AgentSpeak (Panteão MAS) para planejamento de estresse lógico + Modelo de Linguagem e Visão (VLM via Ollama com aceleração CUDA local em GPU RTX 4050) para auditoria perceptual de anomalias visuais e quedas de FPS no Canvas/WebGPU.
+
 ## 6. Build e Tooling
 
   | Ferramenta | Função |
