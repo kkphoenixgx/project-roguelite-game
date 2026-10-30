@@ -33,7 +33,7 @@ export class PolygonEditorApp {
         
         this.setupUI();
         this.setupTools();
-        this.saveState(); // Salva o estado inicial (vazio) no histórico
+        this.saveState();
         this.setupEvents();
         this.resize();
         window.addEventListener('resize', () => this.resize());
@@ -43,10 +43,11 @@ export class PolygonEditorApp {
     }
 
     private saveState() {
-        // Cria uma cópia profunda (Deep Copy) do array atual para desatrelar a referência da memória
+        //? Deep copy para desatrelar a referência de memória do histórico
         const state = JSON.parse(JSON.stringify(this.hitboxes));
         if (this.historyIndex < this.history.length - 1) {
-            this.history = this.history.slice(0, this.historyIndex + 1); // Corta caminhos alternativos se você "desfez" e "desenhou algo novo"
+            //? Trunca o histórico caso novas ações sejam disparadas após undo
+            this.history = this.history.slice(0, this.historyIndex + 1);
         }
         this.history.push(state);
         this.historyIndex++;
@@ -56,7 +57,7 @@ export class PolygonEditorApp {
         if (this.historyIndex > 0) {
             this.historyIndex--;
             this.hitboxes = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
-            this.setupTools(); // Recria as ferramentas para elas usarem a nova referência de memória
+            this.setupTools();
             this.render();
         }
     }
@@ -105,9 +106,6 @@ export class PolygonEditorApp {
             }
         });
 
-        // ============================================
-        // DRAG AND DROP & UI
-        // ============================================
         const container = document.getElementById('canvas-container')!;
         container.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -136,13 +134,12 @@ export class PolygonEditorApp {
         helpHeader.addEventListener('click', toggleHelp);
         btnToggleHelp.addEventListener('click', toggleHelp);
 
-        // Gerenciamento de estado das ferramentas
         const tools = ['select', 'rectangle', 'polygon', 'circle'] as const;
         tools.forEach(tool => {
             const btn = document.getElementById(`btn-tool-${tool}`);
             if (!btn) return;
             btn.addEventListener('click', () => {
-                this.tools[this.currentTool]?.reset(); // Reseta a ferramenta anterior
+                this.tools[this.currentTool]?.reset();
                 tools.forEach(t => document.getElementById(`btn-tool-${t}`)?.classList.remove('active'));
                 btn.classList.add('active');
                 this.currentTool = tool;
@@ -190,7 +187,6 @@ export class PolygonEditorApp {
     }
 
     private setupEvents() {
-        // Tradutor de posição da tela (Mouse) para o Universo do Canvas (Com Panning e Zoom)
         const getWorldPos = (e: MouseEvent) => {
             return {
                 x: (e.offsetX - this.panX) / this.zoom,
@@ -210,10 +206,9 @@ export class PolygonEditorApp {
             this.tools[this.currentTool]?.onMouseUp(e, getWorldPos(e), this.zoom);
             this.render();
         });
-        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault()); // Evita menu do navegador no click direito
+        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
         
         window.addEventListener('keydown', (e) => {
-            // Atalhos de Histórico (Ctrl+Z / Ctrl+Y)
             if (e.ctrlKey || e.metaKey) {
                 if (e.key.toLowerCase() === 'z') {
                     e.preventDefault();
@@ -237,7 +232,6 @@ export class PolygonEditorApp {
                 }
             }
             
-            // Atalho para Limpar Todas (Rápido, sem pop-up)
             if (e.shiftKey && e.key === 'Delete') {
                 e.preventDefault();
                 this.hitboxes = [];
@@ -247,7 +241,6 @@ export class PolygonEditorApp {
                 return;
             }
 
-            // Atalho para Apagar Hitbox ou Vértice Selecionado (Delete ou Backspace)
             if ((e.key === 'Delete' || e.key === 'Backspace') && !e.shiftKey) {
                 const selectTool = this.tools['select'] as SelectTool;
                 if (this.currentTool === 'select' && selectTool && (selectTool.selectedHitbox || selectTool.selectedVertex)) {
@@ -259,7 +252,6 @@ export class PolygonEditorApp {
                 }
             }
 
-            // Atalhos rapidos para alternar ferramentas (R = Retangulo, P = Poligono, C = Circulo, S/V = Selecionar)
             const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
             if (targetTag !== 'input' && targetTag !== 'textarea' && !e.ctrlKey && !e.metaKey && !e.altKey) {
                 if (e.key === 'r' || e.key === 'R') {
@@ -281,32 +273,28 @@ export class PolygonEditorApp {
             this.render();
         });
 
-        // ============================================
-        // SISTEMA DE CÂMERA (ZOOM E PAN)
-        // ============================================
         const container = document.getElementById('canvas-container')!;
         container.addEventListener('wheel', (e) => {
-            e.preventDefault(); // Impede que o browser dê zoom na página toda ou role a página
+            e.preventDefault();
             
             const mouseX = e.offsetX;
             const mouseY = e.offsetY;
 
             if (e.ctrlKey || e.metaKey) {
-                // Lógica de Zoom focado no ponteiro do mouse
                 const zoomSensitivity = 0.002;
                 const delta = -e.deltaY * zoomSensitivity;
                 const prevZoom = this.zoom;
-                this.zoom = Math.min(Math.max(0.1, this.zoom + delta), 50); // Ampliado para 50x de zoom!
+                this.zoom = Math.min(Math.max(0.1, this.zoom + delta), 50);
                 
-                // Corrige o offset do Pan para manter o pixel sob o cursor inalterado
+                //? Corrige o offset do Pan para manter o pixel sob o cursor inalterado
                 const worldX = (mouseX - this.panX) / prevZoom;
                 const worldY = (mouseY - this.panY) / prevZoom;
                 this.panX = mouseX - worldX * this.zoom;
                 this.panY = mouseY - worldY * this.zoom;
             } else if (e.shiftKey) {
-                this.panX -= e.deltaY; // Mover Horizontalmente
+                this.panX -= e.deltaY;
             } else {
-                this.panY -= e.deltaY; // Mover Verticalmente
+                this.panY -= e.deltaY;
             }
             
             this.updateCanvasTransform();
@@ -314,7 +302,7 @@ export class PolygonEditorApp {
     }
 
     private updateCanvasTransform() {
-        this.render(); // Não delegamos mais pro CSS, o Canvas resolve nativamente na renderização!
+        this.render();
     }
 
     /** RF01: Carregar Sprite via File Reader API nativo do Browser */
@@ -350,7 +338,6 @@ export class PolygonEditorApp {
         this.canvas.height = container.clientHeight;
         
         if (!this.spriteImage) {
-            // Centraliza o placeholder vazio
             this.panX = (container.clientWidth - 400) / 2;
             this.panY = (container.clientHeight - 400) / 2;
         }
@@ -387,7 +374,7 @@ export class PolygonEditorApp {
                     ConfirmationModal.alert('Hitboxes importadas com sucesso!');
                 } else { ConfirmationModal.alert('Formato de JSON inválido.'); }
             } catch (err) { ConfirmationModal.alert('Erro ao ler o arquivo JSON.'); }
-            target.value = ''; // Reseta para permitir re-importação do mesmo arquivo
+            target.value = '';
         };
         reader.readAsText(file);
     }
@@ -396,27 +383,23 @@ export class PolygonEditorApp {
         this.ctx.resetTransform();
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Aplica a câmera matemática diretamente no processador 2D do Canvas
         this.ctx.translate(this.panX, this.panY);
         this.ctx.scale(this.zoom, this.zoom);
-        this.ctx.imageSmoothingEnabled = false; // Mantém a pixel art pura
+        this.ctx.imageSmoothingEnabled = false;
 
         if (this.spriteImage) {
             this.ctx.drawImage(this.spriteImage, 0, 0);
             
-            // Borda guia substituindo o box-shadow perdido do CSS
             this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
             this.ctx.lineWidth = 1 / this.zoom;
             this.ctx.strokeRect(0, 0, this.spriteImage.width, this.spriteImage.height);
         }
 
-        // Volta para o espaço da Tela (Screen Space) para desenhar UI e Hitboxes com precisão
         this.ctx.resetTransform();
 
         const pX = (x: number) => x * this.zoom + this.panX;
         const pY = (y: number) => y * this.zoom + this.panY;
 
-        // 1. Desenha as hitboxes já criadas (Projetadas na tela)
         this.ctx.lineWidth = 2;
         for (const hb of this.hitboxes) {
             if (hb.type === 'polygon' && hb.points) {
@@ -439,7 +422,6 @@ export class PolygonEditorApp {
             }
         }
 
-        // 2. Deixa a Ferramenta atual desenhar seus overlays
         this.tools[this.currentTool]?.draw(this.ctx, this.panX, this.panY, this.zoom);
     }
 
@@ -460,7 +442,6 @@ export class PolygonEditorApp {
             if (width) this.assetTargetWidth = parseInt(width, 10);
             if (height) this.assetTargetHeight = parseInt(height, 10);
 
-            // Atualiza UI com o banner do asset e botão de salvar alteração
             const banner = document.getElementById('active-asset-banner');
             const assetNameEl = document.getElementById('active-asset-id');
             const btnSaveCode = document.getElementById('btn-save-code');
@@ -469,12 +450,10 @@ export class PolygonEditorApp {
             if (assetNameEl) assetNameEl.textContent = assetId;
             if (btnSaveCode) btnSaveCode.style.display = 'block';
 
-            // Carrega imagem se fornecida
             if (imageSrc) {
                 this.loadAssetImageFromUrl(imageSrc);
             }
 
-            // Carrega hitboxes existentes via API
             await this.loadHitboxesFromApi(assetId);
         }
     }
@@ -515,7 +494,7 @@ export class PolygonEditorApp {
                 }
             }
         } catch (err) {
-            // Em testes ou ambientes offline, mantém as hitboxes atuais
+            //? Em testes ou ambientes offline, mantém as hitboxes atuais como fallback
         }
     }
 

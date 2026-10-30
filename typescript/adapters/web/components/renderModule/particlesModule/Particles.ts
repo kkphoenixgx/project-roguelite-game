@@ -36,7 +36,7 @@ export default class Particles {
         this.maxParticles = maxParticles;
         this.pool = new Array(maxParticles);
         
-        // Pré-aloca toda a memória de partículas instantaneamente
+        //! Zero-GC: Pré-aloca pool fixo de partículas para evitar garbage collection em runtime
         for (let i = 0; i < maxParticles; i++) {
             this.pool[i] = new Particle();
         }
@@ -47,14 +47,14 @@ export default class Particles {
      * Operação extremamente barata `O(1)` por partícula emitida.
      */
     public emit(config: ParticleEmitterConfig): void {
-        const safeCount = Math.ceil(config.count * 0.35); // Reduz a emissão bruta em 65% para não estourar a GPU
+        //! Throttling de emissão de partículas para prevenir sobrecarga de renderização no Canvas 2D
+        const safeCount = Math.ceil(config.count * 0.35);
         for (let i = 0; i < safeCount; i++) {
-            if (this.activeCount >= this.maxParticles) break; // Proteção: Pool lotado
+            if (this.activeCount >= this.maxParticles) break;
 
-            // Resgata uma partícula "Morta" do final do array
             const p = this.pool[this.activeCount]!;
 
-            // Matemática do Caos: Gera ângulos e velocidades aleatórias dentro do limite do cone
+            //? Dispersão angular e velocidade dentro dos limites do cone configurado
             const randomAngle = config.angle + (Math.random() - 0.5) * config.spread;
             const randomSpeed = config.speedMin + Math.random() * (config.speedMax - config.speedMin);
 
@@ -71,7 +71,6 @@ export default class Particles {
             p.fade = config.fade !== undefined ? config.fade : true;
             p.isCircle = config.isCircle !== undefined ? config.isCircle : false;
 
-            // Move o ponteiro, tornando-a "Viva"
             this.activeCount++;
         }
     }
@@ -83,12 +82,13 @@ export default class Particles {
             p.life -= deltaTime;
 
             if (p.life <= 0) {
-                // MÁGICA ZERO-GC: A partícula morreu. Troca ela de lugar com a última partícula viva!
+                //! Zero-GC: Swap com o último elemento ativo em O(1) sem splice ou alocações
                 this.activeCount--;
                 const temp = this.pool[this.activeCount]!;
                 this.pool[this.activeCount] = p;
                 this.pool[i] = temp;
-                i--; // Re-avalia o índice atual no próximo loop já que ele agora abriga outra partícula
+                //? Reavalia índice após swap de partição
+                i--;
             } else {
                 p.vx *= p.friction;
                 p.vy *= p.friction;
@@ -119,7 +119,7 @@ export default class Particles {
                 lastColor = p.color;
             }
             
-            // fillRect é até 50x mais rápido que beginPath + arc + fill por software no Canvas 2D
+            //! Otimização Canvas 2D: fillRect é significativamente mais rápido que arcos para partículas pequenas
             if (p.isCircle && p.size > 6) {
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
@@ -128,7 +128,8 @@ export default class Particles {
                 ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
             }
         }
-        ctx.globalAlpha = 1.0; // Reseta a transparência para não manchar outras instâncias visuais do jogo
+        //? Restaura alpha padrão do contexto para isolamento de pipeline
+        ctx.globalAlpha = 1.0;
     }
 
     /** Reseta todas as partículas vivas do pool sem realocações de memória (Zero-GC). */

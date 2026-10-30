@@ -362,7 +362,7 @@ export default class CharacterMenuGui {
         if (this.isVisible) { 
             this.isVisible = false; 
             this.container.style.display = 'none'; 
-            if (this.globalTooltip) this.globalTooltip.style.display = none;
+            if (this.globalTooltip) this.globalTooltip.style.display = 'none';
             this.togglePauseCallback(); 
         } 
     }
@@ -761,7 +761,7 @@ export default class CharacterMenuGui {
 
                 const starBadge = document.createElement('span');
                 starBadge.className = 'skill-slot-number';
-                starBadge.textContent = ★;
+                starBadge.textContent = '★';
                 slotDiv.appendChild(starBadge);
 
                 if (primordialSkill) {

@@ -317,10 +317,6 @@ export class MapCanvas {
         this.centerMap();
     }
 
-    // =========================================================================
-    // EVENTOS E INTERAÇÃO
-    // =========================================================================
-
     private bindEvents(): void {
         if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
             window.addEventListener('resize', () => {
@@ -676,7 +672,8 @@ export class MapCanvas {
                 const init = this.initialAssetRect;
                 const minSize = 16;
                 const aspect = (init.width && init.height) ? (init.width / init.height) : 1;
-                const lockAspect = e.shiftKey; //? Shift restringe redimensionamento para proporção 1:1
+                //? Shift restringe redimensionamento para proporção 1:1
+                const lockAspect = e.shiftKey;
 
                 let newX = init.x;
                 let newY = init.y;
@@ -684,21 +681,21 @@ export class MapCanvas {
                 let newH = init.height;
 
                 switch (this.activeResizeHandle) {
-                    case se:
+                    case 'se':
                         newW = Math.max(minSize, init.width + dx);
                         newH = lockAspect ? Math.max(minSize, Math.round(newW / aspect)) : Math.max(minSize, init.height + dy);
                         break;
-                    case sw:
+                    case 'sw':
                         newW = Math.max(minSize, init.width - dx);
                         newH = lockAspect ? Math.max(minSize, Math.round(newW / aspect)) : Math.max(minSize, init.height + dy);
                         newX = init.x + (init.width - newW);
                         break;
-                    case ne:
+                    case 'ne':
                         newW = Math.max(minSize, init.width + dx);
                         newH = lockAspect ? Math.max(minSize, Math.round(newW / aspect)) : Math.max(minSize, init.height - dy);
                         newY = init.y + (init.height - newH);
                         break;
-                    case nw:
+                    case 'nw':
                         newW = Math.max(minSize, init.width - dx);
                         newH = lockAspect ? Math.max(minSize, Math.round(newW / aspect)) : Math.max(minSize, init.height - dy);
                         newX = init.x + (init.width - newW);
@@ -717,7 +714,7 @@ export class MapCanvas {
                 return;
             }
 
-            // Arraste de múltiplos assets selecionados em conjunto
+            //? Arraste de múltiplos assets selecionados em conjunto
             if (this.isDraggingAsset) {
                 let dx = worldPos.x - this.dragStartWorldX;
                 let dy = worldPos.y - this.dragStartWorldY;
@@ -742,7 +739,6 @@ export class MapCanvas {
                 return;
             }
 
-            // Atualização dinâmica do Cursor quando em hover sobre alças ou elementos
             if (!this.isPanning && !this.isDraggingAsset && !this.isResizingAsset && !this.isBoxSelecting) {
                 if (this.showPlayerReference) {
                     const refRect = this.getPlayerReferenceRect();
@@ -775,7 +771,6 @@ export class MapCanvas {
             }
         });
 
-        // 5. Mouse Up
         if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
             window.addEventListener('mouseup', () => {
                 if (this.isPaintingBrushStroke) {
@@ -814,7 +809,7 @@ export class MapCanvas {
             });
         }
 
-        // 5.5 Double Click no Asset: Se hitboxes estiverem ativas (F2), abre o Hitbox Editor para o asset
+        //? Double-click com hitboxes ativas (F2): abre o PolygonWebEditor para o asset selecionado
         this.canvas.addEventListener('dblclick', (e) => {
             if (!this.showHitboxes) return;
             const rect = this.canvas.getBoundingClientRect();
@@ -828,7 +823,7 @@ export class MapCanvas {
             }
         });
 
-        // 5.6 Botão Direito no Canvas: cancela Chunk Brush Mode ou Stamp Mode se ativo
+        //? Botão direito cancela Chunk Brush Mode ou Stamp Mode ativo
         this.canvas.addEventListener('contextmenu', (e) => {
             if (this.isChunkBrushMode) {
                 e.preventDefault();
@@ -841,7 +836,6 @@ export class MapCanvas {
             }
         });
 
-        // 6. Suporte a Drag and Drop Nativo da Gaveta
         this.canvas.addEventListener('dragover', (e) => {
             e.preventDefault();
             if (e.dataTransfer) {
@@ -860,7 +854,6 @@ export class MapCanvas {
                 wy = Math.round(wy / this.gridSize) * this.gridSize;
             }
 
-            // Renderiza indicador de coordenadas no canvas
             this.ghostAsset = {
                 asset: (window as any).__draggedAssetData || { width: 64, height: 64, imageSrc: '' },
                 worldX: wx,
@@ -894,7 +887,6 @@ export class MapCanvas {
                 const mouseScreenY = e.clientY - rect.top;
                 const worldPos = this.screenToWorld(mouseScreenX, mouseScreenY);
 
-                // Centraliza o asset sob o cursor ao soltar
                 let finalX = worldPos.x - assetData.width / 2;
                 let finalY = worldPos.y - assetData.height / 2;
 
@@ -907,7 +899,6 @@ export class MapCanvas {
             }
         });
 
-        // 7. Navegação Touch com Dois Dedos (Pan Bidimensional e Zoom por Pinça)
         this.canvas.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
                 e.preventDefault();
@@ -939,11 +930,10 @@ export class MapCanvas {
                 const midX = (t1.clientX + t2.clientX) / 2 - rect.left;
                 const midY = (t1.clientY + t2.clientY) / 2 - rect.top;
 
-                // 1. Pan com 2 dedos
                 this.panX = midX - this.touchStartPanX;
                 this.panY = midY - this.touchStartPanY;
 
-                // 2. Zoom por pinça (se a distância dos dedos variar significativamente)
+                //? Zoom por pinça quando a distância dos dedos varia significativamente
                 if (this.touchInitialDist > 0) {
                     const currentDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
                     const scaleFactor = currentDist / this.touchInitialDist;
@@ -971,9 +961,6 @@ export class MapCanvas {
         this.canvas.addEventListener('touchcancel', endTouch);
     }
 
-    // =========================================================================
-    // MÉTODOS DE MANIPULAÇÃO DE ASSETS
-    // =========================================================================
     public addAssetToMap(asset: AssetDefinition, worldX: number, worldY: number): PlacedAssetModel {
         const isPortal = asset.id.includes('portal') || asset.category === 'portals';
         const isItem = Boolean(asset.isItem || asset.category === 'items');
@@ -1101,7 +1088,7 @@ export class MapCanvas {
             const ay1 = asset.y;
             const ay2 = asset.y + asset.height;
 
-            // Teste de intersecção AABB entre caixa de seleção e bounds do asset
+            //? Teste de intersecção AABB entre caixa de seleção e bounds do asset
             const overlaps = ax1 < maxX && ax2 > minX && ay1 < maxY && ay2 > minY;
             if (overlaps) {
                 matchedUids.add(asset.uid);
@@ -1135,7 +1122,6 @@ export class MapCanvas {
     public paste(): void {
         if (this.clipboardAssets.length === 0) return;
 
-        // Bounding box dos assets originais no clipboard
         let minX = Infinity;
         let minY = Infinity;
         for (const a of this.clipboardAssets) {
@@ -1146,7 +1132,7 @@ export class MapCanvas {
         let offsetX = 32;
         let offsetY = 32;
 
-        // Se o mouse estiver posicionado no mapa, cola alinhado ao cursor
+        //? Cola alinhado ao cursor se o mouse estiver posicionado no mapa
         if (this.lastMouseWorldPos && (this.lastMouseWorldPos.x !== 0 || this.lastMouseWorldPos.y !== 0)) {
             offsetX = this.lastMouseWorldPos.x - minX;
             offsetY = this.lastMouseWorldPos.y - minY;
@@ -1156,7 +1142,6 @@ export class MapCanvas {
             }
         }
 
-        // Desmarca seleção anterior
         this.placedAssets.forEach(a => a.selected = false);
         this.selectedAssets = [];
 
@@ -1292,7 +1277,7 @@ export class MapCanvas {
         targets.forEach(asset => {
             if (asset.locked) return;
 
-            // 1. Deslocamento radial aleatório (ângulo uniforme 0 a 2PI e distância 1 a maxRadius)
+            //? Deslocamento radial aleatório uniforme no raio configurado
             const angle = Math.random() * Math.PI * 2;
             const distance = 1 + Math.random() * Math.max(1, maxRadius - 1);
             const dx = Math.round(Math.cos(angle) * distance);
@@ -1301,8 +1286,7 @@ export class MapCanvas {
             asset.x += dx;
             asset.y += dy;
 
-            // 2. Variação leve de escala proporcional (ex: 0.90x a 1.10x)
-            // Mantém a proporção de aspecto (aspect ratio) estrita do asset
+            //? Variação suave de escala preservando a proporção de aspecto estrita
             const scaleFactor = 1 + ((Math.random() * 2 - 1) * maxScaleVariation);
             const aspect = (asset.width && asset.height) ? (asset.width / asset.height) : 1;
 
@@ -1418,7 +1402,7 @@ export class MapCanvas {
                     a.y = minY;
                     break;
                 case 'bottom':
-                    // Alinhamento na base inferior (plano de chão do 2.5D)
+                    //? Alinhamento na base inferior (plano de chão do 2.5D)
                     a.y = maxY - a.height;
                     break;
                 case 'center-v':
@@ -1549,7 +1533,6 @@ export class MapCanvas {
             this.activeStampAsset = null;
             this.ghostAsset = null;
         } else {
-            // Inicializa ghost preview na posição atual do mouse se conhecida
             if (this.lastMouseWorldPos && this.activeStampAsset) {
                 let gx = this.lastMouseWorldPos.x - this.activeStampAsset.width / 2;
                 let gy = this.lastMouseWorldPos.y - this.activeStampAsset.height / 2;
@@ -1568,10 +1551,6 @@ export class MapCanvas {
         this.onStampModeChanged?.(this.isStampMode, this.activeStampAsset);
         this.render();
     }
-
-    // =========================================================================
-    // PINCEL DE TEXTURA DE CHUNK (CHUNK TEXTURE BRUSH TOOL - TECLA T)
-    // =========================================================================
 
     /**
      * Alterna o modo Pincel de Textura de Chunk (Tecla T).
@@ -1622,7 +1601,6 @@ export class MapCanvas {
         if (textureName) {
             this.activeBrushTextureName = textureName;
         }
-        // Pré-carrega a textura nos caches
         this.getSpriteImage(textureUrl);
         if (!this.chunkImages.has(textureUrl) && typeof Image !== 'undefined') {
             const img = new Image();
@@ -1630,7 +1608,7 @@ export class MapCanvas {
             img.onload = () => this.render();
             this.chunkImages.set(textureUrl, img);
         }
-        // Se mudou a textura, inicia um novo objeto pintado na próxima pincelada
+        //? Mudança de textura inicia uma nova camada pintada na próxima pincelada
         if (textureChanged) {
             this.activePaintedAsset = null;
         }
@@ -1687,7 +1665,7 @@ export class MapCanvas {
                 return c;
             }
         }
-        // Fallback mock para ambiente de teste sem Canvas 2D nativo
+        //? Fallback mock para ambiente de teste sem Canvas 2D nativo
         return {
             width: w,
             height: h,
@@ -1797,7 +1775,7 @@ export class MapCanvas {
                 }
             }
         } catch {
-            // Ignora falhas de tainted canvas em ambientes restritos
+            //? Ignora falhas de tainted canvas em ambientes restritos de teste/CORS
         }
     }
 
@@ -1812,7 +1790,6 @@ export class MapCanvas {
         const dabMaxX = Math.ceil(wx + radius);
         const dabMaxY = Math.ceil(wy + radius);
 
-        // Verifica se reutilizamos o activePaintedAsset atual ou criamos um novo
         let asset = this.activePaintedAsset;
         if (
             !asset ||
@@ -1827,7 +1804,7 @@ export class MapCanvas {
             const layerCanvas = this.createOffscreenCanvas(initW, initH);
             this.paintedLayerCanvases.set(uid, layerCanvas);
 
-            // Calcula o menor zIndex para que a pintura de terreno fique no chão (abaixo das árvores/casas)
+            //? Z-index no piso inferior para pintura de terreno ficar abaixo de props/casas
             asset = {
                 uid,
                 presetId: 'painted_chunk_layer',
@@ -1853,7 +1830,7 @@ export class MapCanvas {
             this.activePaintedAsset = asset;
         }
 
-        // Verifica se o dab extrapola os limites atuais do canvas da camada pintada
+        //? Expande os limites da camada se a pincelada extrapolar o bounding box atual
         let layerCanvas = this.paintedLayerCanvases.get(asset.uid);
         if (!layerCanvas) {
             layerCanvas = this.createOffscreenCanvas(asset.width, asset.height);
@@ -1892,7 +1869,6 @@ export class MapCanvas {
             asset.baseHeight = newH;
         }
 
-        // Desenha o círculo com a textura alinhada ao mundo dentro do layerCanvas
         const lCtx = layerCanvas.getContext('2d');
         if (lCtx) {
             const localCx = wx - asset.x;
@@ -1900,7 +1876,7 @@ export class MapCanvas {
             this.drawTexturedBrushCircleOnLayer(lCtx, localCx, localCy, radius, asset.x, asset.y);
         }
 
-        // Atualiza imageSrc imediatamente se for o primeiro ponto para que nunca fique vazio
+        //? Atualiza imageSrc no primeiro ponto para evitar canvas vazio
         if (asset.imageSrc.length < 120) {
             this.syncPaintedAssetDataUrl(asset);
         }
@@ -1927,8 +1903,7 @@ export class MapCanvas {
         layerCtx.save();
         layerCtx.globalAlpha = this.chunkBrushOpacity;
 
-        // Se houver suavidade de borda (softness > 0) e estivermos em ambiente browser com canvas real,
-        // compomos o dab num mini-canvas com máscara radial para bordas orgânicas suaves
+        //? Suavidade de borda (softness > 0): compõe máscara radial com gradiente de transparência
         const dabCanvas = this.createOffscreenCanvas(diam, diam);
         const dabCtx = dabCanvas.getContext('2d');
 
@@ -1956,7 +1931,7 @@ export class MapCanvas {
             dabCtx.restore();
             layerCtx.drawImage(dabCanvas, localCx - radius, localCy - radius);
         } else {
-            // Fallback direto com clip circular no contexto alvo
+            //? Fallback direto com clip circular no contexto alvo
             layerCtx.beginPath();
             layerCtx.arc(localCx, localCy, radius, 0, Math.PI * 2);
             if (typeof layerCtx.clip === 'function') {
@@ -2011,7 +1986,7 @@ export class MapCanvas {
                 }
             }
         } else {
-            // Cor representativa enquanto a imagem carrega ou em ambiente de teste
+            //? Cor representativa enquanto a imagem carrega ou em ambiente de teste
             ctx.fillStyle = '#3b7a57';
             ctx.fillRect(destOffsetX, destOffsetY, width, height);
         }
@@ -2325,10 +2300,6 @@ export class MapCanvas {
         return null;
     }
 
-    // =========================================================================
-    // COORDENADAS & CONVERSÕES
-    // =========================================================================
-
     public screenToWorld(sx: number, sy: number): { x: number, y: number } {
         return {
             x: (sx - this.panX) / this.zoom,
@@ -2347,10 +2318,6 @@ export class MapCanvas {
         const tag = document.activeElement?.tagName?.toLowerCase();
         return tag === 'input' || tag === 'textarea';
     }
-
-    // =========================================================================
-    // HISTÓRICO (UNDO / REDO)
-    // =========================================================================
 
     public saveState(): void {
         const snapshot = JSON.parse(JSON.stringify(this.placedAssets));
@@ -2380,10 +2347,6 @@ export class MapCanvas {
             this.render();
         }
     }
-
-    // =========================================================================
-    // PIPELINE DE RENDERIZAÇÃO
-    // =========================================================================
 
     private startRenderLoop(): void {
         const loop = (timestamp?: number) => {

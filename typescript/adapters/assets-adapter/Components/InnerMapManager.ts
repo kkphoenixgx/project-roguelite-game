@@ -28,7 +28,7 @@ export class InnerMapManager {
     }
 
     private loadInitialData(): void {
-        // 1. Carrega do JSON estático importado
+        /* 1. Carrega do JSON estático importado */
         for (const [id, raw] of Object.entries(defaultIntermapsJson)) {
             if (InnerMapManager.ROOT_WORLDS.has(id)) continue;
             const def = raw as any;
@@ -47,7 +47,7 @@ export class InnerMapManager {
             });
         }
 
-        // 2. Carrega do localStorage se houver dados em cache e expurga contaminações de mundos raiz
+        //? Carrega do localStorage se houver dados em cache e expurga contaminações de mundos raiz
         try {
             const cached = localStorage.getItem('rpg_assets_adapter_intermaps');
             if (cached) {
@@ -179,7 +179,7 @@ export class InnerMapManager {
         const backgroundColor = config.backgroundColor || '#000000';
         const defaultSpawn = config.defaultSpawn || { x: Math.round(width / 2), y: Math.round(height * 0.7) };
 
-        // Cria o portal de retorno automático para o mundo pai (Double Bind)
+        //? Cria o portal de retorno automático para o mundo pai (Double Bind)
         const returnPortal: IntermapPortalConfig = {
             x: Math.round(width / 2),
             y: Math.round(height * 0.75),
@@ -220,7 +220,7 @@ export class InnerMapManager {
         const updated: IntermapDefinition = {
             ...existing,
             ...updates,
-            id: existing.id // ID é imutável para não quebrar links existentes
+            id: existing.id
         };
 
         this.intermaps.set(id, updated);
@@ -246,7 +246,7 @@ export class InnerMapManager {
         if (!portalAsset.targetMapId) return;
         const targetId = portalAsset.targetMapId.trim();
 
-        // Mundos raiz nunca são criados como InnerMaps
+        //? Mundos raiz nunca são criados como InnerMaps
         if (InnerMapManager.ROOT_WORLDS.has(targetId)) {
             return;
         }
@@ -259,7 +259,6 @@ export class InnerMapManager {
         let innerMap = this.intermaps.get(targetId);
 
         if (!innerMap) {
-            // Cria o InnerMap automaticamente com Double Bind
             innerMap = await this.createInnerMap({
                 id: targetId,
                 name: portalAsset.name.startsWith('Portal Link') ? this.formatInnerMapName(targetId) : portalAsset.name,
@@ -271,12 +270,11 @@ export class InnerMapManager {
                 returnPortalCoords: safeReturnCoords
             });
         } else {
-            // Atualiza o Double Bind no InnerMap existente
             if (!innerMap.portals) innerMap.portals = [];
             const returnPortal = innerMap.portals.find(p => p.targetMapId === currentMap.id);
 
             if (returnPortal) {
-                // Preserva as coordenadas de retorno customizadas pelo usuário caso já existam
+                //? Preserva as coordenadas de retorno customizadas pelo usuário caso já existam
                 if (!returnPortal.targetSpawnCoords) {
                     returnPortal.targetSpawnCoords = safeReturnCoords;
                     await this.saveToDisk();

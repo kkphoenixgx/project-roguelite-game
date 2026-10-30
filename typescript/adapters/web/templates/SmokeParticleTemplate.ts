@@ -28,26 +28,24 @@ export class SmokeParticleRenderer implements ICustomParticleRenderer {
   }
 
   public draw(ctx: CanvasRenderingContext2D, p: Particle, progress: number): void {
-    // progress: 1.0 (nasceu) -> 0.0 (morreu)
-    const lifeRatio = 1.0 - progress; // 0.0 (início) -> 1.0 (fim)
+    const lifeRatio = 1.0 - progress;
     const expand = 1.0 + (this.options.expandFactor ?? 2.8) * lifeRatio;
     const currentRadius = (p.size / 2) * expand;
     
-    // Opacidade não-linear (ease-out de dissolução)
+    //? Opacidade não-linear com curva senoidal para simular dissolução e nascimento orgânico
     const alpha = Math.sin(progress * Math.PI) * 0.45;
     if (alpha <= 0.01) return;
 
     ctx.save();
     ctx.translate(p.x, p.y);
     
-    // Rotação suave no ar
     const rotSpeed = this.options.rotationSpeed ?? 1.2;
     ctx.rotate(lifeRatio * rotSpeed);
 
     ctx.fillStyle = p.color;
     ctx.globalAlpha = alpha;
 
-    // Desenha nuvem de fumaça com 3 lóbulos assimétricos (puff orgânico)
+    //? Renderiza nuvem de fumaça com lóbulos radiais múltiplos para contorno volumétrico
     const lobes = this.options.lobes ?? 3;
     const angleStep = (Math.PI * 2) / lobes;
     const offset = currentRadius * 0.4;
@@ -77,10 +75,10 @@ export const SmokeVfxPresets = {
       .speed(10, 35)
       .size(10, 22)
       .life(1.2, 2.4)
-      .directional(-Math.PI / 2, Math.PI / 4) // Sobe em leque
-      .gravity(-25) // Empuxo térmico
+      .directional(-Math.PI / 2, Math.PI / 4)
+      .gravity(-25)
       .friction(0.96)
-      .asCircle(false), // Custom renderer assume o desenho
+      .asCircle(false),
 
   poisonCloud: (x: number, y: number) =>
     ParticleConfigBuilder.at(x, y)

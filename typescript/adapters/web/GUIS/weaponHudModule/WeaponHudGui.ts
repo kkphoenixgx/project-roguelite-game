@@ -74,23 +74,22 @@ export default class WeaponHudGui {
 
         let angle = 0;
 
-        // O Adapter é agnóstico à classe concreta, lendo apenas o discriminador injetado no DTO
+        //? Leitura de discriminador do DTO desacoplada de referências diretas a entidades de domínio
         const isStaff = mainHand.weaponType === 'staff' || mainHand.unlocksClass === 'Mago';
         const facingDirection = (data as EntityRenderableState & { facingDirection?: { x: number, y: number } }).facingDirection;
 
         if (isStaff && facingDirection) {
-            // Para o Cajado: Aponta para a direção em que as magias vão sair
+            //? Para cajado: orienta o anel na direção de lançamento (facingDirection)
             angle = Math.atan2(facingDirection.y, facingDirection.x) * (180 / Math.PI);
         } else {
-            // Para outras armas (Ex: Foice, Arma de fogo): Aponta ativamente para o Mouse
+            //? Para armas físicas/balísticas: orienta ativamente na mira do cursor do mouse
             const dx = mousePos.x - playerScreenPos.x;
             const dy = mousePos.y - playerScreenPos.y;
             angle = Math.atan2(dy, dx) * (180 / Math.PI);
         }
 
         this.weaponCircle.style.transform = `rotate(${angle + 90}deg)`;
-        // Contra-rotaciona o ícone para que seu eixo permaneça fixo na tela (Canvas).
-        // Retiramos o +180 para que a ponta da arma fique virada para cima naturalmente!
+        //? Contra-rotaciona o ícone para mantê-lo verticalmente alinhado na viewport
         const hasAirInfusion = data.spellElements?.includes('air') || data.activeStatuses?.some(s => s.id === 'blade_infusion_air');
         const hasLightInfusion = data.spellElements?.includes('light') || data.activeStatuses?.some(s => s.id === 'blade_infusion_light');
 
@@ -102,7 +101,7 @@ export default class WeaponHudGui {
         this.weaponCircle.classList.toggle('infused-air', !!hasAirInfusion);
         this.weaponCircle.classList.toggle('infused-light', !!hasLightInfusion);
 
-        // Lógica de Fade Out por Inatividade
+        /* Lógica de Fade Out por Inatividade */
         const currentWorldPos = data.coordinates;
         const hasPlayerMoved = currentWorldPos.x !== this.lastPlayerWorldPos.x || currentWorldPos.y !== this.lastPlayerWorldPos.y;
         const hasMouseMoved = mousePos.x !== this.lastMousePos.x || mousePos.y !== this.lastMousePos.y;
@@ -113,7 +112,7 @@ export default class WeaponHudGui {
             this.lastMousePos = { ...mousePos };
         }
 
-        // Oculta o HUD se passar de 2 segundos sem agir (combinado com a transição no CSS)
+        //? Oculta o HUD por opacidade após 1.5s sem interação ou movimento
         this.container.style.opacity = (Date.now() - this.lastActionTime > 1500) ? '0' : '1';
     }
 }

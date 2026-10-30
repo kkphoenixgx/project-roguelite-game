@@ -17,7 +17,8 @@ export default abstract class Weapon extends Item implements IWeapon {
   public unlocksClass?: string | undefined;
   public onHitActions: OnHitAction[] = []; //? Permite injetar ações de impacto (ex: roubo de vida, lentidão) na arma
   public projectileType?: objectTypeId;
-  public weaponType: string = 'melee'; //? Campo discriminador serializado para renderização e regras de interface
+  //? Campo discriminador serializado para renderização e regras de interface
+  public weaponType: string = 'melee';
 
   constructor(
     public baseDamage: number,

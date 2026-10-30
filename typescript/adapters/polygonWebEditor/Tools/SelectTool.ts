@@ -120,16 +120,15 @@ export class SelectTool implements ITool {
     public onMouseDown(e: MouseEvent, worldPos: Point, zoom: number): void {
         const vertexTarget = this.getVertexAt(worldPos.x, worldPos.y, zoom);
 
-        // 1. Interação com Vértice
         if (vertexTarget) {
-            if (e.button === 0) { // Clique Esquerdo: Seleciona e inicia arrasto do vértice
+            if (e.button === 0) {
                 this.selectedHitbox = vertexTarget.hitbox;
                 this.selectedVertex = vertexTarget.point;
                 this.dragMode = 'vertex';
                 this.dragStartPos = { x: worldPos.x, y: worldPos.y };
                 this.onSelectionChange?.(this.selectedHitbox);
                 return;
-            } else if (e.button === 2) { // Clique Direito: Remove vértice (ou hitbox se <= 3 pontos)
+            } else if (e.button === 2) {
                 if (vertexTarget.hitbox.type === 'polygon' && vertexTarget.hitbox.points) {
                     const ptIdx = vertexTarget.hitbox.points.indexOf(vertexTarget.point);
                     if (ptIdx > -1) {
@@ -158,10 +157,9 @@ export class SelectTool implements ITool {
             }
         }
 
-        // 2. Interação com Corpo da Hitbox
         const hitboxTarget = this.getHitboxAt(worldPos, zoom);
         if (hitboxTarget) {
-            if (e.button === 0) { // Clique Esquerdo: Seleciona e prepara arrasto da hitbox inteira
+            if (e.button === 0) {
                 this.selectedHitbox = hitboxTarget;
                 this.selectedVertex = null;
                 this.dragMode = 'hitbox';
@@ -174,7 +172,7 @@ export class SelectTool implements ITool {
                 }
                 this.onSelectionChange?.(this.selectedHitbox);
                 return;
-            } else if (e.button === 2) { // Clique Direito: Remove a hitbox inteira
+            } else if (e.button === 2) {
                 const hbIdx = this.hitboxes.indexOf(hitboxTarget);
                 if (hbIdx > -1) {
                     this.hitboxes.splice(hbIdx, 1);
@@ -189,7 +187,6 @@ export class SelectTool implements ITool {
             }
         }
 
-        // 3. Clique no Vazio: Desmarca seleção
         if (e.button === 0) {
             this.selectedHitbox = null;
             this.selectedVertex = null;
@@ -223,7 +220,6 @@ export class SelectTool implements ITool {
             return;
         }
 
-        // Atualização de hover quando não estiver arrastando
         const vTarget = this.getVertexAt(worldPos.x, worldPos.y, zoom);
         if (vTarget) {
             this.hoverTarget = { type: 'vertex', point: vTarget.point, hitbox: vTarget.hitbox };
@@ -240,7 +236,7 @@ export class SelectTool implements ITool {
     public onMouseUp(e: MouseEvent, worldPos: Point, zoom: number): void {
         if (this.dragMode !== 'none') {
             this.dragMode = 'none';
-            this.onChange(); // Persiste alteração no histórico ao soltar o mouse
+            this.onChange();
         }
     }
 
@@ -291,7 +287,6 @@ export class SelectTool implements ITool {
         const pX = (x: number) => x * zoom + panX;
         const pY = (y: number) => y * zoom + panY;
 
-        // 1. Destaque de Hover quando não está selecionado
         if (this.hoverTarget && this.dragMode === 'none') {
             if (this.hoverTarget.type === 'hitbox' && this.hoverTarget.hitbox !== this.selectedHitbox) {
                 ctx.save();
@@ -325,13 +320,11 @@ export class SelectTool implements ITool {
             }
         }
 
-        // 2. Destaque Vibrante da Hitbox Selecionada (Borda Neon, Preenchimento e Handles)
         if (this.selectedHitbox) {
             ctx.save();
             const hb = this.selectedHitbox;
 
             if (hb.type === 'polygon' && hb.points && hb.points.length > 1) {
-                // Contorno ativo com linha tracejada e preenchimento
                 ctx.strokeStyle = '#00e5ff';
                 ctx.lineWidth = 3;
                 if (ctx.setLineDash) ctx.setLineDash([6, 3]);
@@ -344,7 +337,6 @@ export class SelectTool implements ITool {
                 ctx.stroke();
                 if (ctx.setLineDash) ctx.setLineDash([]);
 
-                // Desenha todos os vértices da hitbox selecionada como alças interativas
                 for (const p of hb.points) {
                     const vx = pX(p.x);
                     const vy = pY(p.y);
@@ -369,7 +361,6 @@ export class SelectTool implements ITool {
                 ctx.stroke();
                 if (ctx.setLineDash) ctx.setLineDash([]);
 
-                // Ponto central da alça
                 const cx = pX(hb.coordinates.x);
                 const cy = pY(hb.coordinates.y);
                 ctx.beginPath();

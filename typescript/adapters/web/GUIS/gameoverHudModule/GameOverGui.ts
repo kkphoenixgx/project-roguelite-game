@@ -32,7 +32,6 @@ export default class GameOverGui {
     public show(): void {
         this.container.style.display = 'flex';
         
-        // Fetch stats from Domain
         const mpm = (this.domain as any).metaProgressionManager;
         if (mpm && mpm.lastRunSummary) {
             const summary = mpm.lastRunSummary;
@@ -41,7 +40,7 @@ export default class GameOverGui {
             const featsList = this.container.querySelector('#go-feats-list') as HTMLElement;
             const totalEl = this.container.querySelector('#go-total-reward') as HTMLElement;
             
-            // Note: finalLevel is inferred from levelReward (levelReward = finalLevel * 50)
+            //? Nível final deduzido da recompensa de nível (50 XP por nível)
             lvlEl.textContent = (summary.breakdown.levelReward / 50).toString();
             lvlEssEl.textContent = `+${summary.breakdown.levelReward} XP`;
             
@@ -60,12 +59,10 @@ export default class GameOverGui {
             totalEl.textContent = `+${summary.totalReward} XP`;
         }
 
-        // Fallback garantido: Pressione qualquer tecla ou clique para reiniciar
-        // Atraso de 1.5 segundos para o jogador não pular a tela sem querer se estiver atacando alucinadamente
+        //? Delay protetivo de 1.5s antes de registrar listener de restart para evitar avanço acidental
         setTimeout(() => {
             const forceRestart = () => { this.restartCallback(); };
             window.addEventListener('keydown', forceRestart, { once: true });
-            // window.addEventListener('mousedown', forceRestart, { once: true }); // Desativado mouse p/ poder scrollar feats
         }, 1500);
     }
 

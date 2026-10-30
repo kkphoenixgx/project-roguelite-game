@@ -37,7 +37,7 @@ export default class LevelUpRewardGui {
     private currentCoords: any = null;
     private flipTimers: any[] = [];
 
-    // Sigilo Rúnico Arcano para o verso da carta (Renderizado em SVG limpo, zero GC)
+    //? Sigilo Rúnico Arcano para o verso da carta (Renderizado em SVG inline, zero GC)
     private static readonly CARD_BACK_SIGIL = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="60" height="60">
             <circle cx="32" cy="32" r="28" fill="none" stroke="#855cc7" stroke-width="2" stroke-dasharray="4 2"/>
@@ -99,7 +99,7 @@ export default class LevelUpRewardGui {
         
         let selectedRewards = choices;
         if (!selectedRewards || selectedRewards.length === 0) {
-            selectedRewards = this.domain.generateLocalRewards(); // fallback
+            selectedRewards = this.domain.generateLocalRewards();
         }
 
         const cardWrappers: HTMLElement[] = [];
@@ -152,13 +152,12 @@ export default class LevelUpRewardGui {
             cardWrappers.push(wrapper);
         });
 
-        // Animação de flipagem das cartas onInit (escalonada / staggered)
-        // Dispara no próximo frame de renderização para garantir transição suave via hardware
+        //? Animação escalonada (staggered) de flipagem das cartas no próximo frame de renderização
         requestAnimationFrame(() => {
             cardWrappers.forEach((wrapper, index) => {
                 const timer = setTimeout(() => {
                     wrapper.classList.add('flipped');
-                    // Adiciona classe 'ready' após o término da transição de rotação para habilitar hover sem jank
+                    //? Adiciona classe 'ready' após término da rotação para permitir hover suave
                     const readyTimer = setTimeout(() => {
                         wrapper.classList.add('ready');
                     }, 550);
@@ -175,12 +174,12 @@ export default class LevelUpRewardGui {
 
     private getRarityColor(rarity: string): string {
         switch(rarity) {
-            case 'incomum': return '#1eff00'; // Verde
-            case 'raro': return '#0070dd'; // Azul
-            case 'epico': return '#a335ee'; // Roxo
-            case 'lendario': return '#ff8000'; // Laranja Ouro
+            case 'incomum': return '#1eff00';
+            case 'raro': return '#0070dd';
+            case 'epico': return '#a335ee';
+            case 'lendario': return '#ff8000';
             case 'comum':
-            default: return '#a0a0a0'; // Cinza
+            default: return '#a0a0a0';
         }
     }
 

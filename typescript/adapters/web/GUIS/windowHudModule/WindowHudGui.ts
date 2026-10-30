@@ -8,7 +8,7 @@ export default class WindowHudGui {
     private container!: HTMLElement;
 
     constructor() {
-        // Só injeta a barra superior se o jogo estiver rodando pelo binário do Tauri!
+        //? Só injeta a barra superior se o jogo estiver rodando pelo binário do Tauri
         if ((window as any).__TAURI_INTERNALS__) {
             this.injectUI();
             this.setupActions();
@@ -31,7 +31,7 @@ export default class WindowHudGui {
         const div = document.createElement('div');
         div.innerHTML = html;
         this.container = div.firstElementChild as HTMLElement;
-        // Garante que o HUD da janela tenha prioridade absoluta sobre todas as outras UIs (incluindo a SkillTree que está em 1000)
+        //? Garante que o HUD da janela tenha prioridade absoluta sobre todas as outras UIs
         this.container.style.zIndex = '9999';
         document.body.appendChild(this.container);
 
@@ -75,14 +75,13 @@ export default class WindowHudGui {
 
         maximizeBtn?.addEventListener('click', async () => {
             try {
-                // toggleMaximize alterna automaticamente entre Maximizado e Restaurado
                 await getCurrentWindow().toggleMaximize();
             } catch(e) { console.warn(e); }
         });
 
         const win = getCurrentWindow();
 
-        // Intercepta solicitações de fechamento disparadas pelo sistema operacional / Tauri
+        //? Intercepta solicitações de fechamento disparadas pelo sistema operacional / Tauri
         try {
             if (typeof win.onCloseRequested === 'function') {
                 win.onCloseRequested(async (event: any) => {
@@ -135,9 +134,7 @@ export default class WindowHudGui {
             const { invoke } = await import('@tauri-apps/api/core');
             await invoke('exit_game');
             return;
-        } catch {
-            // Segue para fallback se invoke não estiver disponível
-        }
+        } catch {}
 
         try {
             await win.destroy();

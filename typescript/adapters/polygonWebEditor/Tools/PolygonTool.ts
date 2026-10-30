@@ -9,10 +9,10 @@ export class PolygonTool implements ITool {
     constructor(private onComplete: (hitbox: HitboxModel) => void) {}
 
     public onMouseDown(e: MouseEvent, worldPos: Point, zoom: number): void {
-        if (e.button === 0) { // Clique Esquerdo: Adiciona ponto
+        if (e.button === 0) {
             this.points.push({ x: worldPos.x, y: worldPos.y });
-            this.undonePoints = []; // Limpa o histórico de redo ao adicionar novo ponto
-        } else if (e.button === 2 && this.points.length > 0) { // Clique Direito: Desfaz
+            this.undonePoints = [];
+        } else if (e.button === 2 && this.points.length > 0) {
             this.onUndo();
         }
     }
@@ -21,14 +21,14 @@ export class PolygonTool implements ITool {
         this.mousePos = { x: worldPos.x, y: worldPos.y };
     }
 
-    public onMouseUp(e: MouseEvent, worldPos: Point, zoom: number): void {} // Não usado nesta ferramenta
+    public onMouseUp(e: MouseEvent, worldPos: Point, zoom: number): void {}
 
     public onKeyDown(e: KeyboardEvent): void {
         if (e.key === 'Enter' && this.points.length >= 3) {
             const hitbox: HitboxModel = {
                 id: `poly_${Date.now()}`,
                 type: 'polygon',
-                coordinates: { x: this.points[0]!.x, y: this.points[0]!.y }, // Usa o 1º vértice como Posição Origem
+                coordinates: { x: this.points[0]!.x, y: this.points[0]!.y },
                 rotation: 0,
                 points: [...this.points]
             };
@@ -64,16 +64,14 @@ export class PolygonTool implements ITool {
         const pX = (x: number) => x * zoom + panX;
         const pY = (y: number) => y * zoom + panY;
 
-        // Linha de Conexão
         ctx.strokeStyle = '#00FF00';
-        ctx.lineWidth = 2; // Tamanho absoluto na tela (Screen Space)
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(pX(this.points[0]!.x), pY(this.points[0]!.y));
         for (let i = 1; i < this.points.length; i++) ctx.lineTo(pX(this.points[i]!.x), pY(this.points[i]!.y));
-        if (this.mousePos) ctx.lineTo(pX(this.mousePos.x), pY(this.mousePos.y)); // Fio do mouse (Preview)
+        if (this.mousePos) ctx.lineTo(pX(this.mousePos.x), pY(this.mousePos.y));
         ctx.stroke();
 
-        // Desenha os Vértices
         ctx.fillStyle = '#FF0000';
         for (const p of this.points) {
             ctx.beginPath(); ctx.arc(pX(p.x), pY(p.y), 4, 0, Math.PI * 2); ctx.fill();
