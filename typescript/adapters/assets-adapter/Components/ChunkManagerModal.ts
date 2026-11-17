@@ -407,6 +407,10 @@ export class ChunkManagerModal {
                                         <button type="button" id="btn-clear-chunk-bg" class="btn-danger" title="Limpar apenas a imagem de fundo deste bloco mantendo o chunk">
                                             <span>🧹</span> Limpar Fundo
                                         </button>
+                                        <button type="button" id="btn-apply-bg-all-chunks" class="btn-secondary" title="Usar a imagem deste bloco como fundo de todos os chunks existentes do mapa"
+                                                ${chunks[this.selectedCell.row]?.[this.selectedCell.col] ? '' : 'disabled'}>
+                                            <span>🧱</span> Aplicar a Todos os Chunks
+                                        </button>
                                     </div>
 
                                     ${(chunks[this.selectedCell.row]?.[this.selectedCell.col] || this.cellPaths.get(`${this.selectedCell.row},${this.selectedCell.col}`)) ? `
@@ -761,6 +765,13 @@ export class ChunkManagerModal {
             if (this.selectedCell) {
                 this.setChunkBackground(this.selectedCell.row, this.selectedCell.col, '');
             }
+        });
+
+        this.modalElement.querySelector('#btn-apply-bg-all-chunks')?.addEventListener('click', () => {
+            if (!this.selectedCell) return;
+            const { row, col } = this.selectedCell;
+            const bgUrl = this.mapConfig.chunks?.[row]?.[col] || '';
+            this.applyBackgroundToAllChunks(bgUrl, this.cellPaths.get(`${row},${col}`));
         });
     }
 
@@ -1222,6 +1233,31 @@ export class ChunkManagerModal {
         }
         this.saveAndNotify();
         this.render();
+    }
+
+    /**
+     * Aplica a mesma imagem de fundo a todos os chunks existentes do mapa (células vazias continuam vazias,
+     * preservando o formato do mapa). Diferente de `fillAll`, que também cria chunks nas células vazias.
+     * @returns Quantidade de chunks alterados.
+     */
+    public applyBackgroundToAllChunks(bgUrl: string, displayPath?: string): number {
+        if (!bgUrl) return 0;
+        const chunks = this.mapConfig.chunks || [];
+        let changed = 0;
+        for (let r = 0; r < chunks.length; r++) {
+            for (let c = 0; c < chunks[r]!.length; c++) {
+                const current = chunks[r]![c];
+                if (!current || current.trim() === '') continue;
+                chunks[r]![c] = bgUrl;
+                if (displayPath) this.cellPaths.set(`${r},${c}`, displayPath);
+                changed++;
+            }
+        }
+        if (changed > 0) {
+            this.saveAndNotify();
+            this.render();
+        }
+        return changed;
     }
 
     public setChunkBackground(row: number, col: number, bgUrl: string, displayPath?: string): void {

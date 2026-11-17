@@ -100,6 +100,8 @@ export interface InnerMapDTO {
   chunkSize?: number | undefined;
   defaultSpawn?: { x: number; y: number } | undefined;
   portals?: any[] | undefined;
+  /** Mapa independente (não é interior de outro mundo); `parentWorldId` vira apenas a referência de retorno. */
+  standalone?: boolean | undefined;
 }
 
 /** DTO base para o estado de qualquer objeto que pode ser renderizado. */

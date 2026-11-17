@@ -9,42 +9,78 @@
 <body>
     <header id="top-navbar">
         <div class="nav-left">
-            <span class="app-logo">🗺️</span>
-            <h1>Assets Adapter</h1>
-            <span class="app-badge">Scenery & World Placer</span>
+            <span class="app-logo" title="Assets Adapter">🗺️</span>
+
+            <nav id="editor-menu-bar" class="menu-bar" aria-label="Menu do editor">
+                <div class="menu-root">
+                    <button type="button" class="menu-trigger" aria-haspopup="true" aria-expanded="false">Arquivo</button>
+                    <div class="menu-dropdown" role="menu">
+                        <button type="button" role="menuitem" class="menu-item" id="btn-menu-new-map">
+                            <span class="menu-item-icon">➕</span><span class="menu-item-label">Novo Mapa...</span>
+                        </button>
+                        <button type="button" role="menuitem" class="menu-item" id="btn-quick-change-map">
+                            <span class="menu-item-icon">🗺️</span><span class="menu-item-label">Abrir Mapa...</span>
+                        </button>
+                        <div class="menu-separator" role="separator"></div>
+                        <button type="button" role="menuitem" class="menu-item" id="btn-quick-export-image" title="Exportar o canvas atual como imagem PNG limpa de fundo (sem hitboxes ou objetos adicionais)">
+                            <span class="menu-item-icon">📸</span><span class="menu-item-label">Exportar Fundo (PNG)</span>
+                        </button>
+                        <button type="button" role="menuitem" class="menu-item" id="btn-quick-export" title="Ver/copiar o código gerado do cenário">
+                            <span class="menu-item-icon">📋</span><span class="menu-item-label">Exportar Código do Cenário...</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="menu-root">
+                    <button type="button" class="menu-trigger" aria-haspopup="true" aria-expanded="false">Mapa</button>
+                    <div class="menu-dropdown" role="menu">
+                        <button type="button" role="menuitem" class="menu-item" id="btn-manage-chunks" title="Adicionar/remover chunks, trocar imagens de fundo e gerenciar InnerMaps">
+                            <span class="menu-item-icon">🧱</span><span class="menu-item-label">Chunks e Fundo...</span>
+                        </button>
+                        <button type="button" role="menuitem" class="menu-item" id="btn-open-sprite-modal">
+                            <span class="menu-item-icon">✨</span><span class="menu-item-label">Definir Novo Sprite...</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="menu-root">
+                    <button type="button" class="menu-trigger" aria-haspopup="true" aria-expanded="false">Exibir</button>
+                    <div class="menu-dropdown" role="menu">
+                        <button type="button" role="menuitemcheckbox" class="menu-item menu-item-toggle" id="btn-quick-toggle-hitboxes" title="Mostrar as hitboxes de colisão dos assets no mapa">
+                            <span class="menu-item-check">✓</span><span class="menu-item-label" id="hitbox-status-text">Hitboxes</span><span class="menu-item-shortcut">F2</span>
+                        </button>
+                        <button type="button" role="menuitemcheckbox" class="menu-item menu-item-toggle active" id="btn-quick-toggle-player-ref" title="Mostrar a referência de tamanho do Player Idle">
+                            <span class="menu-item-check">✓</span><span class="menu-item-label" id="player-ref-text">Referência do Player</span><span class="menu-item-shortcut">P</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="menu-root">
+                    <button type="button" class="menu-trigger" aria-haspopup="true" aria-expanded="false">Ferramentas</button>
+                    <div class="menu-dropdown" role="menu">
+                        <button type="button" role="menuitemcheckbox" class="menu-item menu-item-toggle" id="btn-quick-toggle-snap" title="Encaixe na grade (snap to grid) para posicionamento alinhado">
+                            <span class="menu-item-check">✓</span><span class="menu-item-label" id="snap-status-text">Encaixe na Grade</span>
+                        </button>
+                        <div class="menu-separator" role="separator"></div>
+                        <button type="button" role="menuitemcheckbox" class="menu-item menu-item-toggle" id="btn-quick-stamp-mode" title="Modo carimbo / pincel contínuo de assets">
+                            <span class="menu-item-check">✓</span><span class="menu-item-label" id="stamp-status-text">Modo Carimbo</span><span class="menu-item-shortcut">B</span>
+                        </button>
+                        <button type="button" role="menuitemcheckbox" class="menu-item menu-item-toggle" id="btn-quick-chunk-brush" title="Pincel de textura de chunk para pintar terrenos (pronto para Bake)">
+                            <span class="menu-item-check">✓</span><span class="menu-item-label" id="chunk-brush-status-text">Pincel de Chunk</span><span class="menu-item-shortcut">T</span>
+                        </button>
+                    </div>
+                </div>
+            </nav>
         </div>
+
+        <h1 class="menu-bar-title">Assets Adapter</h1>
+
         <div class="nav-right">
+            <div id="active-modes-indicator" class="active-modes-indicator" aria-live="polite"></div>
             <div id="sync-status-badge" class="sync-status-badge saved" title="Status de sincronização direta com o arquivo do mundo">
                 <span class="sync-dot"></span>
                 <span id="sync-status-text">✓ Sincronizado com VilgemWorld.ts</span>
             </div>
-            <button id="btn-quick-change-map" class="nav-btn">
-                <span>🗺️</span> Selecionar Mapa
-            </button>
-            <button id="btn-manage-chunks" class="nav-btn" title="Gerenciar Chunks, Adicionar/Remover Chunks e Fundos do Terreno">
-                <span>🧱</span> Chunks & Terreno
-            </button>
-            <button id="btn-quick-toggle-snap" class="nav-btn" title="Alternar Encaixe na Grade (Snap to Grid) para posicionamento alinhado ou livre">
-                <span id="snap-status-icon">📐</span> <span id="snap-status-text">Grid Snap: Desligado</span>
-            </button>
-            <button id="btn-quick-toggle-hitboxes" class="nav-btn" title="Alternar visualização das hitboxes de colisão dos assets no mapa (Atalho: Tecla F2)">
-                <span id="hitbox-status-icon">🎯</span> <span id="hitbox-status-text">Hitboxes (F2): Off</span>
-            </button>
-            <button id="btn-quick-toggle-player-ref" class="nav-btn active" title="Alternar visualização da referência do Player Idle no canto inferior (Atalho: Tecla P)">
-                <span id="player-ref-icon">👤</span> <span id="player-ref-text">Player Ref (P): On</span>
-            </button>
-            <button id="btn-quick-stamp-mode" class="nav-btn" title="Alternar Modo Carimbo / Pincel Contínuo (Atalho: Tecla B)">
-                <span id="stamp-status-icon">🖌️</span> <span id="stamp-status-text">Carimbo (B): Off</span>
-            </button>
-            <button id="btn-quick-chunk-brush" class="nav-btn" title="Alternar Pincel de Textura de Chunk para pintar terrenos e gerar objetos prontos para Bake (Atalho: Tecla T)">
-                <span id="chunk-brush-status-icon">🎨</span> <span id="chunk-brush-status-text">Pincel Chunk (T): Off</span>
-            </button>
-            <button id="btn-quick-export-image" class="nav-btn btn-export-highlight" title="Exportar o canvas atual como imagem PNG limpa de fundo (sem hitboxes ou objetos adicionais)">
-                <span>📸</span> Exportar Fundo (PNG)
-            </button>
-            <button id="btn-open-sprite-modal" class="nav-btn">
-                <span>✨</span> Definir Novo Sprite
-            </button>
         </div>
     </header>
 
