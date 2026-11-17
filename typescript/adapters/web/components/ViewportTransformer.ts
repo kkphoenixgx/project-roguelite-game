@@ -23,8 +23,8 @@ export default class ViewportTransformer {
             ? { coordinates: playerRenderable.coordinates, size: playerRenderable.size }
             : { coordinates: { x: 0, y: 0 }, size: { width: 0, height: 0 } };
 
-        const viewWidth = this.renderer.canvas.element.width / zoom;
-        const viewHeight = this.renderer.canvas.element.height / zoom;
+        const viewWidth = this.renderer.canvas.element.width / this.camera.renderScale;
+        const viewHeight = this.renderer.canvas.element.height / this.camera.renderScale;
 
         const camX = (target.coordinates.x + target.size.width / 2) - viewWidth / 2;
         const camY = (target.coordinates.y + target.size.height / 2) - viewHeight / 2;
@@ -58,8 +58,8 @@ export default class ViewportTransformer {
             ? { coordinates: playerRenderable.coordinates, size: playerRenderable.size }
             : { coordinates: { x: 0, y: 0 }, size: { width: 0, height: 0 } };
 
-        const viewWidth = this.renderer.canvas.element.width / zoom;
-        const viewHeight = this.renderer.canvas.element.height / zoom;
+        const viewWidth = this.renderer.canvas.element.width / this.camera.renderScale;
+        const viewHeight = this.renderer.canvas.element.height / this.camera.renderScale;
 
         const camX = (target.coordinates.x + target.size.width / 2) - viewWidth / 2;
         const camY = (target.coordinates.y + target.size.height / 2) - viewHeight / 2;
