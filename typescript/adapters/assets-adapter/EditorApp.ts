@@ -122,6 +122,7 @@ export class EditorApp {
                 }
             }
         );
+        this.drawer.onNewSpriteRequested = () => this.spriteDefModal.open();
 
         this.panelResizer = new PanelResizer({
             drawerId: 'asset-drawer',
