@@ -43,7 +43,10 @@ export class InnerMapManager {
                 chunkSize: def.chunkSize || 1024,
                 defaultSpawn: def.defaultSpawn || { x: 512, y: 700 },
                 portals: def.portals || [],
-                scenery: def.scenery || []
+                scenery: def.scenery || [],
+                ...(def.items ? { items: def.items } : {}),
+                ...(def.originChunk ? { originChunk: def.originChunk } : {}),
+                ...(def.standalone ? { standalone: true } : {})
             });
         }
 
@@ -202,6 +205,103 @@ export class InnerMapManager {
             chunkSize: config.chunkSize || 1024,
             defaultSpawn,
             portals: [returnPortal],
+            scenery: []
+        };
+
+        this.intermaps.set(id, newDef);
+        await this.saveToDisk();
+        return newDef;
+    }
+
+    /**
+     * Converte um nome livre em ID de mapa válido (minúsculas, sem acentos, apenas a-z, 0-9 e _).
+     * Ex: "Teste Render" -> "teste_render".
+     */
+    public static slugifyMapId(name: string): string {
+        return name
+            .normalize('NFD').replace(/[̀-ͯ]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '');
+    }
+
+    /**
+     * Monta a matriz de chunks (linhas x colunas) preenchida com a mesma imagem de fundo
+     * (string vazia = chunk sem imagem, usando a cor sólida de fundo do mapa).
+     */
+    public static buildChunkGrid(cols: number, rows: number, backgroundUrl: string): string[][] {
+        const safeCols = Math.max(1, Math.floor(cols));
+        const safeRows = Math.max(1, Math.floor(rows));
+        return Array.from({ length: safeRows }, () => Array.from({ length: safeCols }, () => backgroundUrl));
+    }
+
+    /**
+     * Retorna os mapas independentes (criados pelo botão "Novo Mapa"), que não são interiores de outro mundo.
+     */
+    public getStandaloneMaps(): IntermapDefinition[] {
+        return Array.from(this.intermaps.values()).filter(m => m.standalone === true && !InnerMapManager.ROOT_WORLDS.has(m.id));
+    }
+
+    /**
+     * Cria um mapa independente baseado em chunks, sem mundo pai obrigatório.
+     * Se `returnMapId` for informado, cria um portal perto do spawn levando de volta a esse mapa.
+     */
+    public async createStandaloneMap(config: {
+        name: string;
+        id?: string | undefined;
+        cols: number;
+        rows: number;
+        chunkSize?: number | undefined;
+        backgroundUrl?: string | undefined;
+        backgroundColor?: string | undefined;
+        returnMapId?: string | undefined;
+    }): Promise<IntermapDefinition> {
+        const id = InnerMapManager.slugifyMapId(config.id?.trim() || config.name);
+        if (!id) {
+            throw new Error('Informe um nome ou ID válido para o mapa.');
+        }
+        if (InnerMapManager.ROOT_WORLDS.has(id)) {
+            throw new Error(`O ID "${id}" é reservado para um mundo raiz.`);
+        }
+        if (this.intermaps.has(id)) {
+            throw new Error(`Já existe um mapa com o ID "${id}".`);
+        }
+
+        const chunkSize = config.chunkSize || 1024;
+        const chunks = InnerMapManager.buildChunkGrid(config.cols, config.rows, config.backgroundUrl || '');
+        const width = chunks[0]!.length * chunkSize;
+        const height = chunks.length * chunkSize;
+        const defaultSpawn = { x: Math.round(width / 2), y: Math.round(height / 2) };
+
+        const portals: IntermapPortalConfig[] = [];
+        if (config.returnMapId) {
+            portals.push({
+                x: defaultSpawn.x - 32,
+                y: defaultSpawn.y + 96,
+                width: 64,
+                height: 32,
+                targetMapId: config.returnMapId,
+                targetSpawnCoords: this.intermaps.get(config.returnMapId)?.defaultSpawn
+                    ?? (config.returnMapId === 'vilgem' ? { x: 512, y: 591 } : { x: 500, y: 500 }),
+                type: 'request',
+                promptText: 'Voltar',
+                actionKey: 'E',
+                cooldownMs: 1000
+            });
+        }
+
+        const newDef: IntermapDefinition = {
+            id,
+            name: config.name.trim() || this.formatInnerMapName(id),
+            parentWorldId: config.returnMapId || 'vilgem',
+            standalone: true,
+            width,
+            height,
+            backgroundColor: config.backgroundColor || '#000000',
+            chunks,
+            chunkSize,
+            defaultSpawn,
+            portals,
             scenery: []
         };
 
@@ -391,7 +491,9 @@ export class InnerMapManager {
             backgroundColor: innerMap.backgroundColor || '#000000',
             isInnerMap: true,
             parentWorldId: innerMap.parentWorldId,
-            description: `InnerMap interior derivado de ${innerMap.parentWorldId}`
+            description: innerMap.standalone
+                ? 'Mapa independente criado no editor'
+                : `InnerMap interior derivado de ${innerMap.parentWorldId}`
         };
     }
 

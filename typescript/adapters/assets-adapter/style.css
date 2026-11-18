@@ -2801,3 +2801,250 @@ body.is-resizing .properties-panel {
 }
 
 
+
+/* =========================================================================
+   BARRA DE MENUS SUSPENSOS (estilo VS Code / editores de imagem)
+   Substitui a fileira de botões grandes do topo por menus genéricos
+   (Arquivo, Mapa, Exibir, Ferramentas) com itens específicos dentro.
+   ========================================================================= */
+#top-navbar {
+    height: 40px;
+    padding: 0 12px;
+    gap: 12px;
+    position: relative;
+}
+
+#top-navbar .nav-left {
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+#top-navbar .app-logo {
+    font-size: 16px;
+    padding: 0 6px;
+}
+
+#top-navbar .menu-bar-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 40vw;
+    pointer-events: none;
+}
+
+#top-navbar .nav-right {
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+#top-navbar .sync-status-badge {
+    padding: 3px 10px;
+    font-size: 11px;
+}
+
+.menu-bar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.menu-root {
+    position: relative;
+}
+
+.menu-trigger {
+    font-size: 13px;
+    color: var(--text-primary);
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: background 0.12s ease;
+}
+
+.menu-trigger:hover,
+.menu-root.is-open .menu-trigger {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.menu-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 260px;
+    padding: 5px;
+    background: #1b1f2b;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+}
+
+.menu-root.is-open .menu-dropdown {
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-item {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 6px 10px 6px 6px;
+    border-radius: 5px;
+    font-size: 13px;
+    text-align: left;
+    color: var(--text-primary);
+    transition: background 0.1s ease;
+}
+
+.menu-item:hover:not(:disabled) {
+    background: rgba(0, 210, 255, 0.16);
+}
+
+.menu-item:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.menu-item-icon,
+.menu-item-check {
+    text-align: center;
+    font-size: 13px;
+}
+
+.menu-item-check {
+    color: var(--accent-blue);
+    font-weight: 700;
+    visibility: hidden;
+}
+
+.menu-item-toggle.active .menu-item-check {
+    visibility: visible;
+}
+
+.menu-item-shortcut {
+    font-size: 11px;
+    color: var(--text-secondary);
+    padding-left: 18px;
+}
+
+.menu-separator {
+    height: 1px;
+    margin: 5px 6px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Chips de modos ativos (carimbo, pincel, grade, hitboxes) no canto direito */
+.active-modes-indicator {
+    display: flex;
+    gap: 6px;
+}
+
+.active-mode-chip {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 12px;
+    background: rgba(0, 210, 255, 0.12);
+    border: 1px solid rgba(0, 210, 255, 0.35);
+    color: var(--accent-blue);
+    white-space: nowrap;
+}
+
+.active-mode-chip[data-mode="chunkBrush"],
+.active-mode-chip[data-mode="stamp"] {
+    background: rgba(255, 215, 0, 0.12);
+    border-color: rgba(255, 215, 0, 0.4);
+    color: var(--accent-gold);
+}
+
+/* =========================================================================
+   SELETOR DE MAPAS: SEÇÕES E FORMULÁRIO DE NOVO MAPA
+   ========================================================================= */
+.map-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 6px;
+}
+
+.map-item-card.new-map-card {
+    border-style: dashed;
+    border-color: rgba(0, 210, 255, 0.45);
+}
+
+.new-map-thumb .placeholder-thumb {
+    flex-direction: column;
+    gap: 4px;
+}
+
+.new-map-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.new-map-form .prop-label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.new-map-form-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.new-map-form-row .prop-label {
+    flex: 0 0 140px;
+}
+
+.new-map-size-preview {
+    font-size: 12px;
+    color: var(--accent-blue);
+    padding-bottom: 8px;
+}
+
+.new-map-bg-options {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.new-map-bg-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.new-map-bg-options input[type="file"] {
+    margin-left: 24px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.new-map-error {
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #f87171;
+    font-size: 13px;
+}

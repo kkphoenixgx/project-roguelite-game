@@ -9,6 +9,11 @@ import WebGPURenderer from "../engine/WebGPURenderer";
 import { RenderRegistry } from "../../../shared/RenderRegistry";
 import type IRenderer from "../engine/IRenderer";
 import ParticleOrchestrator from "../particlesModule/ParticleOrchestrator";
+import TrailOrchestrator from "../trailsModule/TrailOrchestrator";
+
+/** Presets percorridos pelo teste de rastro no mouse (F6): desligado -> stretch -> tile -> animado -> rolagem -> desligado. */
+export const MOUSE_TRAIL_TEST_SEQUENCE: readonly string[] = ['trail_test_stretch', 'trail_test_tile', 'trail_test_animated', 'trail_test_scroll'];
+const MOUSE_TRAIL_KEY = 'debug-mouse-trail';
 
 /** @class SceneManager Gerencia as instâncias visuais e a sincronização entre o estado do Domínio e as entidades gráficas na tela. */
 export default class SceneManager {
@@ -23,10 +28,22 @@ export default class SceneManager {
   private nextTransientId: number = -1;
   
   public particleOrchestrator: ParticleOrchestrator;
+  public trailOrchestrator: TrailOrchestrator;
+  /** Preset do rastro de teste que segue o mouse (null = desligado). */
+  public mouseTrailTestId: string | null = null;
 
   constructor(private renderer: IRenderer<any>, private isDebugMode: boolean) {
     this.renderableFactory = new RenderableFactory();
     this.particleOrchestrator = new ParticleOrchestrator();
+    this.trailOrchestrator = new TrailOrchestrator();
+  }
+
+  /** Avança o rastro de teste no mouse pela sequência MOUSE_TRAIL_TEST_SEQUENCE e, depois do último, desliga. */
+  public cycleMouseTrailTest(): string | null {
+    const current = this.mouseTrailTestId ? MOUSE_TRAIL_TEST_SEQUENCE.indexOf(this.mouseTrailTestId) : -1;
+    const next = MOUSE_TRAIL_TEST_SEQUENCE[current + 1];
+    this.mouseTrailTestId = next ?? null;
+    return this.mouseTrailTestId;
   }
 
   public async initialize(): Promise<void> {
@@ -52,10 +69,16 @@ export default class SceneManager {
     }
     this.transientVisuals.clear();
     this.particleOrchestrator.clear();
+    this.trailOrchestrator.clear();
   }
 
   public updateAnimations(deltaTime: number, mouseWorldPos?: {x: number, y: number}): void {
     this.particleOrchestrator.updateAnimations(deltaTime);
+
+    if (this.mouseTrailTestId && mouseWorldPos) {
+        this.trailOrchestrator.track(MOUSE_TRAIL_KEY, mouseWorldPos.x, mouseWorldPos.y, this.mouseTrailTestId);
+    }
+    this.trailOrchestrator.update(deltaTime);
 
     for (const animManager of this.animationManagers.values()) {
       animManager.update(deltaTime);
@@ -211,6 +234,11 @@ export default class SceneManager {
           const centerX = state.coordinates.x + state.size.width / 2;
           const centerY = state.coordinates.y + state.size.height / 2;
           this.particleOrchestrator.dynamicSpellTrail(centerX, centerY, state.spellElements);
+      }
+
+      //? Rastro (trail/ribbon) declarado pelo domínio: a cabeça acompanha o centro da entidade
+      if (state.trailId) {
+          this.trailOrchestrator.track(state.id, state.coordinates.x + state.size.width / 2, state.coordinates.y + state.size.height / 2, state.trailId);
       }
 
       if (this.renderer instanceof WebGPURenderer) {

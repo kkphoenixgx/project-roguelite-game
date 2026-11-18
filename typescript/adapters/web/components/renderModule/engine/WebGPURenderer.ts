@@ -133,7 +133,7 @@ export default class WebGPURenderer implements IRenderer<EntityRenderableState> 
 
   private updateCamera(target: EntityRenderableState | undefined): void {
     const { width, height } = this.canvas.element;
-    const zoom = this.camera.zoom;
+    const zoom = this.camera.renderScale;
 
     const viewWidth = width / zoom;
     const viewHeight = height / zoom;

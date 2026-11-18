@@ -58,6 +58,11 @@ export interface IntermapDefinition {
   items?: IntermapItemConfig[] | undefined;
   collisionData?: any[] | undefined;
   originChunk?: { cx: number; cy: number } | undefined;
+  /**
+   * Mapa independente: não é interior de outro mundo e é listado como mapa próprio no editor.
+   * Nesse caso `parentWorldId` indica apenas o mapa de referência para portais de retorno.
+   */
+  standalone?: boolean | undefined;
 }
 
 export class IntermapRegistry {

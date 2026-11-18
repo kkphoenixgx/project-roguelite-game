@@ -17,6 +17,8 @@ export class AssetDrawer {
     private isCollapsed: boolean = false;
     private isTagsFolded: boolean = true;
     private onAssetSelectedCallback?: ((asset: AssetDefinition) => void) | undefined;
+    /** Ação do botão "Definir Novo Sprite" do rodapé da biblioteca (abre o modal de definição de sprite). */
+    public onNewSpriteRequested?: (() => void) | undefined;
     private savedWidthBeforeCollapse: string = '';
 
     constructor(scanner: AssetScanner, onAssetSelected?: ((asset: AssetDefinition) => void) | undefined) {
@@ -90,7 +92,7 @@ export class AssetDrawer {
             </div>
 
             <div class="drawer-footer">
-                <button id="btn-open-sprite-modal" class="btn-new-sprite">
+                <button type="button" id="btn-drawer-new-sprite" class="btn-new-sprite">
                     <span>✨</span> Definir Novo Sprite
                 </button>
             </div>
@@ -136,6 +138,12 @@ export class AssetDrawer {
     }
 
     private bindEvents(): void {
+        //! Id próprio: antes repetia o id do item de menu e o clique nunca era ligado (getElementById pega só o primeiro)
+        this.container.querySelector('#btn-drawer-new-sprite')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.onNewSpriteRequested?.();
+        });
+
         const btnToggle = this.container.querySelector('#btn-toggle-drawer');
         btnToggle?.addEventListener('click', (e) => {
             e.preventDefault();

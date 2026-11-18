@@ -303,9 +303,9 @@ export class WorldCodeSync {
                 return;
             }
 
-            lines.push(`        //* =========================================================================`);
-            lines.push(`        //* ${chunkIndex++}. CHUNK (${cx},${cy}) [${minX}..${maxX}, ${minY}..${maxY}]${cx === 0 && cy === 0 ? ' - Alvorada de Vilgem (Praça Central / Spawn)' : ''}`);
-            lines.push(`        //* =========================================================================`);
+            lines.push(`        //? =========================================================================`);
+            lines.push(`        //? ${chunkIndex++}. CHUNK (${cx},${cy}) [${minX}..${maxX}, ${minY}..${maxY}]${cx === 0 && cy === 0 ? ' - Alvorada de Vilgem (Praça Central / Spawn)' : ''}`);
+            lines.push(`        //? =========================================================================`);
 
             if (assetsInChunk.length === 0) {
                 lines.push(`        //? (Chunk livre de elementos cenográficos estáticos)`);

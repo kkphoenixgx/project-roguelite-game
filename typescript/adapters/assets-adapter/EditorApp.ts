@@ -18,6 +18,8 @@ import { ChunkManagerModal } from "./Components/ChunkManagerModal";
 import { ChunkSync } from "./Components/ChunkSync";
 import { VisualConfigMap, type MapVisualConfig } from "../web/shared/VisualConfigMap";
 import { InnerMapManager } from "./Components/InnerMapManager";
+import { MenuBar } from "./Components/MenuBar";
+import { getActiveModeChips, getToggleMenuLabels, type EditorToggleState } from "./Components/ToolbarStatus";
 
 export class EditorApp {
     private scanner: AssetScanner;
@@ -120,6 +122,7 @@ export class EditorApp {
                 }
             }
         );
+        this.drawer.onNewSpriteRequested = () => this.spriteDefModal.open();
 
         this.panelResizer = new PanelResizer({
             drawerId: 'asset-drawer',
@@ -293,7 +296,35 @@ export class EditorApp {
         text.textContent = message || (status === 'saved' ? '✓ Sincronizado com VilgemWorld.ts' : 'Salvando...');
     }
 
+    private getToggleState(): EditorToggleState {
+        return {
+            snapToGrid: this.canvas.snapToGrid,
+            gridSize: this.canvas.gridSize,
+            showHitboxes: this.canvas.showHitboxes,
+            showPlayerReference: this.canvas.showPlayerReference,
+            isStampMode: this.canvas.isStampMode,
+            isChunkBrushMode: this.canvas.isChunkBrushMode,
+            chunkBrushRadius: this.canvas.chunkBrushRadius
+        };
+    }
+
+    /** Atualiza os chips de modos ativos no canto direito da barra de menus. */
+    private renderActiveModes(): void {
+        const container = document.getElementById('active-modes-indicator');
+        if (!container) return;
+        container.innerHTML = getActiveModeChips(this.getToggleState())
+            .map(chip => `<span class="active-mode-chip" data-mode="${chip.id}" title="${chip.title}">${chip.label}</span>`)
+            .join('');
+    }
+
     private bindGlobalToolbarEvents(): void {
+        const menuBarRoot = document.getElementById('editor-menu-bar');
+        if (menuBarRoot) new MenuBar(menuBarRoot);
+
+        document.getElementById('btn-menu-new-map')?.addEventListener('click', () => {
+            this.mapSelectorModal.openCreateForm();
+        });
+
         const btnOpenSpriteModal = document.getElementById('btn-open-sprite-modal');
         btnOpenSpriteModal?.addEventListener('click', () => {
             this.spriteDefModal.open();
@@ -333,11 +364,10 @@ export class EditorApp {
                 this.canvas.showGrid = true;
             }
             if (snapText) {
-                snapText.textContent = this.canvas.snapToGrid 
-                    ? `Grid Snap: Ativo (${this.canvas.gridSize}px)` 
-                    : 'Grid Snap: Desligado';
+                snapText.textContent = getToggleMenuLabels(this.getToggleState()).snap;
             }
             btnToggleSnap.classList.toggle('active', this.canvas.snapToGrid);
+            this.renderActiveModes();
             this.canvas.render();
             this.propertiesPanel.render();
         });
@@ -346,11 +376,10 @@ export class EditorApp {
         const hitboxText = document.getElementById('hitbox-status-text');
         const updateHitboxButtonState = () => {
             if (hitboxText) {
-                hitboxText.textContent = this.canvas.showHitboxes
-                    ? 'Hitboxes (F2): Ativo'
-                    : 'Hitboxes (F2): Off';
+                hitboxText.textContent = getToggleMenuLabels(this.getToggleState()).hitboxes;
             }
             btnToggleHitboxes?.classList.toggle('active', this.canvas.showHitboxes);
+            this.renderActiveModes();
         };
 
         btnToggleHitboxes?.addEventListener('click', () => {
@@ -362,9 +391,7 @@ export class EditorApp {
         const playerRefText = document.getElementById('player-ref-text');
         const updatePlayerRefButtonState = () => {
             if (playerRefText) {
-                playerRefText.textContent = this.canvas.showPlayerReference
-                    ? 'Player Ref (P): On'
-                    : 'Player Ref (P): Off';
+                playerRefText.textContent = getToggleMenuLabels(this.getToggleState()).playerRef;
             }
             btnTogglePlayerRef?.classList.toggle('active', this.canvas.showPlayerReference);
         };
@@ -378,11 +405,10 @@ export class EditorApp {
         const stampText = document.getElementById('stamp-status-text');
         const updateStampButtonState = () => {
             if (stampText) {
-                stampText.textContent = this.canvas.isStampMode
-                    ? 'Carimbo (B): Ativo'
-                    : 'Carimbo (B): Off';
+                stampText.textContent = getToggleMenuLabels(this.getToggleState()).stamp;
             }
             btnToggleStamp?.classList.toggle('active', this.canvas.isStampMode);
+            this.renderActiveModes();
         };
 
         btnToggleStamp?.addEventListener('click', () => {
@@ -400,11 +426,10 @@ export class EditorApp {
         const chunkBrushText = document.getElementById('chunk-brush-status-text');
         const updateChunkBrushButtonState = () => {
             if (chunkBrushText) {
-                chunkBrushText.textContent = this.canvas.isChunkBrushMode
-                    ? `Pincel Chunk (T): Ativo (${this.canvas.chunkBrushRadius}px)`
-                    : 'Pincel Chunk (T): Off';
+                chunkBrushText.textContent = getToggleMenuLabels(this.getToggleState()).chunkBrush;
             }
             btnToggleChunkBrush?.classList.toggle('active', this.canvas.isChunkBrushMode);
+            this.renderActiveModes();
         };
 
         btnToggleChunkBrush?.addEventListener('click', () => {
@@ -440,6 +465,8 @@ export class EditorApp {
                 updateStampButtonState();
             }
         });
+
+        this.renderActiveModes();
     }
 }
 

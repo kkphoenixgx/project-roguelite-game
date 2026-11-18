@@ -7,14 +7,31 @@ import type IRenderable from "../visuals/IRenderable";
 export default class Camera {
   private canvas: Canvas;
   private target: IRenderable | null = null;
-  public zoom: number;
+  /** Zoom de referência pedido pelo jogo, em pixels de tela por pixel do mundo numa tela com escala de 100%. */
+  public baseZoom: number;
   private camX:number = 0;
   private camY:number = 0;
 
-  /** @constructor @param canvas A instância do `Canvas` cujas dimensões definem a viewport. @param zoom O nível de magnificação inicial da câmera. */
+  /** @constructor @param canvas A instância do `Canvas` cujas dimensões definem a viewport. @param zoom O nível de magnificação inicial da câmera (em escala de 100%). */
   constructor(canvas: Canvas, zoom: number = 1) {
     this.canvas = canvas;
-    this.zoom = zoom;
+    this.baseZoom = zoom;
+  }
+
+  /** Quantos pixels físicos do buffer cada pixel do mundo ocupa. Sempre inteiro (para zoom >= 1), para que cada pixel da pixel art vire um bloco uniforme na tela. Ex: zoom 3 com escala de 125% do Windows -> round(3.75) = 4. */
+  public get renderScale(): number {
+    const ratio = this.canvas.pixelRatio || 1;
+    const scaled = this.baseZoom * ratio;
+    return scaled >= 1 ? Math.round(scaled) : scaled;
+  }
+
+  /** Zoom efetivo em pixels CSS por pixel do mundo (mesmo sistema de coordenadas do mouse). Usado para converter coordenadas de tela <-> mundo. */
+  public get zoom(): number {
+    return this.renderScale / (this.canvas.pixelRatio || 1);
+  }
+
+  public set zoom(value: number) {
+    this.baseZoom = value;
   }
 
   /** Fase de Update: Define o objeto `IRenderable` que a câmera deve seguir. Geralmente chamado a cada frame para rastrear o jogador. @param target O objeto a ser seguido. */
@@ -26,8 +43,9 @@ export default class Camera {
   public applyTransform(ctx: CanvasRenderingContext2D, world: WorldState): void {
     if (!this.target) return;
 
-    const viewWidth = this.canvas.element.width / this.zoom;
-    const viewHeight = this.canvas.element.height / this.zoom;
+    const scale = this.renderScale;
+    const viewWidth = this.canvas.element.width / scale;
+    const viewHeight = this.canvas.element.height / scale;
 
     let camX = (this.target.coordinates.x + this.target.size.width / 2) - viewWidth / 2;
     let camY = (this.target.coordinates.y + this.target.size.height / 2) - viewHeight / 2;
@@ -46,17 +64,22 @@ export default class Camera {
       ? minY + (totalH - viewHeight) / 2 
       : Math.max(minY, Math.min(camY, maxY - viewHeight));
 
-    this.camX = clampedCamX;
-    this.camY = clampedCamY;
+    //! Encaixa a câmera na grade de pixels físicos: sem isso, posições fracionárias deslocam as bordas dos pixels a cada frame
+    const snappedCamX = Math.round(clampedCamX * scale) / scale;
+    const snappedCamY = Math.round(clampedCamY * scale) / scale;
 
-    ctx.scale(this.zoom, this.zoom);
-    ctx.translate(-clampedCamX, -clampedCamY);
+    this.camX = snappedCamX;
+    this.camY = snappedCamY;
+
+    ctx.scale(scale, scale);
+    ctx.translate(-snappedCamX, -snappedCamY);
   }
 
   /** Verifica se uma caixa delimitadora no mundo está dentro da área visível da câmera (Frustum Culling). */
   public isInViewport(x: number, y: number, width: number, height: number, padding: number = 128): boolean {
-    const viewWidth = this.canvas.element.width / this.zoom;
-    const viewHeight = this.canvas.element.height / this.zoom;
+    const scale = this.renderScale;
+    const viewWidth = this.canvas.element.width / scale;
+    const viewHeight = this.canvas.element.height / scale;
 
     const minX = this.camX - padding;
     const maxX = this.camX + viewWidth + padding;

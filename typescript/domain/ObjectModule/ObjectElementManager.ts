@@ -571,7 +571,8 @@ export default class ObjectElementManager {
       state.hasBeard = (element as any).hasBeard;
       (state as any).facingDirection = (element as any).facingDirection;
       state.spellElements = (element as any).spellElements;
-      
+      state.trailId = element.trailId;
+
       if ('activeStatusesList' in element) {
         const statusesList = (element as any).activeStatusesList as any[];
         if (!state.activeStatuses) state.activeStatuses = [];

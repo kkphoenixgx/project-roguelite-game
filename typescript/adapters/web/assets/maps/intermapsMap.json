@@ -80,5 +80,60 @@
         "baseDamage": 18
       }
     ]
+  },
+  "teste_render": {
+    "id": "teste_render",
+    "name": "Teste Render",
+    "parentWorldId": "vilgem",
+    "standalone": true,
+    "width": 3072,
+    "height": 3072,
+    "backgroundColor": "#000000",
+    "chunks": [
+      [
+        "/assets/maps/teste_render/map_render_test.png",
+        "/assets/maps/teste_render/map_render_test.png",
+        "/assets/maps/teste_render/map_render_test.png"
+      ],
+      [
+        "/assets/maps/teste_render/map_render_test.png",
+        "/assets/maps/teste_render/map_render_test.png",
+        "/assets/maps/teste_render/map_render_test.png"
+      ],
+      [
+        "/assets/maps/teste_render/map_render_test.png",
+        "/assets/maps/teste_render/map_render_test.png",
+        "/assets/maps/teste_render/map_render_test.png"
+      ]
+    ],
+    "chunkSize": 1024,
+    "defaultSpawn": {
+      "x": 1536,
+      "y": 1536
+    },
+    "portals": [
+      {
+        "x": 1500,
+        "y": 1632,
+        "width": 56,
+        "height": 52,
+        "targetMapId": "vilgem",
+        "targetSpawnCoords": {
+          "x": 1536,
+          "y": 1615
+        },
+        "type": "request",
+        "promptText": "Voltar",
+        "actionKey": "E",
+        "cooldownMs": 1000
+      }
+    ],
+    "scenery": [
+      {
+        "x": 1501,
+        "y": 1569,
+        "presetId": "barrel_single"
+      }
+    ]
   }
 }

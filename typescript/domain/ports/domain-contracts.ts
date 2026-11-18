@@ -100,6 +100,8 @@ export interface InnerMapDTO {
   chunkSize?: number | undefined;
   defaultSpawn?: { x: number; y: number } | undefined;
   portals?: any[] | undefined;
+  /** Mapa independente (não é interior de outro mundo); `parentWorldId` vira apenas a referência de retorno. */
+  standalone?: boolean | undefined;
 }
 
 /** DTO base para o estado de qualquer objeto que pode ser renderizado. */
@@ -182,6 +184,8 @@ export interface EntityRenderableState extends BaseRenderableState {
   
   /** Elementos mágicos embutidos na entidade para guiar o Motor de Partículas (O Lego Visual) */
   spellElements?: string[] | undefined;
+  /** Identificador do rastro (trail/ribbon) que a entidade deixa ao se mover; a apresentação resolve o visual. Ausente = sem rastro. */
+  trailId?: string | undefined;
   /** Lista de buffs e debuffs ativos atualmente na entidade. */
   activeStatuses?: ActiveStatusDTO[] | undefined;
   /** Rastreamento de tempo de recarga das habilidades ativas e broches */

@@ -1,0 +1,22 @@
+{
+  "chunks": [
+    [
+      "/assets/maps/teste_render/map_render_test.png",
+      "/assets/maps/teste_render/map_render_test.png",
+      "/assets/maps/teste_render/map_render_test.png"
+    ],
+    [
+      "/assets/maps/teste_render/map_render_test.png",
+      "/assets/maps/teste_render/map_render_test.png",
+      "/assets/maps/teste_render/map_render_test.png"
+    ],
+    [
+      "/assets/maps/teste_render/map_render_test.png",
+      "/assets/maps/teste_render/map_render_test.png",
+      "/assets/maps/teste_render/map_render_test.png"
+    ]
+  ],
+  "width": 3072,
+  "height": 3072,
+  "timestamp": 1794876076176
+}

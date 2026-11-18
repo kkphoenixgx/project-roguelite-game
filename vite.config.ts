@@ -2,6 +2,7 @@ import { defineConfig, Plugin } from 'vite';
 import fs from 'fs';
 import path from 'path';
 import { ChunkBoundaryHelper } from './typescript/domain/ObjectModule/Maps/ChunkBoundaryHelper';
+import { invalidateWrittenFile } from './typescript/adapters/assets-adapter/Components/ViteModuleInvalidation';
 
 /**
  * Plugin de sincronização bidirecional do Assets Adapter.
@@ -12,6 +13,18 @@ function assetsAdapterSyncPlugin(): Plugin {
   return {
     name: 'assets-adapter-sync-plugin',
     configureServer(server) {
+      /**
+       * Grava um arquivo e invalida o módulo correspondente no cache do Vite.
+       * Os arquivos de mapa/assets ficam em `server.watch.ignored` (para o editor não recarregar sozinho a cada
+       * salvamento), então sem esta invalidação o Vite continuaria servindo a versão antiga até ser reiniciado.
+       * Com ela, um F5 no jogo já recebe o conteúdo novo.
+       */
+      const writeSynced = (file: string, data: string | NodeJS.ArrayBufferView, encoding?: BufferEncoding): void => {
+        if (encoding) fs.writeFileSync(file, data, encoding);
+        else fs.writeFileSync(file, data);
+        invalidateWrittenFile(server, file);
+      };
+
       server.middlewares.use(async (req, res, next) => {
         // Redireciona /assets/... para /typescript/adapters/web/assets/... para carregar texturas relativas
         if (req.url?.startsWith('/assets/')) {
@@ -115,7 +128,7 @@ function assetsAdapterSyncPlugin(): Plugin {
                     return;
                   }
 
-                  fs.writeFileSync(visualConfigFile, fileContent, 'utf-8');
+                  writeSynced(visualConfigFile, fileContent, 'utf-8');
                   res.statusCode = 200;
                   res.setHeader('Content-Type', 'application/json');
                   res.end(JSON.stringify({ success: true, timestamp: Date.now() }));
@@ -234,7 +247,7 @@ function assetsAdapterSyncPlugin(): Plugin {
                   if (!fs.existsSync(collisionDir)) {
                     fs.mkdirSync(collisionDir, { recursive: true });
                   }
-                  fs.writeFileSync(targetLayerFile, JSON.stringify({ hitboxes }, null, 2), 'utf-8');
+                  writeSynced(targetLayerFile, JSON.stringify({ hitboxes }, null, 2), 'utf-8');
 
                   // 2. Converte para o formato do asset_hitboxes.json do Domínio
                   if (fs.existsSync(domainHitboxesFile)) {
@@ -268,7 +281,7 @@ function assetsAdapterSyncPlugin(): Plugin {
                       shapes
                     };
 
-                    fs.writeFileSync(domainHitboxesFile, JSON.stringify(catalog, null, 2), 'utf-8');
+                    writeSynced(domainHitboxesFile, JSON.stringify(catalog, null, 2), 'utf-8');
                   }
 
                   res.statusCode = 200;
@@ -318,7 +331,7 @@ function assetsAdapterSyncPlugin(): Plugin {
 
                   const name = fileName || `chunk_r${row}_c${col}_baked_${Date.now()}.png`;
                   const filePath = path.join(mapDir, name);
-                  fs.writeFileSync(filePath, buffer);
+                  writeSynced(filePath, buffer);
 
                   const relativePath = `assets/maps/${mapId}/${name}`;
                   const url = `/assets/maps/${mapId}/${name}`;
@@ -499,7 +512,7 @@ function assetsAdapterSyncPlugin(): Plugin {
                         }
                       }
                     }
-                    fs.writeFileSync(visualConfigFile, visualContent, 'utf-8');
+                    writeSynced(visualConfigFile, visualContent, 'utf-8');
                   }
 
                   // 2. Atualiza dimensões width / height / originChunk no arquivo do mundo (se for mapa principal com arquivo .ts)
@@ -520,11 +533,11 @@ function assetsAdapterSyncPlugin(): Plugin {
                       const spawnX = defaultSpawnMatch ? parseInt(defaultSpawnMatch[1], 10) : (mapId === 'vilgem' ? 512 : 500);
                       const spawnY = defaultSpawnMatch ? parseInt(defaultSpawnMatch[2], 10) : (mapId === 'vilgem' ? 591 : 500);
                       const chunksJsonString = JSON.stringify(data.chunks, null, 8);
-                      const newDims = `    // Dimensões do mapa composto por chunks dinâmicos (Origem no Chunk 0,0)\n    public readonly width = ${data.width};\n    public readonly height = ${data.height};\n    public override readonly minX = ${minX};\n    public override readonly minY = ${minY};\n    public override readonly maxX = ${maxX};\n    public override readonly maxY = ${maxY};\n    public override readonly originChunk = { cx: ${originCx}, cy: ${originCy} };\n    public override readonly defaultSpawn = { x: ${spawnX}, y: ${spawnY} };\n    public override readonly chunks: string[][] = ${chunksJsonString};`;
+                      const newDims = `    //? Dimensões do mapa composto por chunks dinâmicos (Origem no Chunk 0,0)\n    public readonly width = ${data.width};\n    public readonly height = ${data.height};\n    public override readonly minX = ${minX};\n    public override readonly minY = ${minY};\n    public override readonly maxX = ${maxX};\n    public override readonly maxY = ${maxY};\n    public override readonly originChunk = { cx: ${originCx}, cy: ${originCy} };\n    public override readonly defaultSpawn = { x: ${spawnX}, y: ${spawnY} };\n    public override readonly chunks: string[][] = ${chunksJsonString};`;
                       worldContent = worldContent.substring(0, dStart + dimsStart.length) +
                         '\n' + newDims + '\n    ' +
                         worldContent.substring(dEnd);
-                      fs.writeFileSync(worldFile, worldContent, 'utf-8');
+                      writeSynced(worldFile, worldContent, 'utf-8');
                     }
                   } else if (!worldFile) {
                     // Se for um InnerMap, atualiza dimensões no intermapsMap.json se existir
@@ -537,7 +550,7 @@ function assetsAdapterSyncPlugin(): Plugin {
                           if (data.height !== undefined) allIntermaps[mapId].height = data.height;
                           if (data.chunks) allIntermaps[mapId].chunks = data.chunks;
                           if (data.originChunk) allIntermaps[mapId].originChunk = data.originChunk;
-                          fs.writeFileSync(intermapsJsonFile, JSON.stringify(allIntermaps, null, 2), 'utf-8');
+                          writeSynced(intermapsJsonFile, JSON.stringify(allIntermaps, null, 2), 'utf-8');
                         }
                       } catch (_) {}
                     }
@@ -546,7 +559,7 @@ function assetsAdapterSyncPlugin(): Plugin {
                   // 3. Salva JSON estruturado para acesso imediato no reload
                   if (data.chunks && Array.isArray(data.chunks)) {
                     const origin = data.originChunk || (mapId === 'vilgem' ? { cx: 2, cy: 1 } : { cx: 0, cy: 0 });
-                    fs.writeFileSync(chunksJsonFile, JSON.stringify({
+                    writeSynced(chunksJsonFile, JSON.stringify({
                       chunks: data.chunks,
                       width: data.width,
                       height: data.height,
@@ -558,7 +571,7 @@ function assetsAdapterSyncPlugin(): Plugin {
                     const collisionHitboxesFile = path.resolve(__dirname, `typescript/adapters/web/assets/maps/collision-layers/${mapId}_hitboxes.json`);
                     if (fs.existsSync(collisionHitboxesFile)) {
                       const newBoundaries = ChunkBoundaryHelper.computeBoundaries(data.chunks, origin, 1024, 32);
-                      fs.writeFileSync(collisionHitboxesFile, JSON.stringify({ hitboxes: newBoundaries }, null, 2), 'utf-8');
+                      writeSynced(collisionHitboxesFile, JSON.stringify({ hitboxes: newBoundaries }, null, 2), 'utf-8');
                     }
                   }
 
@@ -628,7 +641,7 @@ function assetsAdapterSyncPlugin(): Plugin {
                       if (def.chunks && Array.isArray(def.chunks)) {
                         const chunksFile = path.resolve(__dirname, `typescript/adapters/web/assets/maps/chunks_${id}.json`);
                         try {
-                          fs.writeFileSync(chunksFile, JSON.stringify({
+                          writeSynced(chunksFile, JSON.stringify({
                             chunks: def.chunks,
                             width: def.width,
                             height: def.height,
@@ -637,7 +650,7 @@ function assetsAdapterSyncPlugin(): Plugin {
                         } catch (_) {}
                       }
                     }
-                    fs.writeFileSync(intermapsJsonFile, JSON.stringify(data.intermaps, null, 2), 'utf-8');
+                    writeSynced(intermapsJsonFile, JSON.stringify(data.intermaps, null, 2), 'utf-8');
                   }
                   res.statusCode = 200;
                   res.setHeader('Content-Type', 'application/json');
@@ -687,7 +700,7 @@ function assetsAdapterSyncPlugin(): Plugin {
                   const data = JSON.parse(body);
                   if (data.innerMap) {
                     allIntermaps[mapId] = { ...allIntermaps[mapId], ...data.innerMap };
-                    fs.writeFileSync(intermapsJsonFile, JSON.stringify(allIntermaps, null, 2), 'utf-8');
+                    writeSynced(intermapsJsonFile, JSON.stringify(allIntermaps, null, 2), 'utf-8');
                   }
                   res.statusCode = 200;
                   res.setHeader('Content-Type', 'application/json');
@@ -772,7 +785,7 @@ function assetsAdapterSyncPlugin(): Plugin {
                   return;
                 }
 
-                fs.writeFileSync(targetFile, newFileContent, 'utf-8');
+                writeSynced(targetFile, newFileContent, 'utf-8');
 
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
