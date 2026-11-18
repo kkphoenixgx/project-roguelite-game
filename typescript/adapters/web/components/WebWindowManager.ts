@@ -30,6 +30,12 @@ export default class WebWindowManager {
       console.log(`%c[Debug] %cModo de depuração de HitBoxes: ${this.isDebugMode ? 'ATIVADO' : 'DESATIVADO'}`, 'color: orange', 'color: white');
     };
 
+    (window as any).toggleTrailTest = () => {
+      const trailId = this.sceneManager?.cycleMouseTrailTest() ?? null;
+      console.log(`%c[Debug] %cRastro de teste no mouse (F6): ${trailId ?? 'DESATIVADO'}`, 'color: orange', 'color: white');
+      return trailId;
+    };
+
     (window as any).openHitboxEditor = () => {
       window.open('/typescript/adapters/polygonWebEditor/index.html', '_blank');
       console.log('%c[Editor] %cHitbox Editor Tool aberto em uma nova aba.', 'color: #55aaff', 'color: white');
@@ -105,6 +111,11 @@ export default class WebWindowManager {
       if (e.key === 'F4') {
         e.preventDefault();
         (window as any).openAssetsAdapter();
+      }
+
+      if (e.key === 'F6') {
+        e.preventDefault();
+        (window as any).toggleTrailTest();
       }
     });
 

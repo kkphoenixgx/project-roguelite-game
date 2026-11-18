@@ -7,6 +7,8 @@ export default class ObjectElement {
 
   public rotation:number = 0
   public isDestroyed: boolean = false;
+  /** Rastro (trail/ribbon) deixado pela entidade ao se mover. Pode ser ligado/desligado em runtime (undefined = sem rastro). */
+  public trailId?: string | undefined;
 
   constructor(
     private readonly _size: { width: number; height: number; },

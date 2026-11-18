@@ -728,6 +728,91 @@ export interface MapVisualConfig {
 }
 export type AnyVisualConfig = EntityVisualConfig | ItemVisualConfig | ProjectileVisualConfig | VFXVisualConfig | MapVisualConfig;
 
+/**
+ * Visual de um rastro (trail/ribbon) desenhado a partir de um sprite horizontal.
+ * Convenção do sprite: ponta DIREITA = cabeça (colada no objeto), ponta ESQUERDA = cauda.
+ */
+export interface TrailVisualConfig {
+    imageSrc: string;
+    /** 'stretch': a imagem inteira se estica da cabeça até a cauda. 'tile': a imagem se repete em 1:1 ao longo do caminho. */
+    mode: 'stretch' | 'tile';
+    /** Espessura do rastro em pixels do mundo (na cabeça). */
+    width: number;
+    /** Tempo de vida de cada ponto do caminho, em segundos (define o comprimento do rastro). */
+    lifetime: number;
+    /** Distância mínima em pixels do mundo entre dois pontos gravados do caminho. */
+    minSegmentLength: number;
+    /** Quantidade máxima de pontos guardados (limite de memória do rastro). */
+    maxPoints: number;
+    /** Quanto o rastro afina até a cauda: 0 = espessura constante, 1 = termina em ponta. */
+    taper: number;
+    /** Se o rastro some gradualmente (transparência) conforme os pontos envelhecem. */
+    fade: boolean;
+    /** Animação por quadros: quantidade de quadros empilhados na VERTICAL no sprite (padrão 1). */
+    frameCount?: number;
+    /** Altura de cada quadro em pixels da imagem (padrão: altura da imagem / frameCount). */
+    frameHeight?: number;
+    /** Velocidade da animação por quadros, em quadros por segundo. */
+    animationSpeed?: number;
+    /** Rolagem da textura ao longo do rastro, em pixels da imagem por segundo (positivo = flui da cabeça para a cauda). */
+    scrollSpeed?: number;
+    /**
+     * Onde a textura fica presa (só no modo 'tile'):
+     * - 'head' (padrão): medida a partir da cabeça, a textura acompanha o objeto;
+     * - 'path': presa ao caminho percorrido, como uma trilha pintada no chão; o desenho fica parado e a cabeça vai revelando mais.
+     */
+    textureAnchor?: 'head' | 'path';
+}
+
+/** Catálogo de rastros, indexado pelo `trailId` declarado pelas entidades do domínio. */
+export const TrailVisuals: Record<string, TrailVisualConfig> = {
+    'trail_test_stretch': {
+        imageSrc: new URL('../assets/entities/vfx/trails/medium-test-trail-32hpx.png', import.meta.url).href,
+        mode: 'stretch',
+        width: 32,
+        lifetime: 0.6,
+        minSegmentLength: 6,
+        maxPoints: 64,
+        taper: 0.8,
+        fade: true
+    },
+    'trail_test_tile': {
+        imageSrc: new URL('../assets/entities/vfx/trails/small-test-trail-10hpx.png', import.meta.url).href,
+        mode: 'tile',
+        width: 10,
+        lifetime: 1.2,
+        minSegmentLength: 4,
+        maxPoints: 128,
+        taper: 0,
+        fade: true
+    },
+    'trail_test_animated': {
+        imageSrc: new URL('../assets/entities/vfx/trails/animated-test-trail-128hpxx.png', import.meta.url).href,
+        mode: 'tile',
+        width: 16,
+        lifetime: 1,
+        minSegmentLength: 4,
+        maxPoints: 128,
+        taper: 0.3,
+        fade: true,
+        frameCount: 4,
+        frameHeight: 32,
+        animationSpeed: 8
+    },
+    'trail_test_scroll': {
+        imageSrc: new URL('../assets/entities/vfx/trails/medium-test-trail-32hpx.png', import.meta.url).href,
+        mode: 'tile',
+        width: 24,
+        lifetime: 1.2,
+        minSegmentLength: 4,
+        maxPoints: 128,
+        taper: 0.5,
+        fade: true,
+        textureAnchor: 'path',
+        scrollSpeed: 0
+    }
+};
+
 // <!-- ASSETS_ADAPTER_CHUNKS_START:vilgem -->
 const vilgemChunks: string[][] = [
     [

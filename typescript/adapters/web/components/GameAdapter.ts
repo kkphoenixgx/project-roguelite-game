@@ -882,6 +882,9 @@ export default class GameAdapter {
     //? Aplica ordenação espacial Y-Sorting para profundidade pseudo-3D
         this.canvasRenderBuffer.sort(GameAdapter.ySortComparator);
 
+    //? Rastros (trails) ficam por baixo das entidades e acima do mapa
+        this.canvasRenderBuffer.unshift(this.sceneManager.trailOrchestrator);
+
     //? Adiciona elementos de renderização sempre no topo (partículas e hitboxes de debug)
         this.canvasRenderBuffer.push(this.sceneManager.particleOrchestrator);
         if (this.sceneManager.isDebugModeActive) for (const d of this.sceneManager.debugRenderables.values()) this.canvasRenderBuffer.push(d);
